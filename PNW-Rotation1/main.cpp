@@ -3,6 +3,7 @@
 #include <string>  
 #include <vector>
 #include <sstream> 
+#include <filesystem>
 
 #include "../../eigen-3.4.0/Eigen/Dense"
 
@@ -23,12 +24,13 @@ struct GPS_VData_Point {
   float Ren;
 } dataPoint;
 
-void readDataFile(const std::string &filename, std::vector<GPS_VData_Point>& gpsData) {
+bool readDataFile(const std::string &filename, std::vector<GPS_VData_Point>& gpsData) {
   std::ifstream file(filename);
 
   if (!file.is_open())  {
+    std::cerr << "Path: " << std::filesystem::current_path() << std::endl;
     std::cerr << "Error: Could not open file " << filename << std::endl;
-    return;
+    return false;
   }
 
   gpsData.resize(0);
@@ -57,9 +59,10 @@ void readDataFile(const std::string &filename, std::vector<GPS_VData_Point>& gps
   }
   std::cout << "Loaded " << gpsData.size() << " points\n";
   file.close(); 
+  return true;
 }
 
-void getTransform12(
+bool getTransform12(
     std::vector<GPS_VData_Point>& pArray,
     Eigen::Vector4f& xVector,
     float* R2)
@@ -67,90 +70,96 @@ void getTransform12(
   //printf("GN Regress\n");
   //float4 X { 0.0f, 0.0f, 0.0f, 0.0f };
   const int N = pArray.size();
-  if (N >= 4) // need at least 4 samples to regress
+  if (N < 4) // need at least 4 samples to regress
+    return false;
+
+  // Starting center point estimation
+  float w = gpsBounds.maxLon - gpsBounds.minLon;
+  float h = gpsBounds.maxLat - gpsBounds.minLat;
+  float cx = w / 2.0f + gpsBounds.minLon;
+  float cy = h / 2.0f + gpsBounds.minLat;
+
+  // pass2 - process data
+  Eigen::MatrixXf J(2 * N, 4);
+  Eigen::VectorXf R(2 * N);
+  Eigen::VectorXf wt(2 * N);
+
+  int jIdx = 0;
+  for (int n = 0; n < N; n++)
   {
-    float w = gpsBounds.maxLon - gpsBounds.minLon;
-    float h = gpsBounds.maxLat - gpsBounds.minLat;
-    float cx = w / 2.0f;
-    float cy = h / 2.0f;
+    const float iu = pArray[n].lon;
+    const float iv = pArray[n].lat;
 
-    // pass2 - process data
-    Eigen::MatrixXf J(2 * N, 4);
-    Eigen::VectorXf R(2 * N);
-    Eigen::VectorXf wt(2 * N);
+    const float u = iu - cx;
+    const float v = iv - cy;
 
-    int jIdx = 0;
-    for (int n = 0; n < N; n++)
-    {
-      const float iu = pArray[n].lon;
-      const float iv = pArray[n].lat;
+    // const float uHat = dArray[n].x;
+    // const float vHat = dArray[n].y;
+    // const float dMag = dArray[n].z;
+    // const float s0 = dArray[n].w;
 
-      const float u = iu - cx;
-      const float v = iv - cy;
+    float wu = 1.0f; // wArray[n].x;
+    float wv = 1.0f; // wArray[n].y;
+    // float w = wArray[n].z;
 
-      // const float uHat = dArray[n].x;
-      // const float vHat = dArray[n].y;
-      // const float dMag = dArray[n].z;
-      // const float s0 = dArray[n].w;
+    float ru = pArray[n].Ve; // uHat * dMag; // Dx
+    float rv = pArray[n].Vn; // vHat *dMag; // Dy
 
-      float wu = 1.0f; // wArray[n].x;
-      float wv = 1.0f; // wArray[n].y;
-      // float w = wArray[n].z;
+    // Calculate Jacobian elements for Dx
+    J(jIdx, 0) = 1.0f; //  dru/dtx
+    J(jIdx, 1) = 0.0f;  //  dru/dty
+    J(jIdx, 2) = u;     //  dru/ds
+    J(jIdx, 3) = v;     //  dru/dtheta
 
-      float ru = pArray[n].Ve;  // uHat * dMag; // Dx
-      float rv = pArray[n].Vn;  // vHat *dMag; // Dy
+    R(jIdx) = ru;  // Dx
+    wt(jIdx) = wu; // wu;
+    jIdx++;
 
-      // Calculate Jacobian elements for Dx
-      J(jIdx, 0) = -1.0f; //  dru/dtx
-      J(jIdx, 1) = 0.0f;  //  dru/dty
-      J(jIdx, 2) = u;     //  dru/ds
-      J(jIdx, 3) = v;     //  dru/dtheta
+    // Calculate Jacobian elements for Dy
+    J(jIdx, 0) = 0.0f;  //  drv/dtx
+    J(jIdx, 1) = 1.0f; //  drv/dty
+    J(jIdx, 2) = v;     //  drv/ds
+    J(jIdx, 3) = -u;    //  drv/dtheta
 
-      R(jIdx) = ru;  // Dx
-      wt(jIdx) = wu; // wu;
-      jIdx++;
-
-      // Calculate Jacobian elements for Dy
-      J(jIdx, 0) = 0.0f;  //  drv/dtx
-      J(jIdx, 1) = -1.0f; //  drv/dty
-      J(jIdx, 2) = v;     //  drv/ds
-      J(jIdx, 3) = -u;    //  drv/dtheta
-
-      R(jIdx) = rv;  // Dy
-      wt(jIdx) = wv; // wv;
-      jIdx++;
-    }
-
-    // std::cout << "J: \n" << J << std::endl;
-    // std::cout << "R: \n" << R << std::endl;
-    Eigen::DiagonalMatrix<float, Eigen::Dynamic> W(2 * N);
-    W.diagonal() = wt;
-    Eigen::MatrixXf A = J.transpose() * W * J;
-    // std::cout << "A: \n" << A << std::endl;
-    Eigen::MatrixXf b = -J.transpose() * W * R;
-    // std::cout << "b: \n" << b << std::endl;
-
-    // Residual rms
-    if (R2)
-      *R2 = sqrt(R.transpose() * W * R);
-        
-    // Eigen::Vector4f xVector = A.inverse() * b;
-    // Eigen::Vector4f xVector = A.colPivHouseholderQr().solve(b).col(0);
-    // Eigen::Vector4f xVector = (A.transpose() * A).ldlt().solve(A.transpose() * b);
-    xVector = A.colPivHouseholderQr().solve(b);
-    // std::cout << "X: " << xVector.transpose();
+    R(jIdx) = rv;  // Dy
+    wt(jIdx) = wv; // wv;
+    jIdx++;
   }
+
+  // std::cout << "J: \n" << J << std::endl;
+  // std::cout << "R: \n" << R << std::endl;
+  Eigen::DiagonalMatrix<float, Eigen::Dynamic> W(2 * N);
+  W.diagonal() = wt;
+  Eigen::MatrixXf A = J.transpose() * W * J;
+  // std::cout << "A: \n" << A << std::endl;
+  Eigen::MatrixXf b = -J.transpose() * W * R;
+  // std::cout << "b: \n" << b << std::endl;
+
+  // Residual rms
+  if (R2)
+    *R2 = sqrt(R.transpose() * W * R);
+
+  // xVector = A.inverse() * b;
+  // xVector = A.colPivHouseholderQr().solve(b).col(0);
+  // xVector = (A.transpose() * A).ldlt().solve(A.transpose() * b);
+  xVector = A.colPivHouseholderQr().solve(b);
+  
+  xVector[0] += cx;
+  xVector[1] += cy;
+
+  // std::cout << "X: " << xVector.transpose();
+
+  return true;
 };
 
 int main() {
-  std::string gpsDataFileName = "data/nshm2023_wus_v1.txt";
+  std::string gpsDataFileName = "./data/nshm2023_wus_v1.txt";
   std::vector<GPS_VData_Point> gpsData;
-  readDataFile(gpsDataFileName, gpsData);
-
-  Eigen::Vector4f xVector;
-  float R2;
-  getTransform12(gpsData, xVector, &R2);
-  std::cout << xVector.transpose() << std::endl;
-
+  if (readDataFile(gpsDataFileName, gpsData)) {
+    Eigen::Vector4f xVector{0.0f, 0.0f, 0.0f, 0.0f};
+    float R2;
+    if (getTransform12(gpsData, xVector, &R2));
+      std::cout << xVector.transpose() << std::endl;
+  }
   return 0;
-}
+};
