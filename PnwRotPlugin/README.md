@@ -1,3 +1,11 @@
+# Notes for PnwRotPlugin (based on cpp-sample-qgis-plugin)
+Build from command prompt:
+  cd build
+  cmake ..
+  cmake --build ,
+
+  use copyPlugin.bat command to copy over to qGis plugins
+  
 # A Sample QGIS Plugin in C++
 
 A minimum sample of a C++ plugin for QGIS to help you get started.
