@@ -4,7 +4,7 @@
     <customproperties>
       <Option/>
     </customproperties>
-    <layer-tree-layer id="nshm2023_GPS_velocity_shp_a8262937_f778_47c5_bbbf_6a148dc804e9" legend_exp="" legend_split_behavior="0" checked="Qt::Checked" patch_size="-1,-1" name="nshm2023_GPS_velocity — nshm2023_GPS_velocity.shp" providerKey="ogr" expanded="1" source="./nshm2023_GPS_velocity.zip/nshm2023_GPS_velocity.shp|layername=nshm2023_GPS_velocity">
+    <layer-tree-layer id="pnw_rot_layer_a8262937_f778_47c5_bbbf_6a148dc804e9" legend_exp="" legend_split_behavior="0" checked="Qt::Checked" patch_size="-1,-1" name="pnw_rot_layer2023_motion — pnw_rot_layer2023_motion.shp" providerKey="ogr" expanded="1" source="./PnwRotTest.zip/pnw_rot_layer2023_motion.shp|layername=pnw_rot_layer2023_motion">
       <customproperties>
         <Option/>
       </customproperties>
@@ -24,12 +24,13 @@
         <xmax>-103.02129999999999654</xmax>
         <ymax>52.45819999999999794</ymax>
       </wgs84extent>
-      <id>nshm2023_GPS_velocity_shp_a8262937_f778_47c5_bbbf_6a148dc804e9</id>
-      <datasource>./nshm2023_GPS_velocity.zip/nshm2023_GPS_velocity.shp|layername=nshm2023_GPS_velocity</datasource>
+      <id>pnw_rot_layer_a8262937_f778_47c5_bbbf_6a148dc804e9</id>
+      <datasource>
+      </datasource>
       <keywordList>
         <value></value>
       </keywordList>
-      <layername>nshm2023_GPS_velocity — nshm2023_GPS_velocity.shp</layername>
+      <layername>pnw_rot_layer2023_motion — pnw_rot_layer2023_motion.shp</layername>
       <srs>
         <spatialrefsys>
           <wkt>GEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble",MEMBER["World Geodetic System 1984 (Transit)"],MEMBER["World Geodetic System 1984 (G730)"],MEMBER["World Geodetic System 1984 (G873)"],MEMBER["World Geodetic System 1984 (G1150)"],MEMBER["World Geodetic System 1984 (G1674)"],MEMBER["World Geodetic System 1984 (G1762)"],MEMBER["World Geodetic System 1984 (G2139)"],ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]],ENSEMBLEACCURACY[2.0]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["Horizontal component of 3D system."],AREA["World."],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>

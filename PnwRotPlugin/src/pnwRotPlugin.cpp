@@ -80,7 +80,7 @@ void pnwRotationPlugin::menu_button_action()
    QString tabName = "Pnw Rotation Plugin";
    QgsMessageLog::logMessage(QString("Process data"), tabName, Qgis::MessageLevel::Info);
 
-   QString layerName("nshm2023_GPS_velocity — nshm2023_GPS_velocity.shp");
+   QString layerName("nshm2023_GPS_velocity");
    QgsMapLayer *mapLayer = QgsProject::instance()->mapLayersByName(layerName).value(0);
    QgsVectorLayer *vlayer = dynamic_cast<QgsVectorLayer *>(mapLayer);
    if (!vlayer)
