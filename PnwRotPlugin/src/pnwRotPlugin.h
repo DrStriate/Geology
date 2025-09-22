@@ -17,6 +17,10 @@
 #include <iostream>
 #include <QAction>
 #include <QApplication>
+#include "qgsVectorDataProvider.h"
+#include "qgssinglesymbolrenderer.h"
+#include "qgsmaplayeractionregistry.h"
+#include "qgssymbol.h."
 
 class pnwRotationPlugin : public QObject, public QgisPlugin
 {
@@ -37,14 +41,24 @@ public:
    virtual void unload() override;
 
 public slots:
-   /// An example of an action, triggered when a menu is clicked.
-   void menu_button_action();
+   void clear_menu_button_action();
+   void load_menu_button_action();
 
 private:
    QgisInterface* m_qgis_if;
 
-   /// The action in the QGIS menu bar.
-   QAction* m_menu_action;
+   /// The actions in the QGIS menu bar.
+   QAction *m_clear_menu_action;
+   QAction *m_load_menu_action;
+
+   bool loadRotData(QString rotDataLayer, bool verbose);
+   bool truncateLayerData();
+
+   QgsFields m_fields;
+   std::vector<QString> m_fieldNames;
+   std::vector<std::vector<double>> m_rot_data;
+
+   const bool m_verbose = true;
 };
 
 #endif
