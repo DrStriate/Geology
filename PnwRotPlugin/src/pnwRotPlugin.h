@@ -22,6 +22,7 @@
 #include "qgsmaplayeractionregistry.h"
 #include "qgssymbol.h."
 
+
 class pnwRotationPlugin : public QObject, public QgisPlugin
 {
    Q_OBJECT
@@ -42,22 +43,28 @@ public:
 
 public slots:
    void clear_menu_button_action();
-   void load_menu_button_action();
+   void display_menu_button_action();
 
 private:
    QgisInterface* m_qgis_if;
 
    /// The actions in the QGIS menu bar.
    QAction *m_clear_menu_action;
-   QAction *m_load_menu_action;
+   QAction *m_display_rot_menu_action;
 
+   bool m_rotDataLoaded;
    bool loadRotData(QString rotDataLayer, bool verbose);
-   bool truncateLayerData();
+   bool displayData();
 
-   QgsFields m_fields;
+   QgsVectorLayer *m_rotSrcLayer;
+   QgsVectorLayer *m_DestLayer;
+   // Rot layer data
+   QList<QgsField> m_fieldList;   
+   QgsFeatureList m_featureList;
+
    std::vector<QString> m_fieldNames;
    std::vector<std::vector<double>> m_rot_data;
-
+   
    const bool m_verbose = true;
 };
 

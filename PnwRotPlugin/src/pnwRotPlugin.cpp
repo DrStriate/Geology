@@ -7,7 +7,7 @@ namespace
    const QString s_category = QStringLiteral("Plugins");
    const QString s_version = QStringLiteral("Version 1.2.3");
    const QString s_icon = QStringLiteral(":/plugin.svg");
-   const QString s_rotDataLayerName = QStringLiteral("nshm2023_GPS_velocity");
+   const QString s_rotDatadestLayerName = QStringLiteral("nshm2023_GPS_velocity");
    const QgisPlugin::PluginType s_type = QgisPlugin::UI;
 }
 
@@ -55,6 +55,8 @@ QGISEXTERN void unload(QgisPlugin *plugin)
 
 pnwRotationPlugin::pnwRotationPlugin(QgisInterface *iface) : QgisPlugin(s_name, s_description, s_category, s_version, s_type), m_qgis_if(iface)
 {
+   m_qgis_if = iface;
+   m_rotDataLoaded = false;
 }
 
 void pnwRotationPlugin::unload()
@@ -73,9 +75,9 @@ void pnwRotationPlugin::initGui()
    }
 
    // add an action to the menu
-   m_load_menu_action = new QAction(QIcon(""), QString("Load rot data"), this);
-   connect(m_load_menu_action, SIGNAL(triggered()), this, SLOT(load_menu_button_action()));
-   m_qgis_if->addPluginToMenu(QString("&PnwRotationPlugin"), m_load_menu_action);
+   m_display_rot_menu_action = new QAction(QIcon(""), QString("Display rot data"), this);
+   connect(m_display_rot_menu_action, SIGNAL(triggered()), this, SLOT(display_menu_button_action()));
+   m_qgis_if->addPluginToMenu(QString("&PnwRotationPlugin"), m_display_rot_menu_action);
 
    // add an action to the menu
    m_clear_menu_action = new QAction(QIcon(""), QString("Clear data"), this);
@@ -83,12 +85,19 @@ void pnwRotationPlugin::initGui()
    m_qgis_if->addPluginToMenu(QString("&PnwRotationPlugin"), m_clear_menu_action);
 }
 
-void pnwRotationPlugin::load_menu_button_action()
+void pnwRotationPlugin::display_menu_button_action()
 {
-   if (!loadRotData(s_rotDataLayerName, m_verbose))
+   if (!loadRotData(s_rotDatadestLayerName, m_verbose))
    {
-      QgsMessageLog::logMessage("failed to load rot data from layer", name(), Qgis::MessageLevel::Info);
+      QgsMessageLog::logMessage("failed to load rot data from layer", s_rotDatadestLayerName, Qgis::MessageLevel::Info);
+      return;
    }
+   if (!displayData())
+   {
+      QgsMessageLog::logMessage("failed to write rot data to layer", name(), Qgis::MessageLevel::Info);
+      return;
+   }
+   return;
 }
 
 void pnwRotationPlugin::clear_menu_button_action()
@@ -97,51 +106,69 @@ void pnwRotationPlugin::clear_menu_button_action()
 
 bool pnwRotationPlugin::loadRotData(QString rotDataLayer, bool verbose)
 {
-   // going to suck features from rot layer and write to new layer
-   QgsMapLayer *mapLayer = QgsProject::instance()->mapLayersByName(s_rotDataLayerName).value(0);
-   QgsVectorLayer *vlayer = dynamic_cast<QgsVectorLayer *>(mapLayer);
-   if (!vlayer)
+   if (m_rotDataLoaded)
+      return true;
+
+   QgsMessageLog::logMessage(QString("loadRotData"), name(), Qgis::MessageLevel::Info);
+
+   // get rotation data layer
+   QgsMapLayer *mapLayer = QgsProject::instance()->mapLayersByName(s_rotDatadestLayerName).value(0);
+   m_rotSrcLayer = dynamic_cast<QgsVectorLayer *>(mapLayer);
+   if (!m_rotSrcLayer)
    {
-      QString loadErrorMsg = QString("Could not load source layer ") + s_rotDataLayerName;
+      QString loadErrorMsg = QString("Could not load source layer ") + s_rotDatadestLayerName;
       QgsMessageLog::logMessage(loadErrorMsg, name(), Qgis::MessageLevel::Info);
       return false;
    }
 
-   QString layerName = "PnwPluginData";
-   QString providerName = "memory"; // Or "ogr" for file-based data
+   // get rot data fields
+   QgsFields fields = m_rotSrcLayer->fields();
+   for (const QgsField &field : fields)
+      m_fieldList.append(field);
+
+   // gety rot features 
+   QgsFeatureIterator featureIt = m_rotSrcLayer->getFeatures();
+   QgsFeature feature;
+   while (featureIt.nextFeature(feature))
+      m_featureList << feature;
+
+   m_rotDataLoaded = true;
+   return true;
+}
+
+bool pnwRotationPlugin::displayData()
+{
+   QgsMessageLog::logMessage(QString("displayData"), name(), Qgis::MessageLevel::Info);
+
+   QString destLayerName = "PnwPluginData";
+   QString providerName = "memory";     // Or "ogr" for file-based data
    QString uri = "Point?crs=epsg:4326"; // Example URI for memory provider
-   QgsVectorLayer *mypLayer = new QgsVectorLayer(uri, layerName, providerName);
-   if (!mypLayer->isValid())
+   QgsVectorLayer *m_DestLayer = new QgsVectorLayer(uri, destLayerName, providerName);
+   if (!m_DestLayer->isValid())
    {
       qDebug() << "Could not instantiate plugin target layer";
-      delete mypLayer; // Clean up if creation failed
+      delete m_DestLayer; // Clean up if creation failed
       return false;
    }
 
-   // copy fields over
-   m_fields = vlayer->fields();
-   QList<QgsField> fieldList;
-   for (const QgsField &field : m_fields)
-      fieldList.append(field);
-   if (mypLayer->dataProvider()->addAttributes(fieldList))
-      mypLayer->updateFields();
-
-   // copy features over
-   QgsFeatureIterator featureIt = vlayer->getFeatures();
-   QgsFeature feature;
-   QgsFeatureList featureList;
-   while (featureIt.nextFeature(feature))
-      featureList << feature;
-   mypLayer->dataProvider()->addFeatures(featureList);
-
-   if (mypLayer->isValid())
+   // copy over symbology from rot layer
+   QgsFeatureRenderer *sourceRenderer = m_rotSrcLayer->renderer();
+   if (sourceRenderer)
    {
-      QgsProject::instance()->addMapLayer(mypLayer);
-      return true;
+      QgsFeatureRenderer *clonedRenderer = sourceRenderer->clone();
+      if (clonedRenderer)
+      {
+         m_DestLayer->setRenderer(clonedRenderer);
+      }
    }
-   else
-   {
-      QgsMessageLog::logMessage("failed to create ", name(), Qgis::MessageLevel::Info);
-      return false;
-   }
+
+   // copy rot data fields over
+   if (m_DestLayer->dataProvider()->addAttributes(m_fieldList))
+      m_DestLayer->updateFields();
+
+   // copy feature data over
+   m_DestLayer->dataProvider()->addFeatures(m_featureList);
+
+   QgsProject::instance()->addMapLayer(m_DestLayer);
+   return true;
 }
