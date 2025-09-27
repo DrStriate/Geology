@@ -21,6 +21,8 @@
 #include "qgssinglesymbolrenderer.h"
 #include "qgsmaplayeractionregistry.h"
 #include "qgssymbol.h."
+#include <QVariant>
+#include <qgslogger.h> // For logging potential errors
 
 
 class pnwRotationPlugin : public QObject, public QgisPlugin
@@ -43,7 +45,8 @@ public:
 
 public slots:
    void clear_menu_button_action();
-   void display_menu_button_action();
+   void rot_menu_button_action();
+   void yhs_menu_button_action();
 
 private:
    QgisInterface* m_qgis_if;
@@ -51,21 +54,37 @@ private:
    /// The actions in the QGIS menu bar.
    QAction *m_clear_menu_action;
    QAction *m_display_rot_menu_action;
+   QAction *m_yhs_menu_action;
 
-   bool m_rotDataLoaded;
-   bool loadRotData(QString rotDataLayer, bool verbose);
-   bool displayData();
-
-   QgsVectorLayer *m_rotSrcLayer;
-   QgsVectorLayer *m_DestLayer;
-   // Rot layer data
+   QgsVectorLayer *m_rotSrcLayer = NULL;
+   QgsVectorLayer *m_DestLayer = NULL;
    QList<QgsField> m_fieldList;   
-   QgsFeatureList m_featureList;
+
+   QgsFeatureList m_rotFeatureList;
+   QgsFeatureList m_yhsFeatureList;
 
    std::vector<QString> m_fieldNames;
    std::vector<std::vector<double>> m_rot_data;
    
-   const bool m_verbose = true;
+   bool m_verbose = true;
+   bool m_layers_setup = false;
+   bool m_rotDataLoaded = false;
+   bool m_yhsDataLoaded = false;
+
+   // YHS current center 
+   const double YHS_lat = 44.43;
+   const double YHS_lon = -110.67;
+   // YHS NA Plate Velocity: WSW @ 4.6 cm/yr is best estimate (WSW ~247.5 degrees)
+   const double NA_Vel_N = -0.017603 * 10.0; // cos(247.5) * 0.046 M/Y
+   const double NA_Vel_E = -0.042498 * 10.0; // sin(247.5) * 0.046 M/Y
+
+   bool setupLayers();
+   bool loadRotData();
+   bool setupDestLayer();
+   void displayData(QgsFeatureList& featureList);
+   double getFeatureAttrubute(QgsFeature &feature, int index);
+   bool setFeatureAttribute(QgsFeature &feature, int index, double value);
+   void clear_display_data();
 };
 
 #endif

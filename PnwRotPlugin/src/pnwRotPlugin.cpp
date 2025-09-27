@@ -9,6 +9,7 @@ namespace
    const QString s_icon = QStringLiteral(":/plugin.svg");
    const QString s_rotDatadestLayerName = QStringLiteral("nshm2023_GPS_velocity");
    const QgisPlugin::PluginType s_type = QgisPlugin::UI;
+   const QString s_destLayerName = "PnwPluginData";
 }
 
 QGISEXTERN QgisPlugin *classFactory(QgisInterface *qgis_if)
@@ -56,12 +57,35 @@ QGISEXTERN void unload(QgisPlugin *plugin)
 pnwRotationPlugin::pnwRotationPlugin(QgisInterface *iface) : QgisPlugin(s_name, s_description, s_category, s_version, s_type), m_qgis_if(iface)
 {
    m_qgis_if = iface;
-   m_rotDataLoaded = false;
 }
 
 void pnwRotationPlugin::unload()
 {
    // TODO - need to remove the actions from the menu again.
+   // Get the QgsProject instance
+   QgsProject *project = QgsProject::instance();
+
+   // Find the layer by name
+   // mapLayersByName() returns a list, even if there is only one match
+   QList<QgsMapLayer *> foundLayers = project->mapLayersByName(s_destLayerName);
+
+   // Check if a layer was found
+   if (!foundLayers.isEmpty())
+   {
+      QgsMapLayer *layerToDelete = foundLayers.first();
+      QString layerId = layerToDelete->id();
+
+      // Remove the layer from the project.
+      // The QgsProject takes care of memory management after removal.
+      project->removeMapLayer(layerId);
+
+      // After this, the layer pointer (`layerToDelete`) is no longer valid.
+      // It is a dangling pointer, so do not use it again.
+   }
+   else
+   {
+      qDebug() << "Layer not found:" << s_destLayerName;
+   }
 }
 
 void pnwRotationPlugin::initGui()
@@ -74,37 +98,124 @@ void pnwRotationPlugin::initGui()
       return;
    }
 
-   // add an action to the menu
+   // add display rot data action to the menu
    m_display_rot_menu_action = new QAction(QIcon(""), QString("Display rot data"), this);
-   connect(m_display_rot_menu_action, SIGNAL(triggered()), this, SLOT(display_menu_button_action()));
+   connect(m_display_rot_menu_action, SIGNAL(triggered()), this, SLOT(rot_menu_button_action()));
    m_qgis_if->addPluginToMenu(QString("&PnwRotationPlugin"), m_display_rot_menu_action);
 
-   // add an action to the menu
+   // add clear action to the menu
    m_clear_menu_action = new QAction(QIcon(""), QString("Clear data"), this);
    connect(m_clear_menu_action, SIGNAL(triggered()), this, SLOT(clear_menu_button_action()));
    m_qgis_if->addPluginToMenu(QString("&PnwRotationPlugin"), m_clear_menu_action);
+
+   // add YHS action to the menu
+   m_yhs_menu_action = new QAction(QIcon(""), QString("Move YHS"), this);
+   connect(m_yhs_menu_action, SIGNAL(triggered()), this, SLOT(yhs_menu_button_action()));
+   m_qgis_if->addPluginToMenu(QString("&PnwRotationPlugin"), m_yhs_menu_action);
 }
 
-void pnwRotationPlugin::display_menu_button_action()
+bool pnwRotationPlugin::setupLayers()
 {
-   if (!loadRotData(s_rotDatadestLayerName, m_verbose))
+   if (m_layers_setup)
+      return true;
+   if (!loadRotData())
    {
-      QgsMessageLog::logMessage("failed to load rot data from layer", s_rotDatadestLayerName, Qgis::MessageLevel::Info);
-      return;
+      QgsMessageLog::logMessage("failed to load rot data from layer", name(), Qgis::MessageLevel::Info);
+      return false;
    }
-   if (!displayData())
+   if (!setupDestLayer())
    {
-      QgsMessageLog::logMessage("failed to write rot data to layer", name(), Qgis::MessageLevel::Info);
-      return;
+      QgsMessageLog::logMessage("failed to setup layer", name(), Qgis::MessageLevel::Info);      
+      return false;
    }
-   return;
+   m_layers_setup = true;
+   QgsMessageLog::logMessage("Layers set up ", name(), Qgis::MessageLevel::Info);
+
+   return true;
+}
+
+void pnwRotationPlugin::yhs_menu_button_action()
+{
+   if (!setupLayers())
+      return;
+
+   clear_display_data();
+
+   QgsFeature feature(m_fieldList);
+   if (m_yhsFeatureList.size() == 0) // load first yhs loc/motion
+   {
+      setFeatureAttribute(feature, 0, YHS_lon);
+      setFeatureAttribute(feature, 1, YHS_lat);
+      setFeatureAttribute(feature, 2, NA_Vel_E);
+      setFeatureAttribute(feature, 3, NA_Vel_N);
+      for (int index = 4; index < 9; index++)
+         setFeatureAttribute(feature, index , 0.0);
+   }
+   else // add incremental move
+   {
+
+   }
+   if (m_verbose)
+   {
+      QString entryDataString;
+      for (int i = 0; i < m_fieldList.length(); ++i)
+      {
+         QVariant attributeValueByIndex = feature.attribute(i);
+         entryDataString += attributeValueByIndex.toString() + "\t";
+      }
+      QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
+   }
+   
+   m_yhsFeatureList << feature;
+
+   displayData(m_yhsFeatureList);
+}
+
+void pnwRotationPlugin::rot_menu_button_action()
+{
+   if (!setupLayers())
+      return;
+
+   clear_display_data();
+
+   displayData(m_rotFeatureList);
 }
 
 void pnwRotationPlugin::clear_menu_button_action()
 {
+   QgsMessageLog::logMessage(QString("Clearing yhs data"), name(), Qgis::MessageLevel::Info);
+   m_yhsFeatureList.clear();
+   clear_display_data();
 }
 
-bool pnwRotationPlugin::loadRotData(QString rotDataLayer, bool verbose)
+void pnwRotationPlugin::clear_display_data()
+{
+   if (!m_DestLayer)
+   {
+      QgsMessageLog::logMessage("Error: Provided m_DestLayer is null.", name(), Qgis::MessageLevel::Info);
+      return;
+   }
+
+   m_DestLayer->startEditing();
+   QgsVectorDataProvider *dataProvider = m_DestLayer->dataProvider();
+
+   if (!dataProvider)
+   {
+      QgsMessageLog::logMessage("Error: Data provider not found for the m_DestLayer.", name(), Qgis::MessageLevel::Info);
+      return;
+   }
+
+   if (!dataProvider->truncate())
+   {
+      QgsMessageLog::logMessage(QString("Failed to truncate m_DestLayer '%1'.").arg(m_DestLayer->name()), name(), Qgis::MessageLevel::Info);
+      return;
+   }
+
+   m_DestLayer->commitChanges();
+   m_DestLayer->triggerRepaint();
+}
+
+bool pnwRotationPlugin::loadRotData()
 {
    if (m_rotDataLoaded)
       return true;
@@ -126,24 +237,37 @@ bool pnwRotationPlugin::loadRotData(QString rotDataLayer, bool verbose)
    for (const QgsField &field : fields)
       m_fieldList.append(field);
 
-   // gety rot features 
+   // gety rot features
    QgsFeatureIterator featureIt = m_rotSrcLayer->getFeatures();
    QgsFeature feature;
    while (featureIt.nextFeature(feature))
-      m_featureList << feature;
+   {
+      m_rotFeatureList << feature;
+
+      if (m_verbose)
+      {
+         QString entryDataString;
+         for (int i = 0; i < fields.count(); ++i)
+         {
+            QVariant attributeValueByIndex = feature.attribute(i);
+            entryDataString += attributeValueByIndex.toString() + "\t";
+         }
+         QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
+      }
+   }
 
    m_rotDataLoaded = true;
    return true;
 }
 
-bool pnwRotationPlugin::displayData()
+bool pnwRotationPlugin::setupDestLayer() // Rot layer must be loaded in qgis first (so not at qgis launch)
 {
-   QgsMessageLog::logMessage(QString("displayData"), name(), Qgis::MessageLevel::Info);
+   QgsMessageLog::logMessage(QString("Setup dest layer "), name(), Qgis::MessageLevel::Info);
 
-   QString destLayerName = "PnwPluginData";
    QString providerName = "memory";     // Or "ogr" for file-based data
    QString uri = "Point?crs=epsg:4326"; // Example URI for memory provider
-   QgsVectorLayer *m_DestLayer = new QgsVectorLayer(uri, destLayerName, providerName);
+   if (!m_DestLayer)
+      m_DestLayer = new QgsVectorLayer(uri, s_destLayerName, providerName);
    if (!m_DestLayer->isValid())
    {
       qDebug() << "Could not instantiate plugin target layer";
@@ -165,10 +289,41 @@ bool pnwRotationPlugin::displayData()
    // copy rot data fields over
    if (m_DestLayer->dataProvider()->addAttributes(m_fieldList))
       m_DestLayer->updateFields();
+   
+   return true;
+}
 
+
+void pnwRotationPlugin::displayData(QgsFeatureList& featureList)
+{
    // copy feature data over
-   m_DestLayer->dataProvider()->addFeatures(m_featureList);
+   m_DestLayer->dataProvider()->addFeatures(featureList);
 
    QgsProject::instance()->addMapLayer(m_DestLayer);
+
+   m_DestLayer->triggerRepaint();
+}
+
+bool pnwRotationPlugin::setFeatureAttribute(QgsFeature &feature, int index, double value)
+{
+   QVariant variant;
+
+   if (index < 4)
+      variant = QVariant::fromValue(value);
+   else if (index < 7)
+      variant = QVariant::fromValue(0.0);
+   else
+      variant = QVariant::fromValue(QString("SJW"));
+   if (!feature.setAttribute(index, variant))
+   {
+      qDebug() << "Could not set feature attribute";
+      return false;
+   }
    return true;
+}
+
+double pnwRotationPlugin::getFeatureAttrubute(QgsFeature &feature, int index)
+{
+   QVariant attributeValueByIndex = feature.attribute(index);
+   return attributeValueByIndex.toDouble();
 }
