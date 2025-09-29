@@ -3,7 +3,10 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${OSGEO4W_ROOT}/apps/qgis/include/**",
+                "${OSGEO4W_ROOT}/apps/Qt5/include/**"
+
             ],
             "defines": [
                 "_DEBUG",

@@ -71,12 +71,14 @@ private:
    bool m_rotDataLoaded = false;
    bool m_yhsDataLoaded = false;
 
-   // YHS current center 
+   // YHS current center
+   const double EARTH_RADIUS = 6371000;
    const double YHS_lat = 44.43;
    const double YHS_lon = -110.67;
    // YHS NA Plate Velocity: WSW @ 4.6 cm/yr is best estimate (WSW ~247.5 degrees)
-   const double NA_Vel_N = -0.017603 * 10.0; // cos(247.5) * 0.046 M/Y
-   const double NA_Vel_E = -0.042498 * 10.0; // sin(247.5) * 0.046 M/Y
+   const double NA_Vel_N = -0.3826 * 0.046; // cos(247.5) * 0.046 M/Y
+   const double NA_Vel_E = -0.9239 * 0.046; // sin(247.5) * 0.046 M/Y
+   const double detlaT = 10E6; // 10 million years
 
    bool setupLayers();
    bool loadRotData();
@@ -85,6 +87,10 @@ private:
    double getFeatureAttrubute(QgsFeature &feature, int index);
    bool setFeatureAttribute(QgsFeature &feature, int index, double value);
    void clear_display_data();
+
+   // Meters N,E to lat, Lon
+   double latitudeFromDisatnce(double d);
+   double longitudeFromDistance(double latitude, double d);
 };
 
 #endif

@@ -20,6 +20,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+# #C:\Users\stria\AppData\Local\Programs\OSGeo4W\apps\Qt5\lib\cmake\Qt5
+# set(Qt5_DIR ${OSGEO4W_ROOT}/apps/Qt5)
+# #set(CMAKE_PREFIX_PATH ./cmake)
+
 find_package(QGIS REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Xml Gui REQUIRED)
 

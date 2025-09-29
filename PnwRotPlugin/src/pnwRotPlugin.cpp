@@ -1,4 +1,5 @@
 #include "pnwRotPlugin.h"
+#include <cmath>
 
 namespace
 {
@@ -139,17 +140,21 @@ void pnwRotationPlugin::yhs_menu_button_action()
    if (!setupLayers())
       return;
 
-   clear_display_data();
-
    QgsFeature feature(m_fieldList);
+
    if (m_yhsFeatureList.size() == 0) // load first yhs loc/motion
    {
+      // Create a point geometry
+      QgsPoint pointGeometry(YHS_lon, YHS_lat);
       setFeatureAttribute(feature, 0, YHS_lon);
       setFeatureAttribute(feature, 1, YHS_lat);
-      setFeatureAttribute(feature, 2, NA_Vel_E);
-      setFeatureAttribute(feature, 3, NA_Vel_N);
-      for (int index = 4; index < 9; index++)
-         setFeatureAttribute(feature, index , 0.0);
+      QgsGeometry geometry = QgsGeometry::fromPointXY(pointGeometry);
+      feature.setGeometry(geometry);
+
+      double deltaLat = latitudeFromDisatnce(NA_Vel_N * detlaT);
+      double deltaLon = longitudeFromDistance(YHS_lat, NA_Vel_E * detlaT);
+      setFeatureAttribute(feature, 2, deltaLon);
+      setFeatureAttribute(feature, 3, deltaLat);
    }
    else // add incremental move
    {
@@ -166,8 +171,7 @@ void pnwRotationPlugin::yhs_menu_button_action()
       QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
    }
    
-   m_yhsFeatureList << feature;
-
+   m_yhsFeatureList.push_back(feature);
    displayData(m_yhsFeatureList);
 }
 
@@ -326,4 +330,24 @@ double pnwRotationPlugin::getFeatureAttrubute(QgsFeature &feature, int index)
 {
    QVariant attributeValueByIndex = feature.attribute(index);
    return attributeValueByIndex.toDouble();
+}
+
+double pnwRotationPlugin::latitudeFromDisatnce (double distanceN)
+{
+   double latitude = atan(distanceN / EARTH_RADIUS) * 180.0 / M_PI;
+   return latitude;
+}
+
+// Function to calculate new longitude after moving eastward
+double pnwRotationPlugin::longitudeFromDistance(double latitude, double distance) {
+
+    double latitudeRadians = latitude * M_PI / 180.0;
+
+    // Calculate the radius of the parallel of latitude at the starting latitude
+    double radiusOfParallel = EARTH_RADIUS * std::cos(latitudeRadians);
+
+    // Calculate the change in longitude in radians
+    double deltaLongitudeRadians = distance / radiusOfParallel;
+
+    return deltaLongitudeRadians * 180.0 / M_PI;
 }
