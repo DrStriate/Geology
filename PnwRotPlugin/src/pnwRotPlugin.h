@@ -57,19 +57,22 @@ private:
    QAction *m_yhs_menu_action;
 
    QgsVectorLayer *m_rotSrcLayer = NULL;
-   QgsVectorLayer *m_DestLayer = NULL;
-   QList<QgsField> m_fieldList;   
+   QgsVectorLayer *m_rotDestLayer = NULL;
+   QgsVectorLayer *m_yhsDestLayer = NULL;
 
+   QList<QgsField> m_fieldList;   
    QgsFeatureList m_rotFeatureList;
    QgsFeatureList m_yhsFeatureList;
-
    std::vector<QString> m_fieldNames;
    std::vector<std::vector<double>> m_rot_data;
+   QgsPolylineXY m_line;
+
    
    bool m_verbose = true;
    bool m_layers_setup = false;
    bool m_rotDataLoaded = false;
    bool m_yhsDataLoaded = false;
+   double m_lat, m_lon;
 
    // YHS current center
    const double EARTH_RADIUS = 6371000;
@@ -78,11 +81,15 @@ private:
    // YHS NA Plate Velocity: WSW @ 4.6 cm/yr is best estimate (WSW ~247.5 degrees)
    const double NA_Vel_N = -0.3826 * 0.046; // cos(247.5) * 0.046 M/Y
    const double NA_Vel_E = -0.9239 * 0.046; // sin(247.5) * 0.046 M/Y
-   const double detlaT = 10E6; // 10 million years
+   const double detlaT = 1E6; // 1 million years
+   const double plotScaleE = 9.2;
+   const double plotScaleN = 11.5;
+
 
    bool setupLayers();
    bool loadRotData();
-   bool setupDestLayer();
+   bool setupRotLayer();
+   bool setupYhsLayer();
    void displayData(QgsFeatureList& featureList);
    double getFeatureAttrubute(QgsFeature &feature, int index);
    bool setFeatureAttribute(QgsFeature &feature, int index, double value);

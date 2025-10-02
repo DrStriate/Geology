@@ -4,9 +4,9 @@ Build from command prompt:
   cmake ..
   cmake --build ,
 
-  set environment variables
-  OSGEO4W_ROOT C:\Users\stria\AppData\Local\Programs\OSGeo4W
-  QT5_DIR C:\Users\stria\AppData\Local\Programs\OSGeo4W\apps\Qt5
+  set environment variables e.g.
+  set OSGEO4W_ROOT = C:\Users\stria\AppData\Local\Programs\OSGeo4W
+  set QT5_DIR = %OSGEO4W_ROOT%\apps\Qt5
   
   use copyPlugin.bat command to copy over to qGis plugins
   

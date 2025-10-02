@@ -1,5 +1,6 @@
 #include "pnwRotPlugin.h"
 #include <cmath>
+#include <qgslinesymbol.h>
 
 namespace
 {
@@ -10,7 +11,8 @@ namespace
    const QString s_icon = QStringLiteral(":/plugin.svg");
    const QString s_rotDatadestLayerName = QStringLiteral("nshm2023_GPS_velocity");
    const QgisPlugin::PluginType s_type = QgisPlugin::UI;
-   const QString s_destLayerName = "PnwPluginData";
+   const QString s_yhsDestLayerName = "YHS movement";
+   const QString s_rotDestLayerName = "PNW rotation";
 }
 
 QGISEXTERN QgisPlugin *classFactory(QgisInterface *qgis_if)
@@ -68,7 +70,7 @@ void pnwRotationPlugin::unload()
 
    // Find the layer by name
    // mapLayersByName() returns a list, even if there is only one match
-   QList<QgsMapLayer *> foundLayers = project->mapLayersByName(s_destLayerName);
+   QList<QgsMapLayer *> foundLayers = project->mapLayersByName(s_yhsDestLayerName);
 
    // Check if a layer was found
    if (!foundLayers.isEmpty())
@@ -85,7 +87,7 @@ void pnwRotationPlugin::unload()
    }
    else
    {
-      qDebug() << "Layer not found:" << s_destLayerName;
+      qDebug() << "Layer not found:" << s_yhsDestLayerName;
    }
 }
 
@@ -124,7 +126,12 @@ bool pnwRotationPlugin::setupLayers()
       QgsMessageLog::logMessage("failed to load rot data from layer", name(), Qgis::MessageLevel::Info);
       return false;
    }
-   if (!setupDestLayer())
+   if (!setupRotLayer())
+   {
+      QgsMessageLog::logMessage("failed to setup layer", name(), Qgis::MessageLevel::Info);      
+      return false;
+   }
+   if (!setupYhsLayer())
    {
       QgsMessageLog::logMessage("failed to setup layer", name(), Qgis::MessageLevel::Info);      
       return false;
@@ -135,44 +142,87 @@ bool pnwRotationPlugin::setupLayers()
    return true;
 }
 
+bool pnwRotationPlugin::setupRotLayer() // Rot layer must be loaded in qgis first (so not at qgis launch)
+{
+   QgsMessageLog::logMessage(QString("Setup dest layer "), name(), Qgis::MessageLevel::Info);
+
+   QString providerName = "memory";     // Or "ogr" for file-based data
+   QString uri = "LineString?crs=epsg:4326"; // Example URI for memory provider
+   if (!m_rotDestLayer)
+      m_rotDestLayer = new QgsVectorLayer(uri, s_rotDestLayerName, providerName);
+   if (!m_rotDestLayer->isValid())
+   {
+      qDebug() << "Could not instantiate plugin target layer";
+      delete m_rotDestLayer; // Clean up if creation failed
+      return false;
+   }
+
+   // copy over symbology from rot layer
+   QgsFeatureRenderer *sourceRenderer = m_rotSrcLayer->renderer();
+   if (sourceRenderer)
+   {
+      QgsFeatureRenderer *clonedRenderer = sourceRenderer->clone();
+      if (clonedRenderer)
+      {
+         m_rotDestLayer->setRenderer(clonedRenderer);
+      }
+   }
+
+   //copy rot data fields over
+   if (m_rotDestLayer->dataProvider()->addAttributes(m_fieldList))
+      m_rotDestLayer->updateFields();
+   
+
+   return true;
+}
+
+bool pnwRotationPlugin::setupYhsLayer() // Rot layer must be loaded in qgis first (so not at qgis launch)
+{
+   QgsMessageLog::logMessage(QString("Setup YHS layer "), name(), Qgis::MessageLevel::Info);
+
+   QString providerName = "memory";     // Or "ogr" for file-based data
+   QString uri = "LineString?crs=epsg:4326"; // Example URI for memory provider
+   if (!m_yhsDestLayer)
+      m_yhsDestLayer = new QgsVectorLayer("LineString?crs=EPSG:4326", "MyPolyline", "memory");
+   if (!m_yhsDestLayer->isValid())
+   {
+      qDebug() << "Could not instantiate plugin target layer";
+      delete m_yhsDestLayer; // Clean up if creation failed
+      return false;
+   }
+
+   QgsSingleSymbolRenderer *renderer = dynamic_cast<QgsSingleSymbolRenderer *>(m_yhsDestLayer->renderer());
+   QgsLineSymbol *lineSymbol = dynamic_cast<QgsLineSymbol *>(renderer->symbol());
+   lineSymbol->setWidth(0.5);
+   lineSymbol->setColor(QColor(0, 0, 255)); // Set color to blue
+
+   m_line << QgsPointXY(YHS_lon, YHS_lat); // Set initial point to current YHS
+
+   return true;
+}
+
 void pnwRotationPlugin::yhs_menu_button_action()
 {
    if (!setupLayers())
       return;
 
-   QgsFeature feature(m_fieldList);
+   // Update polyline
+   QgsPointXY lastPoint = m_line.at(m_line.length()-1);
+   double deltaLat = latitudeFromDisatnce(NA_Vel_N * detlaT);
+   double deltaLon = longitudeFromDistance(YHS_lat, NA_Vel_E * detlaT);
+   m_line << QgsPointXY(lastPoint.x() + deltaLon, lastPoint.y() + deltaLat);
 
-   if (m_yhsFeatureList.size() == 0) // load first yhs loc/motion
-   {
-      // Create a point geometry
-      QgsPoint pointGeometry(YHS_lon, YHS_lat);
-      setFeatureAttribute(feature, 0, YHS_lon);
-      setFeatureAttribute(feature, 1, YHS_lat);
-      QgsGeometry geometry = QgsGeometry::fromPointXY(pointGeometry);
-      feature.setGeometry(geometry);
+   // Create a feature
+   QgsFeature feature(m_yhsDestLayer->fields());
+   feature.setGeometry(QgsGeometry::fromPolylineXY(m_line));
 
-      double deltaLat = latitudeFromDisatnce(NA_Vel_N * detlaT);
-      double deltaLon = longitudeFromDistance(YHS_lat, NA_Vel_E * detlaT);
-      setFeatureAttribute(feature, 2, deltaLon);
-      setFeatureAttribute(feature, 3, deltaLat);
-   }
-   else // add incremental move
-   {
+   // Add feature to the layer
+   m_yhsDestLayer->startEditing();
+   m_yhsDestLayer->addFeature(feature);
+   m_yhsDestLayer->commitChanges();
+   QgsProject::instance()->addMapLayer(m_yhsDestLayer);
 
-   }
-   if (m_verbose)
-   {
-      QString entryDataString;
-      for (int i = 0; i < m_fieldList.length(); ++i)
-      {
-         QVariant attributeValueByIndex = feature.attribute(i);
-         entryDataString += attributeValueByIndex.toString() + "\t";
-      }
-      QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
-   }
-   
-   m_yhsFeatureList.push_back(feature);
-   displayData(m_yhsFeatureList);
+   m_yhsDestLayer->triggerRepaint();
 }
 
 void pnwRotationPlugin::rot_menu_button_action()
@@ -194,29 +244,32 @@ void pnwRotationPlugin::clear_menu_button_action()
 
 void pnwRotationPlugin::clear_display_data()
 {
-   if (!m_DestLayer)
+   m_line.clear();
+   m_line << QgsPointXY(YHS_lon, YHS_lat); // Example: San Francisco
+
+   if (!m_yhsDestLayer)
    {
-      QgsMessageLog::logMessage("Error: Provided m_DestLayer is null.", name(), Qgis::MessageLevel::Info);
+      QgsMessageLog::logMessage("Error: Provided m_yhsDestLayer is null.", name(), Qgis::MessageLevel::Info);
       return;
    }
 
-   m_DestLayer->startEditing();
-   QgsVectorDataProvider *dataProvider = m_DestLayer->dataProvider();
+   m_yhsDestLayer->startEditing();
+   QgsVectorDataProvider *dataProvider = m_yhsDestLayer->dataProvider();
 
    if (!dataProvider)
    {
-      QgsMessageLog::logMessage("Error: Data provider not found for the m_DestLayer.", name(), Qgis::MessageLevel::Info);
+      QgsMessageLog::logMessage("Error: Data provider not found for the m_yhsDestLayer.", name(), Qgis::MessageLevel::Info);
       return;
    }
 
    if (!dataProvider->truncate())
    {
-      QgsMessageLog::logMessage(QString("Failed to truncate m_DestLayer '%1'.").arg(m_DestLayer->name()), name(), Qgis::MessageLevel::Info);
+      QgsMessageLog::logMessage(QString("Failed to truncate m_yhsDestLayer '%1'.").arg(m_yhsDestLayer->name()), name(), Qgis::MessageLevel::Info);
       return;
    }
 
-   m_DestLayer->commitChanges();
-   m_DestLayer->triggerRepaint();
+   m_yhsDestLayer->commitChanges();
+   m_yhsDestLayer->triggerRepaint();
 }
 
 bool pnwRotationPlugin::loadRotData()
@@ -264,48 +317,14 @@ bool pnwRotationPlugin::loadRotData()
    return true;
 }
 
-bool pnwRotationPlugin::setupDestLayer() // Rot layer must be loaded in qgis first (so not at qgis launch)
-{
-   QgsMessageLog::logMessage(QString("Setup dest layer "), name(), Qgis::MessageLevel::Info);
-
-   QString providerName = "memory";     // Or "ogr" for file-based data
-   QString uri = "Point?crs=epsg:4326"; // Example URI for memory provider
-   if (!m_DestLayer)
-      m_DestLayer = new QgsVectorLayer(uri, s_destLayerName, providerName);
-   if (!m_DestLayer->isValid())
-   {
-      qDebug() << "Could not instantiate plugin target layer";
-      delete m_DestLayer; // Clean up if creation failed
-      return false;
-   }
-
-   // copy over symbology from rot layer
-   QgsFeatureRenderer *sourceRenderer = m_rotSrcLayer->renderer();
-   if (sourceRenderer)
-   {
-      QgsFeatureRenderer *clonedRenderer = sourceRenderer->clone();
-      if (clonedRenderer)
-      {
-         m_DestLayer->setRenderer(clonedRenderer);
-      }
-   }
-
-   // copy rot data fields over
-   if (m_DestLayer->dataProvider()->addAttributes(m_fieldList))
-      m_DestLayer->updateFields();
-   
-   return true;
-}
-
-
 void pnwRotationPlugin::displayData(QgsFeatureList& featureList)
 {
    // copy feature data over
-   m_DestLayer->dataProvider()->addFeatures(featureList);
+   m_yhsDestLayer->dataProvider()->addFeatures(featureList);
 
-   QgsProject::instance()->addMapLayer(m_DestLayer);
+   QgsProject::instance()->addMapLayer(m_yhsDestLayer);
 
-   m_DestLayer->triggerRepaint();
+   m_yhsDestLayer->triggerRepaint();
 }
 
 bool pnwRotationPlugin::setFeatureAttribute(QgsFeature &feature, int index, double value)
