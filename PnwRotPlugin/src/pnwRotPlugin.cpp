@@ -1,6 +1,10 @@
+#pragma warning(disable : 4996)
+#define sqr(x) ((x) * (x))
 #include "pnwRotPlugin.h"
 #include <cmath>
 #include <qgslinesymbol.h>
+#include <QtWidgets> 
+#include <qaction.h>
 
 namespace
 {
@@ -121,6 +125,7 @@ bool pnwRotationPlugin::setupLayers()
 {
    if (m_layers_setup)
       return true;
+
    if (!loadRotData())
    {
       QgsMessageLog::logMessage("failed to load rot data from layer", name(), Qgis::MessageLevel::Info);
@@ -147,7 +152,7 @@ bool pnwRotationPlugin::setupRotLayer() // Rot layer must be loaded in qgis firs
    QgsMessageLog::logMessage(QString("Setup dest layer "), name(), Qgis::MessageLevel::Info);
 
    QString providerName = "memory";     // Or "ogr" for file-based data
-   QString uri = "LineString?crs=epsg:4326"; // Example URI for memory provider
+   QString uri = "Point?crs=epsg:4326"; // Example URI for memory provider
    if (!m_rotDestLayer)
       m_rotDestLayer = new QgsVectorLayer(uri, s_rotDestLayerName, providerName);
    if (!m_rotDestLayer->isValid())
@@ -168,11 +173,10 @@ bool pnwRotationPlugin::setupRotLayer() // Rot layer must be loaded in qgis firs
       }
    }
 
-   //copy rot data fields over
+   // copy rot data fields over
    if (m_rotDestLayer->dataProvider()->addAttributes(m_fieldList))
       m_rotDestLayer->updateFields();
    
-
    return true;
 }
 
@@ -183,7 +187,7 @@ bool pnwRotationPlugin::setupYhsLayer() // Rot layer must be loaded in qgis firs
    QString providerName = "memory";     // Or "ogr" for file-based data
    QString uri = "LineString?crs=epsg:4326"; // Example URI for memory provider
    if (!m_yhsDestLayer)
-      m_yhsDestLayer = new QgsVectorLayer("LineString?crs=EPSG:4326", "MyPolyline", "memory");
+      m_yhsDestLayer = new QgsVectorLayer("LineString?crs=EPSG:4326", s_yhsDestLayerName, "memory");
    if (!m_yhsDestLayer->isValid())
    {
       qDebug() << "Could not instantiate plugin target layer";
@@ -206,15 +210,83 @@ void pnwRotationPlugin::yhs_menu_button_action()
    if (!setupLayers())
       return;
 
-   // Update polyline
-   QgsPointXY lastPoint = m_line.at(m_line.length()-1);
+   // get translation of NA plate
+   QgsPointXY startPoint = m_line.at(m_line.length()-1);
+   double deltaLon = longitudeFromDistance(startPoint.y(), NA_Vel_E * detlaT);
    double deltaLat = latitudeFromDisatnce(NA_Vel_N * detlaT);
-   double deltaLon = longitudeFromDistance(YHS_lat, NA_Vel_E * detlaT);
-   m_line << QgsPointXY(lastPoint.x() + deltaLon, lastPoint.y() + deltaLat);
 
-   // Create a feature
+   // Get closest rotation vector velocity from rotation field
+   QgsPointXY rotV = getClosestRotEntry(startPoint);
+   double deltaRotLon = longitudeFromDistance(startPoint.y(), rotV.x() * detlaT);
+   double deltaRotLat = latitudeFromDisatnce(rotV.y() * detlaT);
+   
+   QgsPointXY endPoint(startPoint.x() + deltaLon + deltaRotLon, startPoint.y() + deltaLat + deltaRotLat);
+
+   ////////////////// Update polyline layer line
+   m_line << endPoint;
+
+   if (m_verbose)
+   {
+      if (m_line.length() == 2)
+      {
+         QString entryDataString("NA Move \t");
+         entryDataString += "E: " + QString::number(deltaLon) + " deg,\t";
+         entryDataString += "N: " + QString::number(deltaLat) + " deg\t";
+         entryDataString += "(E: " + QString::number(NA_Vel_E * detlaT / 1E6) + " km\t";
+         entryDataString += "N: " + QString::number(NA_Vel_N * detlaT / 1E6) + " km\t)";
+         QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
+      }
+      QString entryDataString("Rot Move \t");
+      entryDataString += "E: " + QString::number(deltaRotLon) + " deg,\t";
+      entryDataString += "N: " + QString::number(deltaRotLat) + " deg\t";
+      entryDataString += "(E: " + QString::number(rotV.x() * detlaT / 1E6) + " km\t";
+      entryDataString += "N: " + QString::number(rotV.y() * detlaT / 1E6) + " km\t";
+      QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
+   }
+
+   displayYhsData(m_line);
+
+   ///////////////////// Update Rot layer vector
+   // QgsFeature rotFeature(m_fieldList);
+
+   // // Create a point geometry
+   // setFeatureAttribute(rotFeature, 0, endPoint.x());
+   // setFeatureAttribute(rotFeature, 1, endPoint.y());
+   // QgsGeometry geometry = QgsGeometry::fromPointXY(endPoint);
+   // rotFeature.setGeometry(geometry);
+
+   // setFeatureAttribute(rotFeature, 2, rotV.x());
+   // setFeatureAttribute(rotFeature, 3, rotV.y());
+
+   // if (m_verbose)
+   // {
+   //    QString entryDataString;
+   //    for (int i = 0; i < 4; ++i)
+   //    {
+   //       QVariant attributeValueByIndex = rotFeature.attribute(i);
+   //       entryDataString += attributeValueByIndex.toString() + "\t";
+   //    }
+   //    QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
+   // }
+
+   // m_rotFeatureList.push_back(rotFeature);
+   // displayRotData(m_rotFeatureList);
+}
+
+void pnwRotationPlugin::displayRotData(QgsFeatureList& featureList)
+{
+   // copy feature data over
+   m_rotDestLayer->dataProvider()->addFeatures(featureList);
+
+   QgsProject::instance()->addMapLayer(m_rotDestLayer);
+
+   m_rotDestLayer->triggerRepaint();
+}
+
+void pnwRotationPlugin::displayYhsData(QgsPolylineXY& line)
+{
    QgsFeature feature(m_yhsDestLayer->fields());
-   feature.setGeometry(QgsGeometry::fromPolylineXY(m_line));
+   feature.setGeometry(QgsGeometry::fromPolylineXY(line));
 
    // Add feature to the layer
    m_yhsDestLayer->startEditing();
@@ -232,37 +304,62 @@ void pnwRotationPlugin::rot_menu_button_action()
 
    clear_display_data();
 
-   displayData(m_rotFeatureList);
+   displayRotData(m_rotFeatureList);
 }
 
 void pnwRotationPlugin::clear_menu_button_action()
 {
    QgsMessageLog::logMessage(QString("Clearing yhs data"), name(), Qgis::MessageLevel::Info);
-   m_yhsFeatureList.clear();
    clear_display_data();
 }
 
 void pnwRotationPlugin::clear_display_data()
 {
-   m_line.clear();
-   m_line << QgsPointXY(YHS_lon, YHS_lat); // Example: San Francisco
+   // Clear rotDestLayer
+   if (!m_rotDestLayer)
+   {
+      QgsMessageLog::logMessage("Error: Provided m_rotDestLayer is null.", name(), Qgis::MessageLevel::Info);
+      return;
+   }
 
+   m_rotDestLayer->startEditing();
+   QgsVectorDataProvider *dataProvider = m_rotDestLayer->dataProvider();
+
+   if (!dataProvider)
+   {
+      QgsMessageLog::logMessage("Error: Data provider not found for the m_rotDestLayer.", name(), Qgis::MessageLevel::Info);
+      return;
+   }
+
+   if (!dataProvider->truncate())
+   {
+      QgsMessageLog::logMessage(QString("Failed to truncate m_rotDestLayer '%1'.").arg(m_rotDestLayer->name()), name(), Qgis::MessageLevel::Info);
+      return;
+   }
+
+   m_rotDestLayer->commitChanges();
+   m_rotDestLayer->triggerRepaint();
+
+   // Clear yhsDestLayer
    if (!m_yhsDestLayer)
    {
       QgsMessageLog::logMessage("Error: Provided m_yhsDestLayer is null.", name(), Qgis::MessageLevel::Info);
       return;
    }
 
-   m_yhsDestLayer->startEditing();
-   QgsVectorDataProvider *dataProvider = m_yhsDestLayer->dataProvider();
+   m_line.clear();
+   m_line << QgsPointXY(YHS_lon, YHS_lat); // Current YHS hotspot
 
-   if (!dataProvider)
+   m_yhsDestLayer->startEditing();
+   QgsVectorDataProvider *yhsDataProvider = m_yhsDestLayer->dataProvider();
+
+   if (!yhsDataProvider)
    {
       QgsMessageLog::logMessage("Error: Data provider not found for the m_yhsDestLayer.", name(), Qgis::MessageLevel::Info);
       return;
    }
 
-   if (!dataProvider->truncate())
+   if (!yhsDataProvider->truncate())
    {
       QgsMessageLog::logMessage(QString("Failed to truncate m_yhsDestLayer '%1'.").arg(m_yhsDestLayer->name()), name(), Qgis::MessageLevel::Info);
       return;
@@ -317,16 +414,6 @@ bool pnwRotationPlugin::loadRotData()
    return true;
 }
 
-void pnwRotationPlugin::displayData(QgsFeatureList& featureList)
-{
-   // copy feature data over
-   m_yhsDestLayer->dataProvider()->addFeatures(featureList);
-
-   QgsProject::instance()->addMapLayer(m_yhsDestLayer);
-
-   m_yhsDestLayer->triggerRepaint();
-}
-
 bool pnwRotationPlugin::setFeatureAttribute(QgsFeature &feature, int index, double value)
 {
    QVariant variant;
@@ -353,11 +440,12 @@ double pnwRotationPlugin::getFeatureAttrubute(QgsFeature &feature, int index)
 
 double pnwRotationPlugin::latitudeFromDisatnce (double distanceN)
 {
-   double latitude = atan(distanceN / EARTH_RADIUS) * 180.0 / M_PI;
+   double latitude = atan(distanceN / (EARTH_RADIUS * 1000)) * 180.0 / M_PI;
    return latitude;
 }
 
 // Function to calculate new longitude after moving eastward
+// distance is in mm
 double pnwRotationPlugin::longitudeFromDistance(double latitude, double distance) {
 
     double latitudeRadians = latitude * M_PI / 180.0;
@@ -366,7 +454,29 @@ double pnwRotationPlugin::longitudeFromDistance(double latitude, double distance
     double radiusOfParallel = EARTH_RADIUS * std::cos(latitudeRadians);
 
     // Calculate the change in longitude in radians
-    double deltaLongitudeRadians = distance / radiusOfParallel;
+    double deltaLongitudeRadians = distance / (radiusOfParallel * 1000); 
 
     return deltaLongitudeRadians * 180.0 / M_PI;
+}
+
+QgsPointXY pnwRotationPlugin::getClosestRotEntry(QgsPointXY endPoint)
+{
+   // get rot features
+   QgsFeatureIterator featureIt = m_rotSrcLayer->getFeatures();
+   QgsFeature feature, closestFeature;
+   double minDist = 1e10;
+   while (featureIt.nextFeature(feature))
+   {
+      double lon = getFeatureAttrubute(feature, 0);
+      double lat = getFeatureAttrubute(feature, 1);
+      double dist = (sqr(lon - endPoint.x()) + sqr(lat - endPoint.y()));
+      if (minDist > dist)
+      {
+         minDist = dist;
+         closestFeature = feature;
+      }
+   }
+   double Ve = getFeatureAttrubute(closestFeature, 2);
+   double Vn = getFeatureAttrubute(closestFeature, 3);
+   return QgsPointXY(Ve, Vn);
 }

@@ -1,0 +1,31 @@
+2025-10-03T15:08:53     INFO    Clearing yhs data
+2025-10-03T15:09:54     INFO    NA Move E: -0.535223 deg, N: -0.158277 deg (E: -42.4994 km N: -17.5996 km )
+2025-10-03T15:09:54     INFO    Rot Move E: -0.0102764 deg, N: -0.00678988 deg (E: -0.816 km N: -0.755 km 
+2025-10-03T15:09:59     INFO    Rot Move E: -0.0215374 deg, N: -0.0179954 deg (E: -1.715 km N: -2.001 km 
+2025-10-03T15:10:03     INFO    Rot Move E: -0.0143989 deg, N: -0.0160529 deg (E: -1.15 km N: -1.785 km 
+2025-10-03T15:10:06     INFO    Rot Move E: -0.0142068 deg, N: -0.0148478 deg (E: -1.138 km N: -1.651 km 
+2025-10-03T15:10:10     INFO    Rot Move E: -0.0191075 deg, N: -0.00884932 deg (E: -1.535 km N: -0.984 km 
+2025-10-03T15:10:15     INFO    Rot Move E: -0.015169 deg, N: -0.000845362 deg (E: -1.222 km N: -0.094 km 
+2025-10-03T15:10:23     INFO    Rot Move E: -0.0208861 deg, N: -0.00125006 deg (E: -1.687 km N: -0.139 km 
+2025-10-03T15:10:27     INFO    Rot Move E: -0.0246963 deg, N: -0.000863349 deg (E: -2 km N: -0.096 km 
+2025-10-03T15:10:32     INFO    Rot Move E: -0.0231171 deg, N: 0.000332749 deg (E: -1.877 km N: 0.037 km 
+2025-10-03T15:10:38     INFO    Rot Move E: -0.0232297 deg, N: -0.000161878 deg (E: -1.891 km N: -0.018 km 
+2025-10-03T15:10:48     INFO    Rot Move E: -0.0223982 deg, N: 0.00284186 deg (E: -1.828 km N: 0.316 km 
+2025-10-03T15:10:55     INFO    Rot Move E: -0.0206189 deg, N: 0.00259904 deg (E: -1.687 km N: 0.289 km 
+2025-10-03T15:11:39     INFO    Rot Move E: -0.0196166 deg, N: 0.00548586 deg (E: -1.609 km N: 0.61 km 
+2025-10-03T15:11:44     INFO    Rot Move E: -0.0333851 deg, N: 0.0122757 deg (E: -2.745 km N: 1.365 km 
+2025-10-03T15:11:53     INFO    Rot Move E: -0.0266221 deg, N: 0.0150726 deg (E: -2.194 km N: 1.676 km 
+2025-10-03T15:12:00     INFO    Rot Move E: -0.0302425 deg, N: 0.0191286 deg (E: -2.498 km N: 2.127 km 
+2025-10-03T15:12:06     INFO    Rot Move E: -0.0336798 deg, N: 0.0274293 deg (E: -2.788 km N: 3.05 km 
+2025-10-03T15:12:18     INFO    Rot Move E: -0.0349612 deg, N: 0.0315752 deg (E: -2.9 km N: 3.511 km 
+2025-10-03T15:12:23     INFO    Rot Move E: -0.0484403 deg, N: 0.0383651 deg (E: -4.026 km N: 4.266 km 
+2025-10-03T15:12:46     INFO    Rot Move E: -0.0497436 deg, N: 0.0566213 deg (E: -4.142 km N: 6.296 km 
+2025-10-03T15:12:53     INFO    Rot Move E: -0.0520399 deg, N: 0.0472144 deg (E: -4.34 km N: 5.25 km 
+2025-10-03T15:13:00     INFO    Rot Move E: -0.0578166 deg, N: 0.0542201 deg (E: -4.83 km N: 6.029 km 
+2025-10-03T15:13:24     INFO    Rot Move E: -0.0550356 deg, N: 0.058258 deg (E: -4.605 km N: 6.478 km 
+2025-10-03T15:13:33     INFO    Rot Move E: -0.0571116 deg, N: 0.0770898 deg (E: -4.786 km N: 8.572 km 
+2025-10-03T15:13:42     INFO    Rot Move E: -0.0295932 deg, N: 0.10951 deg (E: -2.483 km N: 12.177 km 
+2025-10-03T15:14:13     INFO    Rot Move E: 0.0352879 deg, N: 0.146967 deg (E: 2.963 km N: 16.342 km 
+2025-10-03T15:14:19     INFO    Rot Move E: 0.0535956 deg, N: 0.179072 deg (E: 4.501 km N: 19.912 km 
+2025-10-03T15:14:26     INFO    Rot Move E: -0.084939 deg, N: 0.281611 deg (E: -7.131 km N: 31.314 km 
+2025-10-03T15:14:35     INFO    Rot Move E: -0.0850983 deg, N: 0.281611 deg (E: -7.131 km N: 31.314 km 
