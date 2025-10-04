@@ -43,6 +43,14 @@ public:
    /// @brief Called when the plugin is unloaded.
    virtual void unload() override;
 
+   struct pState
+   {
+      double lon;     // deg
+      double lat;     // deg
+      double ve;      // mm/Y
+      double vn;      // mm/Y
+   };
+
 public slots:
    void clear_menu_button_action();
    void rot_menu_button_action();
@@ -62,12 +70,13 @@ private:
 
    QList<QgsField> m_fieldList;   
    QgsFeatureList m_rotFeatureList;
+   QgsFeatureList m_rotFeatureList2;
    QgsFeatureList m_yhsFeatureList;
    std::vector<QString> m_fieldNames;
    std::vector<std::vector<double>> m_rot_data;
+   std::vector<pState> m_pYhsState;
    QgsPolylineXY m_line;
 
-   
    bool m_verbose = true;
    bool m_layers_setup = false;
    bool m_rotDataLoaded = false;
@@ -83,6 +92,7 @@ private:
    const double NA_Vel_N = -0.3826 * 46; // cos(247.5) * 46 mm/Y
    const double NA_Vel_E = -0.9239 * 46; // sin(247.5) * 46 mm/Y
    const double detlaT = 1E6; // 1 million year intervals
+   const double longitudeLimit = -126.0;
 
    bool setupLayers();
    bool loadRotData();
@@ -92,8 +102,9 @@ private:
    void displayYhsData(QgsPolylineXY& list);
    double getFeatureAttrubute(QgsFeature &feature, int index);
    bool setFeatureAttribute(QgsFeature &feature, int index, double value);
-   QgsPointXY getClosestRotEntry(QgsPointXY endPoint);
+   QgsPointXY getClosestRotEntry(double lon, double lat);
    void clear_display_data();
+   void printFeature (QgsFeature feature);
 
    // Meters N,E to lat, Lon
    double latitudeFromDisatnce(double d);

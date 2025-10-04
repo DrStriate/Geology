@@ -3,8 +3,9 @@
 #include "pnwRotPlugin.h"
 #include <cmath>
 #include <qgslinesymbol.h>
-#include <QtWidgets> 
+#include <QtWidgets>
 #include <qaction.h>
+#include <cstdio>
 
 namespace
 {
@@ -64,6 +65,10 @@ QGISEXTERN void unload(QgisPlugin *plugin)
 pnwRotationPlugin::pnwRotationPlugin(QgisInterface *iface) : QgisPlugin(s_name, s_description, s_category, s_version, s_type), m_qgis_if(iface)
 {
    m_qgis_if = iface;
+
+   // Set initial state point
+   const pState yhsState0 = {YHS_lon, YHS_lat, NA_Vel_E, NA_Vel_N};
+   m_pYhsState.push_back(yhsState0);
 }
 
 void pnwRotationPlugin::unload()
@@ -133,12 +138,12 @@ bool pnwRotationPlugin::setupLayers()
    }
    if (!setupRotLayer())
    {
-      QgsMessageLog::logMessage("failed to setup layer", name(), Qgis::MessageLevel::Info);      
+      QgsMessageLog::logMessage("failed to setup layer", name(), Qgis::MessageLevel::Info);
       return false;
    }
    if (!setupYhsLayer())
    {
-      QgsMessageLog::logMessage("failed to setup layer", name(), Qgis::MessageLevel::Info);      
+      QgsMessageLog::logMessage("failed to setup layer", name(), Qgis::MessageLevel::Info);
       return false;
    }
    m_layers_setup = true;
@@ -176,7 +181,7 @@ bool pnwRotationPlugin::setupRotLayer() // Rot layer must be loaded in qgis firs
    // copy rot data fields over
    if (m_rotDestLayer->dataProvider()->addAttributes(m_fieldList))
       m_rotDestLayer->updateFields();
-   
+
    return true;
 }
 
@@ -198,7 +203,7 @@ bool pnwRotationPlugin::setupYhsLayer() // Rot layer must be loaded in qgis firs
    QgsSingleSymbolRenderer *renderer = dynamic_cast<QgsSingleSymbolRenderer *>(m_yhsDestLayer->renderer());
    QgsLineSymbol *lineSymbol = dynamic_cast<QgsLineSymbol *>(renderer->symbol());
    lineSymbol->setWidth(0.5);
-   lineSymbol->setColor(QColor(0, 0, 255)); // Set color to blue
+   lineSymbol->setColor(QColor (255, 0, 0)); // Set color to blue
 
    m_line << QgsPointXY(YHS_lon, YHS_lat); // Set initial point to current YHS
 
@@ -210,70 +215,74 @@ void pnwRotationPlugin::yhs_menu_button_action()
    if (!setupLayers())
       return;
 
-   // get translation of NA plate
-   QgsPointXY startPoint = m_line.at(m_line.length()-1);
-   double deltaLon = longitudeFromDistance(startPoint.y(), NA_Vel_E * detlaT);
-   double deltaLat = latitudeFromDisatnce(NA_Vel_N * detlaT);
-
-   // Get closest rotation vector velocity from rotation field
-   QgsPointXY rotV = getClosestRotEntry(startPoint);
-   double deltaRotLon = longitudeFromDistance(startPoint.y(), rotV.x() * detlaT);
-   double deltaRotLat = latitudeFromDisatnce(rotV.y() * detlaT);
-   
-   QgsPointXY endPoint(startPoint.x() + deltaLon + deltaRotLon, startPoint.y() + deltaLat + deltaRotLat);
-
-   ////////////////// Update polyline layer line
-   m_line << endPoint;
-
-   if (m_verbose)
+   pState p_last = m_pYhsState.at(m_line.length() - 1);
+   while (p_last.lon > longitudeLimit)
    {
-      if (m_line.length() == 2)
+      // Get closest rotation vector velocity from rotation field
+      QgsPointXY rotV = getClosestRotEntry(p_last.lon, p_last.lat);
+
+      // Get state change
+      double deltaLon = longitudeFromDistance(p_last.lat, p_last.ve * detlaT);
+      double deltaLat = latitudeFromDisatnce(p_last.vn * detlaT);
+      double deltaVe = rotV.x();
+      double deltaVn = rotV.y();
+
+      pState p_next = {
+          p_last.lon + deltaLon,
+          p_last.lat + deltaLat,
+          p_last.ve + deltaVe,
+          p_last.vn + deltaVn};
+
+      m_pYhsState.push_back(p_next);
+
+      ////////////////// Update polyline layer line
+      QgsPointXY nextPoint(p_next.lon, p_next.lat);
+      m_line << nextPoint;
+
+      if (m_verbose)
       {
-         QString entryDataString("NA Move \t");
+         if (m_line.length() == 2)
+         {
+            QString entryDataString("NA Move \t");
+            entryDataString += "E: " + QString::number(YHS_lon) + " deg,\t";
+            entryDataString += "N: " + QString::number(YHS_lat) + " deg\t";
+            entryDataString += "(E: " + QString::number(NA_Vel_E * detlaT / 1E6) + " km\t";
+            entryDataString += "N: " + QString::number(NA_Vel_N * detlaT / 1E6) + " km)";
+            QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
+         }
+         QString entryDataString("Rot Move \t");
          entryDataString += "E: " + QString::number(deltaLon) + " deg,\t";
          entryDataString += "N: " + QString::number(deltaLat) + " deg\t";
-         entryDataString += "(E: " + QString::number(NA_Vel_E * detlaT / 1E6) + " km\t";
-         entryDataString += "N: " + QString::number(NA_Vel_N * detlaT / 1E6) + " km\t)";
+         entryDataString += "(E: " + QString::number(deltaVe * detlaT / 1E6) + " km\t";
+         entryDataString += "N: " + QString::number(deltaVn * detlaT / 1E6) + " km)";
          QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
       }
-      QString entryDataString("Rot Move \t");
-      entryDataString += "E: " + QString::number(deltaRotLon) + " deg,\t";
-      entryDataString += "N: " + QString::number(deltaRotLat) + " deg\t";
-      entryDataString += "(E: " + QString::number(rotV.x() * detlaT / 1E6) + " km\t";
-      entryDataString += "N: " + QString::number(rotV.y() * detlaT / 1E6) + " km\t";
-      QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
+
+      displayYhsData(m_line);
+
+      ///////////////////// Update Rot layer vector
+      QgsFeature rotFeature(m_fieldList);
+
+      // Create a point geometry
+      setFeatureAttribute(rotFeature, 0, nextPoint.x());
+      setFeatureAttribute(rotFeature, 1, nextPoint.y());
+      QgsGeometry geometry = QgsGeometry::fromPointXY(nextPoint);
+      rotFeature.setGeometry(geometry);
+
+      setFeatureAttribute(rotFeature, 2, rotV.x());
+      setFeatureAttribute(rotFeature, 3, rotV.y());
+
+      if (m_verbose)
+         printFeature(rotFeature);
+
+      m_rotFeatureList2.push_back(rotFeature);
+      displayRotData(m_rotFeatureList2);
+
+      p_last = p_next;
    }
-
-   displayYhsData(m_line);
-
-   ///////////////////// Update Rot layer vector
-   // QgsFeature rotFeature(m_fieldList);
-
-   // // Create a point geometry
-   // setFeatureAttribute(rotFeature, 0, endPoint.x());
-   // setFeatureAttribute(rotFeature, 1, endPoint.y());
-   // QgsGeometry geometry = QgsGeometry::fromPointXY(endPoint);
-   // rotFeature.setGeometry(geometry);
-
-   // setFeatureAttribute(rotFeature, 2, rotV.x());
-   // setFeatureAttribute(rotFeature, 3, rotV.y());
-
-   // if (m_verbose)
-   // {
-   //    QString entryDataString;
-   //    for (int i = 0; i < 4; ++i)
-   //    {
-   //       QVariant attributeValueByIndex = rotFeature.attribute(i);
-   //       entryDataString += attributeValueByIndex.toString() + "\t";
-   //    }
-   //    QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
-   // }
-
-   // m_rotFeatureList.push_back(rotFeature);
-   // displayRotData(m_rotFeatureList);
 }
 
-void pnwRotationPlugin::displayRotData(QgsFeatureList& featureList)
+void pnwRotationPlugin::displayRotData(QgsFeatureList &featureList)
 {
    // copy feature data over
    m_rotDestLayer->dataProvider()->addFeatures(featureList);
@@ -283,7 +292,7 @@ void pnwRotationPlugin::displayRotData(QgsFeatureList& featureList)
    m_rotDestLayer->triggerRepaint();
 }
 
-void pnwRotationPlugin::displayYhsData(QgsPolylineXY& line)
+void pnwRotationPlugin::displayYhsData(QgsPolylineXY &line)
 {
    QgsFeature feature(m_yhsDestLayer->fields());
    feature.setGeometry(QgsGeometry::fromPolylineXY(line));
@@ -399,15 +408,7 @@ bool pnwRotationPlugin::loadRotData()
       m_rotFeatureList << feature;
 
       if (m_verbose)
-      {
-         QString entryDataString;
-         for (int i = 0; i < fields.count(); ++i)
-         {
-            QVariant attributeValueByIndex = feature.attribute(i);
-            entryDataString += attributeValueByIndex.toString() + "\t";
-         }
-         QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
-      }
+         printFeature(feature);
    }
 
    m_rotDataLoaded = true;
@@ -438,7 +439,7 @@ double pnwRotationPlugin::getFeatureAttrubute(QgsFeature &feature, int index)
    return attributeValueByIndex.toDouble();
 }
 
-double pnwRotationPlugin::latitudeFromDisatnce (double distanceN)
+double pnwRotationPlugin::latitudeFromDisatnce(double distanceN)
 {
    double latitude = atan(distanceN / (EARTH_RADIUS * 1000)) * 180.0 / M_PI;
    return latitude;
@@ -446,37 +447,52 @@ double pnwRotationPlugin::latitudeFromDisatnce (double distanceN)
 
 // Function to calculate new longitude after moving eastward
 // distance is in mm
-double pnwRotationPlugin::longitudeFromDistance(double latitude, double distance) {
+double pnwRotationPlugin::longitudeFromDistance(double latitude, double distance)
+{
 
-    double latitudeRadians = latitude * M_PI / 180.0;
+   double latitudeRadians = latitude * M_PI / 180.0;
 
-    // Calculate the radius of the parallel of latitude at the starting latitude
-    double radiusOfParallel = EARTH_RADIUS * std::cos(latitudeRadians);
+   // Calculate the radius of the parallel of latitude at the starting latitude
+   double radiusOfParallel = EARTH_RADIUS * std::cos(latitudeRadians);
 
-    // Calculate the change in longitude in radians
-    double deltaLongitudeRadians = distance / (radiusOfParallel * 1000); 
+   // Calculate the change in longitude in radians
+   double deltaLongitudeRadians = distance / (radiusOfParallel * 1000);
 
-    return deltaLongitudeRadians * 180.0 / M_PI;
+   return deltaLongitudeRadians * 180.0 / M_PI;
 }
 
-QgsPointXY pnwRotationPlugin::getClosestRotEntry(QgsPointXY endPoint)
+QgsPointXY pnwRotationPlugin::getClosestRotEntry(double lon, double lat)
 {
    // get rot features
    QgsFeatureIterator featureIt = m_rotSrcLayer->getFeatures();
-   QgsFeature feature, closestFeature;
+   QgsFeature feature;
+   double Ve = 0, Vn = 0;
+   double p_lon, p_lat;
    double minDist = 1e10;
    while (featureIt.nextFeature(feature))
    {
-      double lon = getFeatureAttrubute(feature, 0);
-      double lat = getFeatureAttrubute(feature, 1);
-      double dist = (sqr(lon - endPoint.x()) + sqr(lat - endPoint.y()));
-      if (minDist > dist)
+      double f_lon = getFeatureAttrubute(feature, 0);
+      double f_lat = getFeatureAttrubute(feature, 1);
+      double dist = (sqr(f_lon - lon) + sqr(f_lat - f_lat));
+      if (dist < minDist)
       {
          minDist = dist;
-         closestFeature = feature;
+         Ve = getFeatureAttrubute(feature, 2);
+         Vn = getFeatureAttrubute(feature, 3);
+         p_lon = f_lon;
+         p_lat = f_lat;
       }
    }
-   double Ve = getFeatureAttrubute(closestFeature, 2);
-   double Vn = getFeatureAttrubute(closestFeature, 3);
    return QgsPointXY(Ve, Vn);
+}
+
+void pnwRotationPlugin::printFeature(QgsFeature feature)
+{
+   QString entryDataString;
+   for (int i = 0; i < 4; ++i)
+   {
+      QVariant attributeValueByIndex = feature.attribute(i);
+      entryDataString += attributeValueByIndex.toString() + "\t";
+   }
+   QgsMessageLog::logMessage(entryDataString, name(), Qgis::MessageLevel::Info);
 }
