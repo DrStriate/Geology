@@ -26,6 +26,7 @@ import os
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -33,6 +34,11 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 
 class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
+    name = 'PnwRotPyDialog'
+    rotDataLayerName = 'nshm2023_GPS_velocity'
+    destRotDataLayerName = 'pnwPluginData'
+    mapLayer = None
+
     def __init__(self, parent=None):
         """Constructor."""
         super(PnwRotPyDialog, self).__init__(parent)
@@ -42,3 +48,102 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+
+        self.rotDataLoaded = False
+        self.rotDisplayLayerSetup = False
+        self.rotSourceLayer = None
+        self.rotDestLayer = None
+        self.rotFieldList = []
+        self.rotFeatureList = []
+        
+        self.clearDataButton.clicked.connect(self.clearData)
+        self.displayRotDataButton.clicked.connect(self.displayRotDataButtonClicked)
+
+    def clearData(self):
+        return
+
+    def displayRotDataButtonClicked(self):
+        QgsMessageLog.logMessage('displayRotData', tag=PnwRotPyDialog.name, level=Qgis.Info)
+        # if self.targetLayerSetup:
+        #     return
+        # self.setupLayers()
+        if not self.loadRotData():
+            QgsMessageLog.logMessage('failed to load rotation data from layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+            return False
+
+        if not self.setupRotDisplayLayer():
+            QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+            return False
+
+        self.displayRotData()
+
+        return True
+
+    def setupRotDisplayLayer(self):
+        if self.rotDisplayLayerSetup:
+            return True
+
+        if not self.loadRotData():
+            QgsMessageLog.logMessage('failed to access rot data layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+            return False
+
+        providerName = 'memory'
+        uri = 'Point?crs=epsg:4326'
+
+        if self.rotDestLayer is None:
+            self.rotDestLayer = QgsVectorLayer(uri, PnwRotPyDialog.destRotDataLayerName, providerName)
+
+        if not self.rotDestLayer.isValid():
+            QgsMessageLog.logMessage("Couldn't create rotDestLayer", tag=PnwRotPyDialog.name, level=Qgis.Info)
+            return False
+
+        #Copy over symbology from rot data layer
+        sourceRenderer = self.rotSourceLayer.renderer()
+        if not sourceRenderer is None:
+            clonedRenderer = sourceRenderer.clone()
+            if not clonedRenderer is None:
+                self.rotDestLayer.setRenderer(clonedRenderer)
+
+        #Copy rot data fields over too
+        if self.rotDestLayer.dataProvider().addAttributes(self.rotFieldList):
+            self.rotDestLayer.updateFields()
+        else:
+            QgsMessageLog.logMessage('failed to copy rot data', tag=PnwRotPyDialog.name, level=Qgis.Info)
+            return False
+
+        return True
+
+    def loadRotData(self):
+        if self.rotDataLoaded:
+            return True
+
+        QgsMessageLog.logMessage('loadRotData', tag=PnwRotPyDialog.name, level=Qgis.Info)
+
+        # get rotation data layer
+        dataLayers = QgsProject.instance().mapLayersByName(self.rotDataLayerName)
+        if len(dataLayers) == 0 :
+            QgsMessageLog.logMessage('Could not access source data layer' +
+                                     self.rotDataLayerName, tag=PnwRotPyDialog.name, level=Qgis.Info)
+            return False
+        self.rotSourceLayer = dataLayers[0]
+
+        #get rot data fields
+        fields = self.rotSourceLayer.fields()
+        for field in fields:
+            self.rotFieldList.append(field)
+
+        #get rot features
+        featureList = self.rotSourceLayer.getFeatures()
+        for feature in featureList:
+            self.rotFeatureList.append(feature)
+
+        self.rotDataLoaded = True
+        return True
+
+    def displayRotData(self):
+        #copy rot data over
+        self.rotDestLayer.dataProvider().addFeatures(self.rotFeatureList)
+        QgsProject.instance().addMapLayer(self.rotDestLayer)
+        self.rotDestLayer.triggerRepaint()
+
+        return True
