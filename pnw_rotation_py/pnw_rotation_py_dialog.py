@@ -24,20 +24,30 @@
 
 import os
 
-from qgis.PyQt import uic
-from qgis.PyQt import QtWidgets
-from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer
+from qgis.PyQt import uic, QtWidgets
+from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer, QgsPoint, QgsGeometry
+from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
+
+
+from .rot_data import RotData
+from .plate_motion import PlateMotion
+
+# Important constants
+NA_Speed = 20.0
+NA_Bearing = 270.0
+YHS_lat = 44.43
+YHS_long = -110.67
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'pnw_rotation_py_dialog_base.ui'))
 
-
 class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     name = 'PnwRotPyDialog'
-    rotDataLayerName = 'nshm2023_GPS_velocity'
-    destRotDataLayerName = 'pnwPluginData'
-    mapLayer = None
+    destRotDataLayerName = 'pnw rotation data'
+    YHS_lat = 44.43
+    YHS_lon = -110.67
+    destYhsLayerName = 'YHS movement'
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -49,47 +59,46 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        self.rotDataLoaded = False
+        self.rotData = RotData()
         self.rotDisplayLayerSetup = False
-        self.rotSourceLayer = None
         self.rotDestLayer = None
-        self.rotFieldList = []
-        self.rotFeatureList = []
+
+        self.yhsDestLayerSetup = False
+        self.yhsDestLayer = None
+        self.yhsPoints = []
+        self.yhsPolyLine = None
+        self.plateMotion = PlateMotion()
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.displayRotDataButton.clicked.connect(self.displayRotDataButtonClicked)
+        self.runYhsDataButton.clicked.connect(self.runYhsButtonClicked)
 
     def clearData(self):
         return
 
+    ####
+    # Display Rotation Data
+    ####
+
     def displayRotDataButtonClicked(self):
         QgsMessageLog.logMessage('displayRotData', tag=PnwRotPyDialog.name, level=Qgis.Info)
-        # if self.targetLayerSetup:
-        #     return
-        # self.setupLayers()
-        if not self.loadRotData():
-            QgsMessageLog.logMessage('failed to load rotation data from layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
-            return False
 
         if not self.setupRotDisplayLayer():
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
         self.displayRotData()
-
         return True
 
     def setupRotDisplayLayer(self):
         if self.rotDisplayLayerSetup:
             return True
-
-        if not self.loadRotData():
-            QgsMessageLog.logMessage('failed to access rot data layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+        if not self.rotData.load():
+            QgsMessageLog.logMessage('failed to load rotation data from layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
         providerName = 'memory'
         uri = 'Point?crs=epsg:4326'
-
         if self.rotDestLayer is None:
             self.rotDestLayer = QgsVectorLayer(uri, PnwRotPyDialog.destRotDataLayerName, providerName)
 
@@ -98,14 +107,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             return False
 
         #Copy over symbology from rot data layer
-        sourceRenderer = self.rotSourceLayer.renderer()
+        sourceRenderer = self.rotData.rotSourceLayer.renderer()
         if not sourceRenderer is None:
             clonedRenderer = sourceRenderer.clone()
             if not clonedRenderer is None:
                 self.rotDestLayer.setRenderer(clonedRenderer)
 
         #Copy rot data fields over too
-        if self.rotDestLayer.dataProvider().addAttributes(self.rotFieldList):
+        if self.rotDestLayer.dataProvider().addAttributes(self.rotData.rotFieldList):
             self.rotDestLayer.updateFields()
         else:
             QgsMessageLog.logMessage('failed to copy rot data', tag=PnwRotPyDialog.name, level=Qgis.Info)
@@ -113,37 +122,72 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return True
 
-    def loadRotData(self):
-        if self.rotDataLoaded:
-            return True
-
-        QgsMessageLog.logMessage('loadRotData', tag=PnwRotPyDialog.name, level=Qgis.Info)
-
-        # get rotation data layer
-        dataLayers = QgsProject.instance().mapLayersByName(self.rotDataLayerName)
-        if len(dataLayers) == 0 :
-            QgsMessageLog.logMessage('Could not access source data layer' +
-                                     self.rotDataLayerName, tag=PnwRotPyDialog.name, level=Qgis.Info)
-            return False
-        self.rotSourceLayer = dataLayers[0]
-
-        #get rot data fields
-        fields = self.rotSourceLayer.fields()
-        for field in fields:
-            self.rotFieldList.append(field)
-
-        #get rot features
-        featureList = self.rotSourceLayer.getFeatures()
-        for feature in featureList:
-            self.rotFeatureList.append(feature)
-
-        self.rotDataLoaded = True
-        return True
-
     def displayRotData(self):
         #copy rot data over
-        self.rotDestLayer.dataProvider().addFeatures(self.rotFeatureList)
+        self.rotDestLayer.dataProvider().addFeatures(self.rotData.rotFeatureList)
         QgsProject.instance().addMapLayer(self.rotDestLayer)
         self.rotDestLayer.triggerRepaint()
+        return True
+
+    ####
+    # run Yhs Button
+    ####
+
+    def runYhsButtonClicked(self):
+        QgsMessageLog.logMessage('run Yhs Button Clicked', tag=PnwRotPyDialog.name, level=Qgis.Info)
+
+        if not self.setupYhsLayer() :
+            QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+
+        self.displayYhsData()
+        return
+
+    def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
+        if self.yhsDestLayerSetup:
+            return True
+
+        QgsMessageLog.logMessage("Setup YHS layer ", tag=PnwRotPyDialog.name, level=Qgis.Info)
+
+        providerName = "memory"    # Or "ogr" for file - based data
+        uri = "LineString?crs=epsg:4326" # Example URI for memory provider
+
+        if self.yhsDestLayer is None:
+            self.yhsDestLayer = QgsVectorLayer("LineString?crs=EPSG:4326", PnwRotPyDialog.destYhsLayerName, "memory");
+        if not self.yhsDestLayer.isValid():
+            QgsMessageLog.logMessage("Could not instantiate plugin target layer", tag=PnwRotPyDialog.name, level=Qgis.Info)
+            return False
+
+        renderer = self.yhsDestLayer.renderer()
+        lineSymbol = renderer.symbol()
+        lineSymbol.setWidth(0.5)
+        lineSymbol.setColor(QColor(255, 0, 0))
+        self.yhsPoints.append(QgsPoint(PnwRotPyDialog.YHS_lon, PnwRotPyDialog.YHS_lat)) # Set initial point to current YHS
 
         return True
+
+    def displayYhsData(self):
+        #copy yhs data over
+        line_geometry = QgsGeometry.fromPolyline(self.yhsPoints)
+        self.yhsDestLayer.dataProvider().addFeatures(self.rotData.rotFeatureList)
+        QgsProject.instance().addMapLayer(self.yhsDestLayer)
+        self.yhsDestLayer.triggerRepaint()
+        return True
+
+    def removeLayer(self, layer):
+        root = QgsProject.instance().layerTreeRoot()
+        layer_node = root.findLayer(layer.id())
+        if layer_node:
+            layer_node.setItemVisibilityChecked(False)  # Set the checkbox to unchecked
+            QgsProject.instance().removeMapLayers([layer.id()])
+        return
+
+    def closeEvent(self, event: QCloseEvent):
+        QgsMessageLog.logMessage('closeEvent', tag=PnwRotPyDialog.name, level=Qgis.Info)
+        if self.rotDestLayer:
+            self.removeLayer(self.rotDestLayer)
+            self.rotDestLayer = None
+        if self.yhsDestLayer:
+            self.removeLayer(self.yhsDestLayer)
+            self.yhsDestLayer = None
+        return
+

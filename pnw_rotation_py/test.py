@@ -1,5 +1,5 @@
 #import geoHelper
-import geoHelper
+import geo_helper
 from qgis.core import QgsApplication
 #import sys
 

@@ -23,7 +23,10 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
+from PyQt5.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QAction
+
+from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer, QgsPoint, QgsGeometry
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -172,6 +175,7 @@ class PnwRotPy:
 
 
     def unload(self):
+        QgsMessageLog.logMessage('unload', tag="PnwRotPy", level=Qgis.Info)
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             self.iface.removePluginMenu(
@@ -189,12 +193,25 @@ class PnwRotPy:
             self.first_start = False
             self.dlg = PnwRotPyDialog()
 
+        self.dlg.finished.connect(self.handle_dialog_close)
+
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
+        QgsMessageLog.logMessage('run end', tag="PnwRotPy", level=Qgis.Info)
+
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
+
+    def handle_dialog_close(self, result):
+        """
+        This function is called when the dialog is closed.
+        """
+        QgsMessageLog.logMessage('handle_dialog_close', tag="PnwRotPy", level=Qgis.Info)
+
+        # Disconnect the signal to avoid issues if the dialog is reopened
+        self.dlg.finished.disconnect(self.handle_dialog_close)
