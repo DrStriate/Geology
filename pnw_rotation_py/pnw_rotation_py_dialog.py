@@ -25,7 +25,7 @@
 import os
 
 from qgis.PyQt import uic, QtWidgets
-from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer, QgsPoint, QgsGeometry
+from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature
 from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
 
 
@@ -33,8 +33,8 @@ from .rot_data import RotData
 from .plate_motion import PlateMotion
 
 # Important constants
-NA_Speed = 20.0
-NA_Bearing = 270.0
+NA_Speed = 3.8e-2   # m / yr
+NA_Bearing = 225.0  # degrees azimuth
 YHS_lat = 44.43
 YHS_long = -110.67
 
@@ -71,9 +71,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.displayRotDataButton.clicked.connect(self.displayRotDataButtonClicked)
-        self.runYhsDataButton.clicked.connect(self.runYhsButtonClicked)
+        self.stepYhsDataButton.clicked.connect(self.stepYhsButtonClicked)
 
     def clearData(self):
+        self.yhsPoints = []
         return
 
     ####
@@ -133,12 +134,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     # run Yhs Button
     ####
 
-    def runYhsButtonClicked(self):
+    def stepYhsButtonClicked(self):
         QgsMessageLog.logMessage('run Yhs Button Clicked', tag=PnwRotPyDialog.name, level=Qgis.Info)
 
         if not self.setupYhsLayer() :
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
 
+        currentState = self.plateMotion.getNextState(1e6, self.rotData, False, True)
+        self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
         self.displayYhsData()
         return
 
@@ -161,15 +164,25 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         lineSymbol = renderer.symbol()
         lineSymbol.setWidth(0.5)
         lineSymbol.setColor(QColor(255, 0, 0))
-        self.yhsPoints.append(QgsPoint(PnwRotPyDialog.YHS_lon, PnwRotPyDialog.YHS_lat)) # Set initial point to current YHS
+        self.yhsPoints.append(QgsPoint(self.YHS_lon, self.YHS_lat)) # Set initial point to current YHS
 
+        self.plateMotion.initialize(YHS_lat, YHS_long, NA_Speed, NA_Bearing)
         return True
 
     def displayYhsData(self):
+
+        #print("self.yhsPoints: ", self.yhsPoints)
+
         #copy yhs data over
-        line_geometry = QgsGeometry.fromPolyline(self.yhsPoints)
-        self.yhsDestLayer.dataProvider().addFeatures(self.rotData.rotFeatureList)
+        feature = QgsFeature(self.yhsDestLayer.fields())
+        feature.setGeometry(QgsGeometry.fromPolyline(self.yhsPoints))
+
+        # Add feature to layer
+        self.yhsDestLayer.startEditing()
+        self.yhsDestLayer.addFeature(feature)
+        self.yhsDestLayer.commitChanges()
         QgsProject.instance().addMapLayer(self.yhsDestLayer)
+
         self.yhsDestLayer.triggerRepaint()
         return True
 

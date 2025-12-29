@@ -1,24 +1,25 @@
-#import geoHelper
-import geo_helper
-from qgis.core import QgsApplication
-#import sys
+
+
+from geo_helper import geoHelper
+from plate_motion import PlateMotion
+
+NA_Speed = 3.8e-2   # m / yr
+NA_Bearing = 225.0  # degrees azimuth
+YHS_lat = 44.43
+YHS_long = -110.67
 
 def main():
-    QgsApplication.setPrefixPath("%OSGEO4W_ROOT%/bin/qgis-bin.exe", True)
-    qgs = QgsApplication([], False)
-    qgs.initQgis()
-
     print("Running unit tests...\n")
     test_latitudeFromDistance()
     test_lonitudeFromDistance()
-
-    qgs.exitQgis()
+    test_plate_motion()
+    return 0
 
 def testFunction(val, valSB, tol, name):
     if abs(val - valSB) < tol:
-        print ('Test ' + name + ' passed!')
+        print (name + ' passed!')
     else:
-        print ('Test ' + name + ' failed. Was ' + str(val) + ' sb ' + str(valSB))
+        print (name + ' failed. Was ' + str(val) + ' sb ' + str(valSB))
 
 def test_latitudeFromDistance():
     distN = 1000 # 1 km
@@ -32,6 +33,16 @@ def test_lonitudeFromDistance():
     lonSb = 0.0127 # degrees
     lat = geoHelper.longitudeFromDist(lat, distN)
     testFunction(lat, lonSb, 0.001, 'test_lonitudeFromDistance')
+
+def test_plate_motion():
+    plateMotion = PlateMotion()
+    initialState = plateMotion.initialize(YHS_lat, YHS_long, NA_Speed, NA_Bearing)
+    period = 1e6        # 1 My
+    currentState = plateMotion.getNextState(period, None, False, True)
+    testFunction(currentState.latitude, 44.67164642221743, 0.0001, 'test_plate_motion.latitude')
+    testFunction(currentState.longitude, -110.33020007827903, 0.0001, 'test_plate_motion.longitude')
+    testFunction(currentState.vEast, 0.02687, 0.000001, 'test_plate_motion.vEast')
+    testFunction(currentState.vNorth, 0.02687, 0.000001, 'test_plate_motion.vNorth')
 
 if __name__ == "__main__":
     main()

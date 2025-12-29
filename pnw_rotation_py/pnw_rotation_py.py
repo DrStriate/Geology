@@ -176,7 +176,11 @@ class PnwRotPy:
 
     def unload(self):
         QgsMessageLog.logMessage('unload', tag="PnwRotPy", level=Qgis.Info)
+        self.iface.mapCanvas().refreshAllLayers()
+        self.iface.mapCanvas().refresh()
+
         """Removes the plugin menu item and icon from QGIS GUI."""
+        print("QGIS display refreshed.")
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr(u'&Pnw Rotation '),
@@ -199,7 +203,6 @@ class PnwRotPy:
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
-        QgsMessageLog.logMessage('run end', tag="PnwRotPy", level=Qgis.Info)
 
         # See if OK was pressed
         if result:

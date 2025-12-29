@@ -39,7 +39,7 @@ class RotData:
     def getClosestRotEntry(self, longitude, latitude):
         if not self.rotDataLoaded:
             if not self.load():
-                QgsMessageLog.logMessage('No rotation data loaded', tag=RotData.name, level=Qgis.Info)
+                QgsMessageLog.logMessage('No rotation data loaded', RotData.name, Qgis.Info)
                 return None
 
         closestFeature = None

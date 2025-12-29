@@ -189,6 +189,16 @@ bool pnwRotationPlugin::setupRotLayer() // Rot layer must be loaded in qgis firs
    return true;
 }
 
+void pnwRotationPlugin::displayRotData(QgsFeatureList &featureList)
+{
+   // copy feature data over
+   m_rotDestLayer->dataProvider()->addFeatures(featureList);
+
+   QgsProject::instance()->addMapLayer(m_rotDestLayer);
+
+   m_rotDestLayer->triggerRepaint();
+}
+
 bool pnwRotationPlugin::setupYhsLayer() // Rot layer must be loaded in qgis first (so not at qgis launch)
 {
    QgsMessageLog::logMessage(QString("Setup YHS layer "), name(), Qgis::MessageLevel::Info);
@@ -277,17 +287,6 @@ void pnwRotationPlugin::yhs_menu_button_action()
       m_passes++;
    }
    QgsMessageLog::logMessage(QString("Completed. Passes = ") + QString::number(m_passes), name(), Qgis::MessageLevel::Info);
-
-}
-
-void pnwRotationPlugin::displayRotData(QgsFeatureList &featureList)
-{
-   // copy feature data over
-   m_rotDestLayer->dataProvider()->addFeatures(featureList);
-
-   QgsProject::instance()->addMapLayer(m_rotDestLayer);
-
-   m_rotDestLayer->triggerRepaint();
 }
 
 void pnwRotationPlugin::displayYhsData(QgsPolylineXY &line)

@@ -1,1 +1,1 @@
-python-qgis.bat test.py
+python-qgis.bat -m ./test.py

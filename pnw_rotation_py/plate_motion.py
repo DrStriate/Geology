@@ -1,8 +1,16 @@
 # Calculates estimated NA plate motion based on combined plate velocity and rotation data
 from dataclasses import dataclass
-from qgis._core import QgsMessageLog, Qgis
 import math
-from .geo_helper import longitudeFromDist, latutideFromDistN
+
+# qGis versoion
+from .geo_helper import geoHelper
+# test version
+#from geo_helper import geoHelper
+
+# Plate motion is measuring the change in position of an inertial reference point (e.g. the YHS) on the surface
+# of the NA Plate (lat/long). So a motion of the plate will result in the opposite motion of that point
+#
+# Velocities of the inertial points on the plate are measured in meters per year while the Lat/Lon are scaled by DeltaT
 
 @dataclass
 class PState:
@@ -18,42 +26,46 @@ class PlateMotion:
         self.naPlateVe = 0
         self.naPlateVn = 0
 
-    def initialize(self, naSpeed, naBearing):
-        self.currentState = PState(0,0,0,0)
-        self.stateList = []
-        self.naPlateVn = math.cos(naBearing) * naSpeed # math.cos(247.5) * 46  mm / Y
-        self.naPlateVe = math.sin(naBearing) * naSpeed # math.sin(247.5) * 46  mm / Y
+    def initialize(self, initLat, initLong, naSpeed, naBearing): # speed in m/yr, bearing is azimuth degrees
+        self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
+        self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
+
+        self.currentState = PState(initLong, initLat, 0, 0)
+        self.stateList = [self.currentState]
+        return self.currentState
 
     def getNextState(self, deltaT, rotData, applyRotation, applyNaMotion):
         deltaState = PState(0,0,0,0)
 
-        if (applyRotation):
+        if (applyRotation and rotData):
             # get the closest rotation entry velocity for current location
             rotation = rotData.getClosestRotEntry(self.currentState.longitude, self.currentState.latitude)
             if not rotation:
-                QgsMessageLog.logMessage('No close rotation entry found', tag=PlateMotion.__name__, level=Qgis.Info)
+                print('No close rotation entry found')
                 return None
-            deltaState.vEast  = rotation.featureAttribute(2)
-            deltaState.vNorth  = rotation.featureAttribute(3)
+            deltaState.vEast  = -rotation.featureAttribute(2)
+            deltaState.vNorth  = -rotation.featureAttribute(3)
 
         if (applyNaMotion):
-            deltaState.vNorth += self.naPlateVn
-            deltaState.vEast += self.naPlateVe
+            deltaState.vNorth -= self.naPlateVn
+            deltaState.vEast -= self.naPlateVe
 
         #scale motion by time and convert distance to lat/long
-        deltaState.latitude = latutideFromDistN(deltaState.vNorth * deltaT)
-        deltaState.longitude = longitudeFromDist(self.currentState.latitude + deltaState.latitude,
+        deltaState.latitude = geoHelper.latutideFromDistN(deltaState.vNorth * deltaT)
+        deltaState.longitude = geoHelper.longitudeFromDist(self.currentState.latitude + deltaState.latitude,
                                                            deltaState.vEast * deltaT)
-
         #update current state
-        self.currentState.latitude = self.currentState.latitude + deltaState.latitude
-        self.currentState.longitude = self.currentState.longitude + deltaState.longitude
-        self.currentState.vEast = self.currentState.vEast + deltaState.vEast * deltaT
-        self.currentState.vNorth = self.currentState.vNorth + deltaState.vNorth * deltaT
+        nextState = PState(0,0,0,0)
 
-        self.stateList.append(self.currentState)
+        nextState.latitude = self.currentState.latitude + deltaState.latitude
+        nextState.longitude = self.currentState.longitude + deltaState.longitude
+        nextState.vEast = self.currentState.vEast + deltaState.vEast
+        nextState.vNorth = self.currentState.vNorth + deltaState.vNorth
 
-        return self.currentState
+        self.stateList.append(nextState)
+        self.currentState = nextState
+
+        return nextState
 
 
 

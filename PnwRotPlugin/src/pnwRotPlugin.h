@@ -95,8 +95,8 @@ private:
    // YHS NA Plate velocity : 
    // WSW (257.5 degrees) @ 70 - 100 mm/yr up to 16MA
    // W (270 degrees) @ 15 - 25 mm/yr earlier (relative to hotspot)
-   const double NA_Speed = 20.0; 
-   const double NA_Bearing = 270.0;
+   const double NA_Speed = 38.0; // mm/yr
+   const double NA_Bearing = 225.0;
    const double detlaT = 1E6; // 1 million year intervals
    const double longitudeLimit = -126.0;
 
