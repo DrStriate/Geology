@@ -180,13 +180,11 @@ class PnwRotPy:
         self.iface.mapCanvas().refresh()
 
         """Removes the plugin menu item and icon from QGIS GUI."""
-        print("QGIS display refreshed.")
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr(u'&Pnw Rotation '),
                 action)
             self.iface.removeToolBarIcon(action)
-
 
     def run(self):
         """Run method that performs all the real work"""

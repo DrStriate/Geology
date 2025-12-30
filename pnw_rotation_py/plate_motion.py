@@ -22,7 +22,6 @@ class PState:
 class PlateMotion:
     def __init__(self):
         self.currentState = PState(0,0,0,0)
-        self.stateList = []
         self.naPlateVe = 0
         self.naPlateVn = 0
 
@@ -31,7 +30,6 @@ class PlateMotion:
         self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
 
         self.currentState = PState(initLong, initLat, 0, 0)
-        self.stateList = [self.currentState]
         return self.currentState
 
     def getNextState(self, deltaT, rotData, applyRotation, applyNaMotion):
@@ -43,8 +41,8 @@ class PlateMotion:
             if not rotation:
                 print('No close rotation entry found')
                 return None
-            deltaState.vEast  = -rotation.featureAttribute(2)
-            deltaState.vNorth  = -rotation.featureAttribute(3)
+            deltaState.vEast  = -rotation[2] / 1000.0 # m / yr
+            deltaState.vNorth  = -rotation[3] / 1000.0
 
         if (applyNaMotion):
             deltaState.vNorth -= self.naPlateVn
@@ -62,9 +60,7 @@ class PlateMotion:
         nextState.vEast = self.currentState.vEast + deltaState.vEast
         nextState.vNorth = self.currentState.vNorth + deltaState.vNorth
 
-        self.stateList.append(nextState)
         self.currentState = nextState
-
         return nextState
 
 

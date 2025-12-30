@@ -27,10 +27,10 @@ import os
 from qgis.PyQt import uic, QtWidgets
 from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature
 from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
-
+from qgis.utils import iface
 
 from .rot_data import RotData
-from .plate_motion import PlateMotion
+from .plate_motion import PlateMotion, PState
 
 # Important constants
 NA_Speed = 3.8e-2   # m / yr
@@ -66,8 +66,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsDestLayerSetup = False
         self.yhsDestLayer = None
         self.yhsPoints = []
-        self.yhsPolyLine = None
         self.plateMotion = PlateMotion()
+        self.clearData()
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.displayRotDataButton.clicked.connect(self.displayRotDataButtonClicked)
@@ -75,6 +75,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def clearData(self):
         self.yhsPoints = []
+        self.plateMotion.initialize(YHS_lat, YHS_long, NA_Speed, NA_Bearing)
+        self.closeYhsLayer()
+        self.closeRotLayer() 
         return
 
     ####
@@ -121,6 +124,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage('failed to copy rot data', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
+        self.rotDisplayLayerSetup = True
         return True
 
     def displayRotData(self):
@@ -140,7 +144,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.setupYhsLayer() :
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
 
-        currentState = self.plateMotion.getNextState(1e6, self.rotData, False, True)
+        deltaT = float(self.sbStepMy.value()) * 1e6;
+        currentState = self.plateMotion.getNextState(deltaT, self.rotData,
+                                                     self.rbApplyNARotV.isChecked(), self.rbApplyNaPlateV.isChecked())
         self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
         self.displayYhsData()
         return
@@ -165,8 +171,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         lineSymbol.setWidth(0.5)
         lineSymbol.setColor(QColor(255, 0, 0))
         self.yhsPoints.append(QgsPoint(self.YHS_lon, self.YHS_lat)) # Set initial point to current YHS
+        self.yhsDestLayerSetup = True
 
-        self.plateMotion.initialize(YHS_lat, YHS_long, NA_Speed, NA_Bearing)
         return True
 
     def displayYhsData(self):
@@ -187,20 +193,31 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         return True
 
     def removeLayer(self, layer):
-        root = QgsProject.instance().layerTreeRoot()
-        layer_node = root.findLayer(layer.id())
-        if layer_node:
-            layer_node.setItemVisibilityChecked(False)  # Set the checkbox to unchecked
-            QgsProject.instance().removeMapLayers([layer.id()])
+        if layer :
+            root = QgsProject.instance().layerTreeRoot()
+            layer_node = root.findLayer(layer.id())
+            if layer_node:
+                layer_node.setItemVisibilityChecked(False)  # Set the checkbox to unchecked
+                QgsProject.instance().removeMapLayers([layer.id()])
+                iface.mapCanvas().refresh()
         return
 
-    def closeEvent(self, event: QCloseEvent):
-        QgsMessageLog.logMessage('closeEvent', tag=PnwRotPyDialog.name, level=Qgis.Info)
+    def closeRotLayer(self):
         if self.rotDestLayer:
             self.removeLayer(self.rotDestLayer)
             self.rotDestLayer = None
+            self.rotDisplayLayerSetup = False
+
+    def closeYhsLayer(self):
         if self.yhsDestLayer:
             self.removeLayer(self.yhsDestLayer)
             self.yhsDestLayer = None
+            self.yhsDestLayerSetup = False
+
+    def closeEvent(self, event: QCloseEvent):
+        self.closeRotLayer()
+        self.closeYhsLayer()
+
+           # self.plateMotion = None
         return
 
