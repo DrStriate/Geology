@@ -80,7 +80,7 @@
     <double>40.000000000000000</double>
    </property>
   </widget>
-  <widget class="QDoubleSpinBox" name="spbStartLonDD">
+  <widget class="QDoubleSpinBox" name="spbStartLongDD">
    <property name="geometry">
     <rect>
      <x>150</x>
@@ -180,7 +180,7 @@
     </rect>
    </property>
    <property name="title">
-    <string>gb1</string>
+    <string/>
    </property>
    <widget class="QRadioButton" name="rbApplyNaPlateV">
     <property name="geometry">
@@ -197,6 +197,9 @@
     <property name="text">
      <string>NA Plate V</string>
     </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
    </widget>
   </widget>
   <widget class="QGroupBox" name="groupBox_2">
@@ -209,7 +212,7 @@
     </rect>
    </property>
    <property name="title">
-    <string>gb2</string>
+    <string/>
    </property>
    <widget class="QRadioButton" name="rbApplyNARotV">
     <property name="geometry">
@@ -224,7 +227,10 @@
      <number>-3</number>
     </property>
     <property name="text">
-     <string>NA Rotate V</string>
+     <string>NA Rotate</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
@@ -234,11 +240,14 @@
      <x>260</x>
      <y>0</y>
      <width>120</width>
-     <height>80</height>
+     <height>91</height>
     </rect>
    </property>
    <property name="title">
-    <string>gb3</string>
+    <string>Start position</string>
+   </property>
+   <property name="checkable">
+    <bool>false</bool>
    </property>
    <widget class="QRadioButton" name="rbYHS">
     <property name="geometry">
@@ -252,18 +261,34 @@
     <property name="text">
      <string>YHS</string>
     </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
    </widget>
-   <widget class="QRadioButton" name="rbYHS_2">
+   <widget class="QRadioButton" name="rbJdF">
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>50</y>
+      <y>40</y>
       <width>101</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
      <string>Juan De Fuca</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rbME">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>101</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Manual Entry</string>
     </property>
    </widget>
   </widget>

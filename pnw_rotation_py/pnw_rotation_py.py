@@ -175,7 +175,6 @@ class PnwRotPy:
 
 
     def unload(self):
-        QgsMessageLog.logMessage('unload', tag="PnwRotPy", level=Qgis.Info)
         self.iface.mapCanvas().refreshAllLayers()
         self.iface.mapCanvas().refresh()
 
@@ -212,7 +211,6 @@ class PnwRotPy:
         """
         This function is called when the dialog is closed.
         """
-        QgsMessageLog.logMessage('handle_dialog_close', tag="PnwRotPy", level=Qgis.Info)
 
         # Disconnect the signal to avoid issues if the dialog is reopened
         self.dlg.finished.disconnect(self.handle_dialog_close)

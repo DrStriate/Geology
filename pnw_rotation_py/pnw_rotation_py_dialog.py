@@ -33,10 +33,12 @@ from .rot_data import RotData
 from .plate_motion import PlateMotion, PState
 
 # Important constants
-NA_Speed = 3.8e-2   # m / yr
-NA_Bearing = 225.0  # degrees azimuth
-YHS_lat = 44.43
+NA_Speed = 10e-3 #15e-3   # m / yr
+NA_Bearing = 250.0  # degrees azimuth
+YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67
+JdF_Lat = 48.25     # Center of Strait of Juan de Fuca
+JdF_Long = -124.0
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -57,6 +59,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
+
+        print("init")
         self.setupUi(self)
 
         self.rotData = RotData()
@@ -66,18 +70,24 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsDestLayerSetup = False
         self.yhsDestLayer = None
         self.yhsPoints = []
+        self.yhsRotFeatureList = []
         self.plateMotion = PlateMotion()
         self.clearData()
+        self.setStartPoint()
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.displayRotDataButton.clicked.connect(self.displayRotDataButtonClicked)
         self.stepYhsDataButton.clicked.connect(self.stepYhsButtonClicked)
+        self.rbYHS.toggled.connect(self.setStartPoint)
+        self.rbJdF.toggled.connect(self.setStartPoint)
+        self.rbME.toggled.connect(self.setStartPoint)
+        return
 
     def clearData(self):
         self.yhsPoints = []
-        self.plateMotion.initialize(YHS_lat, YHS_long, NA_Speed, NA_Bearing)
+        self.yhsRotFeatureList = []
         self.closeYhsLayer()
-        self.closeRotLayer() 
+        self.closeRotLayer()
         return
 
     ####
@@ -85,13 +95,12 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     ####
 
     def displayRotDataButtonClicked(self):
-        QgsMessageLog.logMessage('displayRotData', tag=PnwRotPyDialog.name, level=Qgis.Info)
 
         if not self.setupRotDisplayLayer():
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
-        self.displayRotData()
+        self.displayRotData(self.rotData.rotFeatureList)
         return True
 
     def setupRotDisplayLayer(self):
@@ -127,9 +136,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotDisplayLayerSetup = True
         return True
 
-    def displayRotData(self):
+    def displayRotData(self, featureList):
         #copy rot data over
-        self.rotDestLayer.dataProvider().addFeatures(self.rotData.rotFeatureList)
+        self.rotDestLayer.dataProvider().addFeatures(featureList)
         QgsProject.instance().addMapLayer(self.rotDestLayer)
         self.rotDestLayer.triggerRepaint()
         return True
@@ -139,7 +148,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     ####
 
     def stepYhsButtonClicked(self):
-        QgsMessageLog.logMessage('run Yhs Button Clicked', tag=PnwRotPyDialog.name, level=Qgis.Info)
+        if len(self.yhsPoints) == 0:
+            self.plateMotion.initialize(self.spbStartLatDD.value(), self.spbStartLongDD.value(), NA_Speed, NA_Bearing)
+            self.yhsPoints.append(
+                QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value()))  # Set initial point to current state
 
         if not self.setupYhsLayer() :
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
@@ -149,13 +161,21 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
                                                      self.rbApplyNARotV.isChecked(), self.rbApplyNaPlateV.isChecked())
         self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
         self.displayYhsData()
+
+        # print("currentState: ")
+        # print(currentState)
+        # print("step yhsPoints: ")
+        # print(self.yhsPoints)
+
+        if self.setupRotDisplayLayer():
+            feature = self.rotData.rotFeatureList[currentState.rotIdx]
+            self.yhsRotFeatureList.append(feature)
+            self.displayRotData(self.yhsRotFeatureList)
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
         if self.yhsDestLayerSetup:
             return True
-
-        QgsMessageLog.logMessage("Setup YHS layer ", tag=PnwRotPyDialog.name, level=Qgis.Info)
 
         providerName = "memory"    # Or "ogr" for file - based data
         uri = "LineString?crs=epsg:4326" # Example URI for memory provider
@@ -170,14 +190,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         lineSymbol = renderer.symbol()
         lineSymbol.setWidth(0.5)
         lineSymbol.setColor(QColor(255, 0, 0))
-        self.yhsPoints.append(QgsPoint(self.YHS_lon, self.YHS_lat)) # Set initial point to current YHS
         self.yhsDestLayerSetup = True
-
         return True
 
     def displayYhsData(self):
-
-        #print("self.yhsPoints: ", self.yhsPoints)
 
         #copy yhs data over
         feature = QgsFeature(self.yhsDestLayer.fields())
@@ -191,6 +207,15 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.yhsDestLayer.triggerRepaint()
         return True
+
+    def setStartPoint(self):
+        if  self.rbYHS.isChecked():
+            self.spbStartLatDD.setValue(YHS_lat)
+            self.spbStartLongDD.setValue(YHS_long)
+        elif self.rbJdF.isChecked():
+            self.spbStartLatDD.setValue(JdF_Lat)
+            self.spbStartLongDD.setValue(JdF_Long)
+        return
 
     def removeLayer(self, layer):
         if layer :
@@ -207,17 +232,18 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.removeLayer(self.rotDestLayer)
             self.rotDestLayer = None
             self.rotDisplayLayerSetup = False
+        return
 
     def closeYhsLayer(self):
         if self.yhsDestLayer:
             self.removeLayer(self.yhsDestLayer)
             self.yhsDestLayer = None
             self.yhsDestLayerSetup = False
+        return
 
     def closeEvent(self, event: QCloseEvent):
         self.closeRotLayer()
         self.closeYhsLayer()
-
-           # self.plateMotion = None
+        self.clearData()
         return
 

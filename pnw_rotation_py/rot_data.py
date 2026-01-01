@@ -42,14 +42,16 @@ class RotData:
                 QgsMessageLog.logMessage('No rotation data loaded', RotData.name, Qgis.Info)
                 return None
 
-        closestFeature = None
+        closestIdx = -1
         minDist = 1e10
+        idx = 0
         for feature in self.rotFeatureList:
             f_lon = feature.attribute(0)
             f_lat = feature.attribute(1)
             dist = (f_lon - longitude)**2 + (f_lat - latitude)**2
             if (dist < minDist):
                 minDist = dist
-                closestFeature = feature
+                closestIdx = idx
+            idx += 1
 
-        return closestFeature
+        return closestIdx
