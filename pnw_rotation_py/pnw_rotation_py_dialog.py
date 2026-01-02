@@ -33,8 +33,8 @@ from .rot_data import RotData
 from .plate_motion import PlateMotion, PState
 
 # Important constants
-NA_Speed = 10e-3 #15e-3   # m / yr
-NA_Bearing = 250.0  # degrees azimuth
+NA_Speed = 30e-3    #15e-3   # m / yr
+NA_Bearing = 240.0  # degrees azimuth
 YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67
 JdF_Lat = 48.25     # Center of Strait of Juan de Fuca
@@ -60,7 +60,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
 
-        print("init")
         self.setupUi(self)
 
         self.rotData = RotData()
@@ -74,6 +73,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.plateMotion = PlateMotion()
         self.clearData()
         self.setStartPoint()
+
+        self.spbNaPlateBearing.setValue(NA_Bearing)
+        self.spbNaPlateSpeed.setValue(NA_Speed)
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.displayRotDataButton.clicked.connect(self.displayRotDataButtonClicked)
@@ -148,29 +150,32 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     ####
 
     def stepYhsButtonClicked(self):
+        if not self.setupYhsLayer() :
+            QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+            return
+
         if len(self.yhsPoints) == 0:
-            self.plateMotion.initialize(self.spbStartLatDD.value(), self.spbStartLongDD.value(), NA_Speed, NA_Bearing)
+            self.plateMotion.initialize(self.spbStartLatDD.value(), self.spbStartLongDD.value(),
+                                        self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value())
             self.yhsPoints.append(
                 QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value()))  # Set initial point to current state
 
-        if not self.setupYhsLayer() :
-            QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+        for i in range (self.sbSteps.value()):
+            deltaT = float(self.sbStepMy.value()) * 1e6;
+            currentState = self.plateMotion.getNextState(deltaT,  self.rotData,
+                                self.rbApplyMaScaling.isChecked(), self.rbApplyNARotV.isChecked(), self.rbApplyNaPlateV.isChecked())
+            self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
+            self.displayYhsData()
 
-        deltaT = float(self.sbStepMy.value()) * 1e6;
-        currentState = self.plateMotion.getNextState(deltaT, self.rotData,
-                                                     self.rbApplyNARotV.isChecked(), self.rbApplyNaPlateV.isChecked())
-        self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
-        self.displayYhsData()
+            # print("currentState: ")
+            # print(currentState)
+            # print("step yhsPoints: ")
+            # print(self.yhsPoints)
 
-        # print("currentState: ")
-        # print(currentState)
-        # print("step yhsPoints: ")
-        # print(self.yhsPoints)
-
-        if self.setupRotDisplayLayer():
-            feature = self.rotData.rotFeatureList[currentState.rotIdx]
-            self.yhsRotFeatureList.append(feature)
-            self.displayRotData(self.yhsRotFeatureList)
+            if self.setupRotDisplayLayer():
+                feature = self.rotData.rotFeatureList[currentState.rotIdx]
+                self.yhsRotFeatureList.append(feature)
+                self.displayRotData(self.yhsRotFeatureList)
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
