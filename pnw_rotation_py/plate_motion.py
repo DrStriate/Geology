@@ -1,9 +1,10 @@
 # Calculates estimated NA plate motion based on combined plate velocity and rotation data
 from dataclasses import dataclass
 import math
+import numpy as np
 
 # qGis versoion
-from .geo_helper import geoHelper
+from .geo_helper import GeoHelper
 # test version
 #from geo_helper import geoHelper
 
@@ -61,24 +62,32 @@ class PlateMotion:
             if closestIdx == -1:
                 print('No close rotation entry found')
                 return None
+
             appliedMaScaling = 1.0
             if applyNaScaling and self.totalT < 0.0:
-                scaleIdx = min(int(-self.totalT / 5.0e6),len(self.ScalingMa) -1)
-                appliedMaScaling = self.ScalingMa[scaleIdx]
+                scaleIdx = min(-self.totalT / 5.0e6,len(self.ScalingMa) -1.0)
+                appliedMaScaling = np.interp(scaleIdx, np.arange(len(self.ScalingMa)), self.ScalingMa)
 
             print ("totalT: " + str(self.totalT))
 
             rotation = rotData.rotFeatureList[closestIdx]
             deltaState.vEast  = -rotation[2] / 1000.0 * appliedMaScaling # m / yr
             deltaState.vNorth  = -rotation[3] / 1000.0 * appliedMaScaling
+            # azimuthR = math.atan2(deltaState.vEast, deltaState.vNorth)
+            # print("Rot Ve: " + str(deltaState.vEast) + ", Vn: " + str(deltaState.vNorth) + ", az: ", math.degrees(azimuthR))
 
         if (applyNaMotion):
-            deltaState.vNorth = deltaState.vNorth - self.naPlateVn
-            deltaState.vEast = deltaState.vEast - self.naPlateVe
+            deltaState.vNorth -= self.naPlateVn
+            deltaState.vEast -= self.naPlateVe
+            # azimuthNA = math.atan2(-self.naPlateVe, -self.naPlateVn)
+            # print("Na Ve: " + str(-self.naPlateVe) + ", Vn: " + str(-self.naPlateVn) + ", az: ", math.degrees(azimuthNA))
+
+        # azimuthS = math.atan2(deltaState.vEast, deltaState.vNorth)
+        # print("Sum Ve: " + str(deltaState.vEast) + ", Vn: " + str(deltaState.vNorth) + ", az: ", math.degrees(azimuthS))
 
         #scale motion by time and convert distance to lat/long
-        deltaState.latitude = geoHelper.latutideFromDistN(deltaState.vNorth * deltaT)
-        deltaState.longitude = geoHelper.longitudeFromDist(self.currentState.latitude + deltaState.latitude,
+        deltaState.latitude = GeoHelper.latutideFromDistN(deltaState.vNorth * deltaT)
+        deltaState.longitude = GeoHelper.longitudeFromDist(self.currentState.latitude + deltaState.latitude,
                                                            deltaState.vEast * deltaT)
         #update current state
         nextState = PState(0,0,0,0,0)

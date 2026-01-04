@@ -1,6 +1,6 @@
 import math
 earthRadius = 6371.01 * 1000 # m
-class geoHelper:
+class GeoHelper:
 
     def latutideFromDistN(distN): # dist in meters North
        lat = math.atan2(distN, earthRadius) * 180.0 / math.pi

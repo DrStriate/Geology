@@ -1,5 +1,4 @@
-
-from geo_helper import latutideFromDistN, longitudeFromDist
+from geo_helper import GeoHelper
 #from qgis.core import QgsApplication
 
 
@@ -24,14 +23,14 @@ def testFunction(val, valSB, tol, name):
 def test_latitudeFromDistance():
     distN = 1000 # 1 km
     latSb = 0.00898 # degrees
-    lat = latutideFromDistN(distN)
+    lat = GeoHelper.latutideFromDistN(distN)
     testFunction(lat, latSb, 0.001, 'test_latitudeFromDistance')
 
 def test_lonitudeFromDistance():
     distN = 1000 # 1 km
     lat = 45
     lonSb = 0.0127 # degrees
-    lat = longitudeFromDist(lat, distN)
+    lat = GeoHelper.longitudeFromDist(lat, distN)
     testFunction(lat, lonSb, 0.001, 'test_lonitudeFromDistance')
 
 def test_plate_motion():

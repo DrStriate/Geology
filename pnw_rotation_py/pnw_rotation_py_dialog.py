@@ -167,6 +167,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
             self.displayYhsData()
 
+            print("i: ", + i)
             # print("currentState: ")
             # print(currentState)
             # print("step yhsPoints: ")
