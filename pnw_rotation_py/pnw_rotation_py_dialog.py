@@ -33,12 +33,12 @@ from .rot_data import RotData
 from .plate_motion import PlateMotion, PState
 
 # Important constants
-NA_Speed = 30e-3    #15e-3   # m / yr
+NA_Speed = 35e-3    # m / yr (Current)
 NA_Bearing = 240.0  # degrees azimuth
 YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67
-JdF_Lat = 48.25     # Center of Strait of Juan de Fuca
-JdF_Long = -124.0
+MtO_Lat = 47.8      # Mount Olympus
+MtO_Long = -123.6
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -81,7 +81,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.displayRotDataButton.clicked.connect(self.displayRotDataButtonClicked)
         self.stepYhsDataButton.clicked.connect(self.stepYhsButtonClicked)
         self.rbYHS.toggled.connect(self.setStartPoint)
-        self.rbJdF.toggled.connect(self.setStartPoint)
+        self.rbMtO.toggled.connect(self.setStartPoint)
         self.rbME.toggled.connect(self.setStartPoint)
         return
 
@@ -154,8 +154,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return
 
+        startT = float(self.sbStartMa.value()) * 1e6;
         if len(self.yhsPoints) == 0:
-            self.plateMotion.initialize(self.spbStartLatDD.value(), self.spbStartLongDD.value(),
+            self.plateMotion.initialize(startT, self.spbStartLatDD.value(), self.spbStartLongDD.value(),
                                         self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value())
             self.yhsPoints.append(
                 QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value()))  # Set initial point to current state
@@ -167,7 +168,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
             self.displayYhsData()
 
-            print("i: ", + i)
+            # print("i: ", + i)
             # print("currentState: ")
             # print(currentState)
             # print("step yhsPoints: ")
@@ -218,9 +219,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if  self.rbYHS.isChecked():
             self.spbStartLatDD.setValue(YHS_lat)
             self.spbStartLongDD.setValue(YHS_long)
-        elif self.rbJdF.isChecked():
-            self.spbStartLatDD.setValue(JdF_Lat)
-            self.spbStartLongDD.setValue(JdF_Long)
+        elif self.rbMtO.isChecked():
+            self.spbStartLatDD.setValue(MtO_Lat)
+            self.spbStartLongDD.setValue(MtO_Long)
         return
 
     def removeLayer(self, layer):

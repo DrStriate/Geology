@@ -44,18 +44,23 @@ class PlateMotion:
         self.naPlateVe = 0
         self.naPlateVn = 0
 
-    def initialize(self, initLat, initLong, naSpeed, naBearing): # speed in m/yr, bearing is azimuth degrees
+    def initialize(self, startMa, initLat, initLong, naSpeed, naBearing): # speed in m/yr, bearing is azimuth degrees
         self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
         self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
-        self.totalT = 0.0
+        self.currentYr = -startMa * 1e6
         self.currentState = PState(initLong, initLat, 0, 0, 0)
         return self.currentState
 
-    def getNextState(self, deltaT, rotData, applyNaScaling, applyRotation, applyNaMotion):
-        deltaState = PState(0,0,0,0,0)
+    def getNextState(self, deltaT, rotData, applyNaScaling, applyRotation, applyNaMotion, verbose=False):
+
+        deltaRot = PState(0,0,0,0,0)    # rotation component of delta
+        deltaNa = PState(0,0,0,0,0)     # NA Plate component of delta
+        deltaState = PState(0,0,0,0,0)  # combined delta vector
 
         closestIdx = -1;
-        self.totalT += deltaT
+        self.currentYr += deltaT
+        motionSense = -1.0 if deltaT > 0 else 1.0
+
         if (applyRotation and rotData):
             # get the closest rotation entry velocity for current location
             closestIdx = rotData.getClosestRotEntry(self.currentState.longitude, self.currentState.latitude)
@@ -64,31 +69,38 @@ class PlateMotion:
                 return None
 
             appliedMaScaling = 1.0
-            if applyNaScaling and self.totalT < 0.0:
-                scaleIdx = min(-self.totalT / 5.0e6,len(self.ScalingMa) -1.0)
+            if applyNaScaling and self.currentYr < 0.0:
+                scaleIdx = min(-self.currentYr / 5.0e6,len(self.ScalingMa) -1.0)
                 appliedMaScaling = np.interp(scaleIdx, np.arange(len(self.ScalingMa)), self.ScalingMa)
 
-            print ("totalT: " + str(self.totalT))
-
             rotation = rotData.rotFeatureList[closestIdx]
-            deltaState.vEast  = -rotation[2] / 1000.0 * appliedMaScaling # m / yr
-            deltaState.vNorth  = -rotation[3] / 1000.0 * appliedMaScaling
-            # azimuthR = math.atan2(deltaState.vEast, deltaState.vNorth)
-            # print("Rot Ve: " + str(deltaState.vEast) + ", Vn: " + str(deltaState.vNorth) + ", az: ", math.degrees(azimuthR))
+            deltaRot.vEast  = motionSense * rotation[2] / 1000.0 * appliedMaScaling # m / yr
+            deltaRot.vNorth = motionSense * rotation[3] / 1000.0 * appliedMaScaling
+
+            if verbose:
+                azimuthR = math.atan2(deltaRot.vEast, deltaRot.vNorth)
+                print("Rot Ve: " + str(deltaRot.vEast) + ", Vn: " + str(deltaRot.vNorth) + ", az: ", math.degrees(azimuthR))
 
         if (applyNaMotion):
-            deltaState.vNorth -= self.naPlateVn
-            deltaState.vEast -= self.naPlateVe
-            # azimuthNA = math.atan2(-self.naPlateVe, -self.naPlateVn)
-            # print("Na Ve: " + str(-self.naPlateVe) + ", Vn: " + str(-self.naPlateVn) + ", az: ", math.degrees(azimuthNA))
+            deltaNa.vNorth += motionSense * self.naPlateVn
+            deltaNa.vEast += motionSense * self.naPlateVe
 
-        # azimuthS = math.atan2(deltaState.vEast, deltaState.vNorth)
-        # print("Sum Ve: " + str(deltaState.vEast) + ", Vn: " + str(deltaState.vNorth) + ", az: ", math.degrees(azimuthS))
+            if verbose:
+                azimuthNA = math.atan2(deltaNa.vEast, deltaNa.vNorth)
+                print("Na Ve: " + str(deltaNa.vEast) + ", Vn: " + str(deltaNa.vNorth) + ", az: ", math.degrees(azimuthNA))
+
+        deltaState.vNorth = deltaNa.vNorth + deltaRot.vNorth
+        deltaState.vEast = deltaNa.vEast + deltaRot.vEast
+
+        if verbose:
+            print ("currentYr: " + str(self.currentYr))
+            azimuthS = math.atan2(deltaState.vEast, deltaState.vNorth)
+            print("Sum Ve: " + str(deltaState.vEast) + ", Vn: " + str(deltaState.vNorth) + ", az: ", math.degrees(azimuthS))
 
         #scale motion by time and convert distance to lat/long
-        deltaState.latitude = GeoHelper.latutideFromDistN(deltaState.vNorth * deltaT)
+        deltaState.latitude = GeoHelper.latutideFromDistN(deltaState.vNorth * abs(deltaT))
         deltaState.longitude = GeoHelper.longitudeFromDist(self.currentState.latitude + deltaState.latitude,
-                                                           deltaState.vEast * deltaT)
+                                                           deltaState.vEast * abs(deltaT))
         #update current state
         nextState = PState(0,0,0,0,0)
 

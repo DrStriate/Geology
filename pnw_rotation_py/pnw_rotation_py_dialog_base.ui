@@ -42,9 +42,9 @@
   <widget class="QPushButton" name="stepYhsDataButton">
    <property name="geometry">
     <rect>
-     <x>40</x>
+     <x>10</x>
      <y>130</y>
-     <width>161</width>
+     <width>151</width>
      <height>31</height>
     </rect>
    </property>
@@ -151,9 +151,9 @@
   <widget class="QSpinBox" name="sbStepMy">
    <property name="geometry">
     <rect>
-     <x>210</x>
+     <x>240</x>
      <y>130</y>
-     <width>71</width>
+     <width>61</width>
      <height>31</height>
     </rect>
    </property>
@@ -176,7 +176,7 @@
      <x>40</x>
      <y>70</y>
      <width>101</width>
-     <height>51</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="title">
@@ -186,7 +186,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
+      <y>0</y>
       <width>81</width>
       <height>18</height>
      </rect>
@@ -208,7 +208,7 @@
      <x>150</x>
      <y>70</y>
      <width>111</width>
-     <height>51</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="title">
@@ -218,7 +218,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
+      <y>0</y>
       <width>91</width>
       <height>18</height>
      </rect>
@@ -265,7 +265,7 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QRadioButton" name="rbJdF">
+   <widget class="QRadioButton" name="rbMtO">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -275,7 +275,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Juan De Fuca</string>
+     <string>Mt Olympus</string>
     </property>
    </widget>
    <widget class="QRadioButton" name="rbME">
@@ -423,9 +423,9 @@
   <widget class="QSpinBox" name="sbSteps">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>310</x>
      <y>130</y>
-     <width>71</width>
+     <width>51</width>
      <height>31</height>
     </rect>
    </property>
@@ -433,7 +433,7 @@
     <number>-1</number>
    </property>
    <property name="suffix">
-    <string> Steps</string>
+    <string> </string>
    </property>
    <property name="minimum">
     <number>1</number>
@@ -446,6 +446,94 @@
    </property>
    <property name="value">
     <number>50</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="StartLatLabel_4">
+   <property name="geometry">
+    <rect>
+     <x>240</x>
+     <y>100</y>
+     <width>41</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Step T</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="StartLatLabel_5">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>100</y>
+     <width>41</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Steps</string>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="sbStartMa">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>130</y>
+     <width>61</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTipDuration">
+    <number>-1</number>
+   </property>
+   <property name="suffix">
+    <string> Ma</string>
+   </property>
+   <property name="minimum">
+    <number>0</number>
+   </property>
+   <property name="maximum">
+    <number>50</number>
+   </property>
+   <property name="singleStep">
+    <number>1</number>
+   </property>
+   <property name="value">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="StartLatLabel_6">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>100</y>
+     <width>41</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Start T</string>
    </property>
   </widget>
  </widget>
