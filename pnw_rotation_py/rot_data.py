@@ -105,6 +105,11 @@ class RotData:
             print("latitude out of range: " + str(latitude))
             return None
 
+        u, v = self.interp_func(longitude, latitude)
+
+        # note index set to zero - need to create a new QFeature array for interpolated rot display TO DO
+        return PState(longitude, latitude, u, v, 0)
+
     # returns PState of closest rot vector
     def getClosestRotEntry(self, longitude, latitude):
         if not self.rotDataLoaded:
