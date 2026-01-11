@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import math
 import numpy as np
+from .rot_data import PState
 
 # qGis versoion
 from .geo_helper import GeoHelper
@@ -13,17 +14,8 @@ from .geo_helper import GeoHelper
 #
 # Velocities of the inertial points on the plate are measured in meters per year while the Lat/Lon are scaled by DeltaT
 
-@dataclass
-class PState:
-    longitude: float
-    latitude: float
-    vEast: float
-    vNorth: float
-    rotIdx: int
-
-    # Historic estimates of rates compared to current (0 Ma)
-
 class PlateMotion:
+    # Historic estimates of rates compared to current (0 Ma)
     # so data is Ma vs Rate Scaling in steps of 5 Ma
     # need to validate and refine these data using current studies
     ScalingMa = [
@@ -44,50 +36,53 @@ class PlateMotion:
         self.naPlateVe = 0
         self.naPlateVn = 0
 
-    def initialize(self, startMa, initLat, initLong, naSpeed, naBearing): # speed in m/yr, bearing is azimuth degrees
+    def initialize(self, startMa, initLat, initLong, naSpeed, naBearing, interpFunction="ClosestEntry"): # speed in m/yr, bearing is azimuth degrees
         self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
         self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
         self.currentYr = -startMa * 1e6
         self.currentState = PState(initLong, initLat, 0, 0, 0)
+        self.interpFunction = interpFunction
         return self.currentState
 
-    def getNextState(self, deltaT, rotData, applyNaScaling, applyRotation, applyNaMotion, verbose=False):
-
+    def getNextState(self, deltaT, rotData, applyNaScaling, applyRotation, verbose=False):
         deltaRot = PState(0,0,0,0,0)    # rotation component of delta
         deltaNa = PState(0,0,0,0,0)     # NA Plate component of delta
         deltaState = PState(0,0,0,0,0)  # combined delta vector
 
-        closestIdx = -1;
         self.currentYr += deltaT
         motionSense = -1.0 if deltaT > 0 else 1.0
 
         if (applyRotation and rotData):
-            # get the closest rotation entry velocity for current location
-            closestIdx = rotData.getClosestRotEntry(self.currentState.longitude, self.currentState.latitude)
-            if closestIdx == -1:
-                print('No close rotation entry found')
-                return None
-
             appliedMaScaling = 1.0
             if applyNaScaling and self.currentYr < 0.0:
                 scaleIdx = min(-self.currentYr / 5.0e6,len(self.ScalingMa) -1.0)
                 appliedMaScaling = np.interp(scaleIdx, np.arange(len(self.ScalingMa)), self.ScalingMa)
 
-            rotation = rotData.rotFeatureList[closestIdx]
-            deltaRot.vEast  = motionSense * rotation[2] / 1000.0 * appliedMaScaling # m / yr
-            deltaRot.vNorth = motionSense * rotation[3] / 1000.0 * appliedMaScaling
+            if self.interpFunction == "ClosestEntry":
+                # get the closest rotation entry velocity for current location
+                rotEntry = rotData.getClosestRotEntry(self.currentState.longitude, self.currentState.latitude)
+
+            else: # Interpolated
+                rotEntry = rotData.getLinearInterpSample(self.currentState.longitude, self.currentState.latitude)
+
+            if rotEntry is None or rotEntry.rotIdx == -1:
+                print('No close rotation entry found')
+                return
+
+            deltaRot.vEast  = motionSense * rotEntry.vEast / 1000.0 * appliedMaScaling # m / yr
+            deltaRot.vNorth = motionSense * rotEntry.vNorth / 1000.0 * appliedMaScaling
 
             if verbose:
                 azimuthR = math.atan2(deltaRot.vEast, deltaRot.vNorth)
                 print("Rot Ve: " + str(deltaRot.vEast) + ", Vn: " + str(deltaRot.vNorth) + ", az: ", math.degrees(azimuthR))
 
-        if (applyNaMotion):
-            deltaNa.vNorth += motionSense * self.naPlateVn
-            deltaNa.vEast += motionSense * self.naPlateVe
+        # Apply NA Motion
+        deltaNa.vNorth += motionSense * self.naPlateVn
+        deltaNa.vEast += motionSense * self.naPlateVe
 
-            if verbose:
-                azimuthNA = math.atan2(deltaNa.vEast, deltaNa.vNorth)
-                print("Na Ve: " + str(deltaNa.vEast) + ", Vn: " + str(deltaNa.vNorth) + ", az: ", math.degrees(azimuthNA))
+        if verbose:
+            azimuthNA = math.atan2(deltaNa.vEast, deltaNa.vNorth)
+            print("Na Ve: " + str(deltaNa.vEast) + ", Vn: " + str(deltaNa.vNorth) + ", az: ", math.degrees(azimuthNA))
 
         deltaState.vNorth = deltaNa.vNorth + deltaRot.vNorth
         deltaState.vEast = deltaNa.vEast + deltaRot.vEast
@@ -108,10 +103,12 @@ class PlateMotion:
         nextState.longitude = self.currentState.longitude + deltaState.longitude
         nextState.vEast = deltaState.vEast #self.currentState.vEast + deltaState.vEast
         nextState.vNorth = deltaState.vNorth #self.currentState.vNorth + deltaState.vNorth
-        nextState.rotIdx = closestIdx;
+        #nextState.rotIdx = rotEntry.rotIdx
 
         self.currentState = nextState
         return nextState
+
+
 
 
 

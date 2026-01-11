@@ -78,11 +78,15 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.spbNaPlateSpeed.setValue(NA_Speed)
         
         self.clearDataButton.clicked.connect(self.clearData)
-        self.displayRotDataButton.clicked.connect(self.displayRotDataButtonClicked)
+        self.rbApplyRotationV.clicked.connect(self.rbApplyRotationVClicked)
         self.stepYhsDataButton.clicked.connect(self.stepYhsButtonClicked)
+        self.rbApplyInterpolation.clicked.connect(self.clearData)
         self.rbYHS.toggled.connect(self.setStartPoint)
         self.rbMtO.toggled.connect(self.setStartPoint)
         self.rbME.toggled.connect(self.setStartPoint)
+        self.interpFunction = "LinearNDInterpolator"
+
+        self.rotData.load()
         return
 
     def clearData(self):
@@ -90,13 +94,17 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsRotFeatureList = []
         self.closeYhsLayer()
         self.closeRotLayer()
+        if self.rbApplyInterpolation.isChecked():
+            self.interpFunction = "LinearNDInterpolator"
+        else:
+            self.interpFunction = "ClosestEntry"
         return
 
     ####
     # Display Rotation Data
     ####
 
-    def displayRotDataButtonClicked(self):
+    def rbApplyRotationVClicked(self):
 
         if not self.setupRotDisplayLayer():
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
@@ -108,7 +116,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     def setupRotDisplayLayer(self):
         if self.rotDisplayLayerSetup:
             return True
-        if not self.rotData.load():
+
+        if not self.rotData.rotDataLoaded:
             QgsMessageLog.logMessage('failed to load rotation data from layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
@@ -156,15 +165,16 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
         startT = float(self.sbStartMa.value()) * 1e6;
         if len(self.yhsPoints) == 0:
+            self.rotData.setupSampling(self.interpFunction)
             self.plateMotion.initialize(startT, self.spbStartLatDD.value(), self.spbStartLongDD.value(),
-                                        self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value())
+                                        self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value(), self.interpFunction)
             self.yhsPoints.append(
                 QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value()))  # Set initial point to current state
 
         for i in range (self.sbSteps.value()):
-            deltaT = float(self.sbStepMy.value()) * 1e6;
+            deltaT = self.spbStepMa.value() * 1e6;
             currentState = self.plateMotion.getNextState(deltaT,  self.rotData,
-                                self.rbApplyMaScaling.isChecked(), self.rbApplyNARotV.isChecked(), self.rbApplyNaPlateV.isChecked())
+                                self.rbApplyMaScaling.isChecked(), self.rbApplyRotationV.isChecked())
             self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
             self.displayYhsData()
 
