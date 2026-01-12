@@ -78,8 +78,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.spbNaPlateSpeed.setValue(NA_Speed)
         
         self.clearDataButton.clicked.connect(self.clearData)
-        self.rbApplyRotationV.clicked.connect(self.rbApplyRotationVClicked)
         self.stepYhsDataButton.clicked.connect(self.stepYhsButtonClicked)
+        self.displayRotDataButton.clicked.connect(self.displayRotData)
         self.rbApplyInterpolation.clicked.connect(self.clearData)
         self.rbYHS.toggled.connect(self.setStartPoint)
         self.rbMtO.toggled.connect(self.setStartPoint)
@@ -175,17 +175,15 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             deltaT = self.spbStepMa.value() * 1e6;
             currentState = self.plateMotion.getNextState(deltaT,  self.rotData,
                                 self.rbApplyMaScaling.isChecked(), self.rbApplyRotationV.isChecked())
+            if not currentState:
+                print("Something went wrong. No update to track")
+                break
+
             self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
             self.displayYhsData()
 
-            # print("i: ", + i)
-            # print("currentState: ")
-            # print(currentState)
-            # print("step yhsPoints: ")
-            # print(self.yhsPoints)
-
             if self.setupRotDisplayLayer():
-                feature = self.rotData.rotFeatureList[currentState.rotIdx]
+                feature = self.rotData.createRotFeature(currentState, 200.0)
                 self.yhsRotFeatureList.append(feature)
                 self.displayRotData(self.yhsRotFeatureList)
         return

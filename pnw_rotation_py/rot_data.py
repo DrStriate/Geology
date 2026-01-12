@@ -1,4 +1,7 @@
-from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsFeature
+from qgis._core import QgsMessageLog, Qgis, QgsProject
+from qgis.core import QgsFeature, QgsPointXY,QgsGeometry
+from qgis.PyQt.QtCore import QVariant, QDateTime, Qt
+
 from dataclasses import dataclass
 from scipy.interpolate import griddata
 import matplotlib.pyplot as plt
@@ -25,6 +28,7 @@ class RotData:
 
     def __init__(self):
         self.rotSourceLayer = None
+        self.rotSourceFields = None
         self.rotDataLoaded = False
         self.rotFieldList = []
         self.rotFeatureList = []
@@ -42,7 +46,6 @@ class RotData:
         if self.rotDataLoaded:
             return True
 
-        print ("Rot_d2ata loading ")
         # get rotation data layer
         dataLayers = QgsProject.instance().mapLayersByName(self.rotDataLayerName)
         if len(dataLayers) == 0 :
@@ -53,8 +56,8 @@ class RotData:
         self.rotSourceLayer = dataLayers[0]
 
         #get rot data fields
-        fields = self.rotSourceLayer.fields()
-        for field in fields:
+        self.rotSourceFields = self.rotSourceLayer.fields()
+        for field in self.rotSourceFields:
             self.rotFieldList.append(field)
 
         #get rot features
@@ -89,12 +92,9 @@ class RotData:
             u.append(feature.attribute(2))
             v.append(feature.attribute(3))
 
-        print("setup data for linear interpolation")
         points = np.column_stack((x, y))  # (N, 2)
         values = np.column_stack((u, v))  # (N, 2)
         self.interp_func = LinearNDInterpolator(points, values)
-
-        print("resampleToGrid")
         return
 
     def getLinearInterpSample(self, longitude, latitude):
@@ -203,3 +203,21 @@ class RotData:
         else:
             print("No interp found")
         return
+
+    def createRotFeature(self, pState, v_scaling = 1.0):
+        # --- Create a new QgsFeature instance ---
+        new_feature = QgsFeature(self.rotSourceFields)
+        geometry = QgsGeometry.fromPointXY(QgsPointXY(pState.longitude, pState.latitude))
+
+        # Assign the created geometry to the feature
+        new_feature.setGeometry(geometry)
+
+        # --- Set the Attributes ---
+        # Provide a list of values that match the field order defined above
+        attributes = [pState.longitude, pState.latitude, pState.vEast * v_scaling, pState.vNorth * v_scaling]
+
+        # Assign the attributes to the feature
+        new_feature.setAttributes(attributes)
+
+        return new_feature
+
