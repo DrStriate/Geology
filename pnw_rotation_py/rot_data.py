@@ -24,7 +24,8 @@ class RotData:
     XYSteps = 50
     XSize = (XRange["max"] - XRange["min"]) / XYSteps
     YSize = (YRange["max"] - YRange["min"]) / XYSteps
-
+    RotEntryExclusions = [438, 3659] # clear outliers
+    # RotEntryExclusions = [2425, 438, 3659] # more consistent final path
 
     def __init__(self):
         self.rotSourceLayer = None
@@ -86,11 +87,14 @@ class RotData:
     def linearInterpSamplerSetup(self):
         # build x (longitude), y (latitude), u (Ve) and v (vn) arrays
         x, y, u, v = [], [], [], []
+        feature_idx = 0
         for feature in self.rotFeatureList:
-            x.append(feature.attribute(0))
-            y.append(feature.attribute(1))
-            u.append(feature.attribute(2))
-            v.append(feature.attribute(3))
+            if feature_idx not in self.RotEntryExclusions:
+                x.append(feature.attribute(0))
+                y.append(feature.attribute(1))
+                u.append(feature.attribute(2))
+                v.append(feature.attribute(3))
+            feature_idx += 1
 
         points = np.column_stack((x, y))  # (N, 2)
         values = np.column_stack((u, v))  # (N, 2)
@@ -124,7 +128,7 @@ class RotData:
             f_lon = feature.attribute(0)
             f_lat = feature.attribute(1)
             dist = (f_lon - longitude)**2 + (f_lat - latitude)**2
-            if (dist < minDist):
+            if dist < minDist and idx not in self.RotEntryExclusions:
                 minDist = dist
                 closestIdx = idx
             idx += 1

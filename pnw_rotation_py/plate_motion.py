@@ -35,13 +35,17 @@ class PlateMotion:
         self.currentState = PState(0,0,0,0,0)
         self.naPlateVe = 0
         self.naPlateVn = 0
+        self.dataFile = None
 
-    def initialize(self, startMa, initLat, initLong, naSpeed, naBearing, interpFunction="ClosestEntry"): # speed in m/yr, bearing is azimuth degrees
+    def initialize(self, startMa, initLat, initLong, naSpeed, naBearing, interpFunction, dataFile): # speed in m/yr, bearing is azimuth degrees
         self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
         self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
         self.currentYr = -startMa * 1e6
         self.currentState = PState(initLong, initLat, 0, 0, 0)
         self.interpFunction = interpFunction
+        self.dataFile = dataFile
+        if dataFile:
+            dataFile.write("long, lat, Na-e, Na-n, Rot-e, Rot-n, Rot-idx, Delta-e, Delta-n, Delta-long, Delta-lat\n")
         return self.currentState
 
     def getNextState(self, deltaT, rotData, applyNaScaling, applyRotation, verbose=False):
@@ -105,6 +109,22 @@ class PlateMotion:
         nextState.vNorth = deltaState.vNorth #self.currentState.vNorth + deltaState.vNorth
         #nextState.rotIdx = rotEntry.rotIdx
 
+        #latRange = [47.26, 47.40] # zig-zags in nearest sample run
+        #latRange = [46.94, 47.16] # sudden jump right at lat 47.09
+        latRange = [0, 0]
+        if self.dataFile and self.currentState.latitude > latRange[0] and self.currentState.latitude < latRange[1]:
+            self.dataFile.write(
+                f"{self.currentState.longitude:.4f}" + ", " +
+                f"{self.currentState.latitude:.4f}" + ", " +
+                f"{deltaNa.vEast:.4f}" + ", " +
+                f"{deltaNa.vNorth:.4f}" + ", " +
+                f"{deltaRot.vEast:.4f}" + ", " +
+                f"{deltaRot.vNorth:.4f}" + ", " +
+                str(rotEntry.rotIdx) + ", " +
+                f"{deltaState.vEast:.4f}" + ", " +
+                f"{deltaState.vNorth:.4f}" + ", " +
+                f"{deltaState.longitude:.4f}" + ", " +
+                f"{deltaState.latitude:.4f}" + "\n")
         self.currentState = nextState
         return nextState
 

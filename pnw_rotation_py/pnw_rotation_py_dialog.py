@@ -25,7 +25,7 @@
 import os
 
 from qgis.PyQt import uic, QtWidgets
-from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature
+from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature, QgsApplication
 from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
 from qgis.utils import iface
 
@@ -37,8 +37,8 @@ NA_Speed = 35e-3    # m / yr (Current)
 NA_Bearing = 240.0  # degrees azimuth
 YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67
-MtO_Lat = 47.8      # Mount Olympus
-MtO_Long = -123.6
+Brothers_Lat = 47.652      # Mount Olympus
+Brothers_Long = -123.141
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -78,11 +78,11 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.spbNaPlateSpeed.setValue(NA_Speed)
         
         self.clearDataButton.clicked.connect(self.clearData)
-        self.stepYhsDataButton.clicked.connect(self.stepYhsButtonClicked)
+        self.runYhsDataButton.clicked.connect(self.runYhsButtonClicked)
         self.displayRotDataButton.clicked.connect(self.displayRotData)
         self.rbApplyInterpolation.clicked.connect(self.clearData)
         self.rbYHS.toggled.connect(self.setStartPoint)
-        self.rbMtO.toggled.connect(self.setStartPoint)
+        self.rbBrothers.toggled.connect(self.setStartPoint)
         self.rbME.toggled.connect(self.setStartPoint)
         self.interpFunction = "LinearNDInterpolator"
 
@@ -158,34 +158,38 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     # run Yhs Button
     ####
 
-    def stepYhsButtonClicked(self):
+    def runYhsButtonClicked(self):
         if not self.setupYhsLayer() :
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return
 
-        startT = float(self.sbStartMa.value()) * 1e6;
-        if len(self.yhsPoints) == 0:
-            self.rotData.setupSampling(self.interpFunction)
-            self.plateMotion.initialize(startT, self.spbStartLatDD.value(), self.spbStartLongDD.value(),
-                                        self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value(), self.interpFunction)
-            self.yhsPoints.append(
-                QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value()))  # Set initial point to current state
+        dataFile = None
+        plugin_dir_os = os.path.dirname(os.path.realpath(__file__)) # point to plugin dir
+        file_path = os.path.join(plugin_dir_os, "rotation_run.csv")
+        with open(file_path, "w") as dataFile:
+            startT = float(self.sbStartMa.value()) * 1e6;
+            if len(self.yhsPoints) == 0:
+                self.rotData.setupSampling(self.interpFunction)
+                self.plateMotion.initialize(startT, self.spbStartLatDD.value(), self.spbStartLongDD.value(),
+                                    self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value(), self.interpFunction, dataFile)
+                self.yhsPoints.append(
+                    QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value()))  # Set initial point to current state
 
-        for i in range (self.sbSteps.value()):
-            deltaT = self.spbStepMa.value() * 1e6;
-            currentState = self.plateMotion.getNextState(deltaT,  self.rotData,
-                                self.rbApplyMaScaling.isChecked(), self.rbApplyRotationV.isChecked())
-            if not currentState:
-                print("Something went wrong. No update to track")
-                break
+            for i in range (self.sbSteps.value()):
+                deltaT = self.spbStepMa.value() * 1e6;
+                currentState = self.plateMotion.getNextState(deltaT,  self.rotData,
+                                    self.rbApplyMaScaling.isChecked(), self.rbApplyRotationV.isChecked())
+                if not currentState:
+                    print("Something went wrong. No update to track")
+                    break
 
-            self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
-            self.displayYhsData()
+                self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
+                self.displayYhsData()
 
-            if self.setupRotDisplayLayer():
-                feature = self.rotData.createRotFeature(currentState, 200.0)
-                self.yhsRotFeatureList.append(feature)
-                self.displayRotData(self.yhsRotFeatureList)
+                if self.setupRotDisplayLayer():
+                    feature = self.rotData.createRotFeature(currentState, 200.0)
+                    self.yhsRotFeatureList.append(feature)
+                    self.displayRotData(self.yhsRotFeatureList)
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
@@ -227,9 +231,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if  self.rbYHS.isChecked():
             self.spbStartLatDD.setValue(YHS_lat)
             self.spbStartLongDD.setValue(YHS_long)
-        elif self.rbMtO.isChecked():
-            self.spbStartLatDD.setValue(MtO_Lat)
-            self.spbStartLongDD.setValue(MtO_Long)
+        elif self.rbBrothers.isChecked():
+            self.spbStartLatDD.setValue(Brothers_Lat)
+            self.spbStartLongDD.setValue(Brothers_Long)
         return
 
     def removeLayer(self, layer):
