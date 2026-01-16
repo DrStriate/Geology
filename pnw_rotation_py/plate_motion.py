@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import math
 import numpy as np
+from .geoHelper import latutideFromDistN, longitudeFromDist
 from .rot_data import PState
 
 # qGis versoion
@@ -37,10 +38,10 @@ class PlateMotion:
         self.naPlateVn = 0
         self.dataFile = None
 
-    def initialize(self, startMa, initLat, initLong, naSpeed, naBearing, interpFunction, dataFile): # speed in m/yr, bearing is azimuth degrees
+    def initialize(self, startT, initLat, initLong, naSpeed, naBearing, interpFunction, dataFile): # speed in m/yr, bearing is azimuth degrees
         self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
         self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
-        self.currentYr = -startMa * 1e6
+        self.currentYr = startT
         self.currentState = PState(initLong, initLat, 0, 0, 0)
         self.interpFunction = interpFunction
         self.dataFile = dataFile
@@ -54,8 +55,8 @@ class PlateMotion:
         deltaState = PState(0,0,0,0,0)  # combined delta vector
 
         self.currentYr += deltaT
+        #verbose = True
         motionSense = -1.0 if deltaT > 0 else 1.0
-
         if (applyRotation and rotData):
             appliedMaScaling = 1.0
             if applyNaScaling and self.currentYr < 0.0:
@@ -97,16 +98,16 @@ class PlateMotion:
             print("Sum Ve: " + str(deltaState.vEast) + ", Vn: " + str(deltaState.vNorth) + ", az: ", math.degrees(azimuthS))
 
         #scale motion by time and convert distance to lat/long
-        deltaState.latitude = GeoHelper.latutideFromDistN(deltaState.vNorth * abs(deltaT))
-        deltaState.longitude = GeoHelper.longitudeFromDist(self.currentState.latitude + deltaState.latitude,
+        deltaState.latitude = latutideFromDistN(deltaState.vNorth * abs(deltaT))
+        deltaState.longitude = longitudeFromDist(self.currentState.latitude + deltaState.latitude,
                                                            deltaState.vEast * abs(deltaT))
         #update current state
         nextState = PState(0,0,0,0,0)
 
         nextState.latitude = self.currentState.latitude + deltaState.latitude
         nextState.longitude = self.currentState.longitude + deltaState.longitude
-        nextState.vEast = deltaState.vEast #self.currentState.vEast + deltaState.vEast
-        nextState.vNorth = deltaState.vNorth #self.currentState.vNorth + deltaState.vNorth
+        nextState.vEast = deltaRot.vEast #used to show rot influence
+        nextState.vNorth = deltaRot.vNorth
         #nextState.rotIdx = rotEntry.rotIdx
 
         #latRange = [47.26, 47.40] # zig-zags in nearest sample run

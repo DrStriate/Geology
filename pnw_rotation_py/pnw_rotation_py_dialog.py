@@ -65,28 +65,27 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotData = RotData()
         self.rotDisplayLayerSetup = False
         self.rotDestLayer = None
-
         self.yhsDestLayerSetup = False
         self.yhsDestLayer = None
+        self.interpFunction = "LinearNDInterpolator"
         self.yhsPoints = []
         self.yhsRotFeatureList = []
         self.plateMotion = PlateMotion()
-        self.clearData()
-        self.setStartPoint()
-
-        self.spbNaPlateBearing.setValue(NA_Bearing)
-        self.spbNaPlateSpeed.setValue(NA_Speed)
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.runYhsDataButton.clicked.connect(self.runYhsButtonClicked)
-        self.displayRotDataButton.clicked.connect(self.displayRotData)
         self.rbApplyInterpolation.clicked.connect(self.clearData)
         self.rbYHS.toggled.connect(self.setStartPoint)
         self.rbBrothers.toggled.connect(self.setStartPoint)
         self.rbME.toggled.connect(self.setStartPoint)
-        self.interpFunction = "LinearNDInterpolator"
+        self.rbDisplayRot.clicked.connect(self.displayRotData)
 
+        self.clearData()
+        self.setStartPoint()
+        self.spbNaPlateBearing.setValue(NA_Bearing)
+        self.spbNaPlateSpeed.setValue(NA_Speed)
         self.rotData.load()
+        self.setupRotDisplayLayer()
         return
 
     def clearData(self):
@@ -147,12 +146,16 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotDisplayLayerSetup = True
         return True
 
-    def displayRotData(self, featureList):
-        #copy rot data over
-        self.rotDestLayer.dataProvider().addFeatures(featureList)
-        QgsProject.instance().addMapLayer(self.rotDestLayer)
-        self.rotDestLayer.triggerRepaint()
-        return True
+    def displayRotData(self):
+        if self.rbApplyRotationV.isChecked():
+            if not self.rotDisplayLayerSetup:
+                self.setupRotDisplayLayer()
+            if self.rbDisplayRot.isChecked():
+                self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
+            else:
+                self.rotDestLayer.dataProvider().truncate()
+            QgsProject.instance().addMapLayer(self.rotDestLayer)
+            self.rotDestLayer.triggerRepaint()
 
     ####
     # run Yhs Button
@@ -184,12 +187,13 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
                     break
 
                 self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
-                self.displayYhsData()
 
-                if self.setupRotDisplayLayer():
-                    feature = self.rotData.createRotFeature(currentState, 200.0)
-                    self.yhsRotFeatureList.append(feature)
-                    self.displayRotData(self.yhsRotFeatureList)
+                feature = self.rotData.createRotFeature(currentState, 200.0)
+                self.yhsRotFeatureList.append(feature)
+
+            self.displayYhsData()
+            if self.rbDisplayRot.isChecked() and self.rbApplyRotationV.isChecked():
+                self.displayRotData()
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
@@ -210,6 +214,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         lineSymbol.setWidth(0.5)
         lineSymbol.setColor(QColor(255, 0, 0))
         self.yhsDestLayerSetup = True
+
+        #self.displayRotData()
         return True
 
     def displayYhsData(self):
