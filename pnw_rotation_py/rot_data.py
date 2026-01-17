@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 
+from .geo_helper import GeoHelper as gh
+
 @dataclass
 class PState:
     longitude: float
@@ -20,12 +22,14 @@ class PState:
 class RotData:
     rotDataLayerName = 'nshm2023_GPS_velocity'
     XRange = {"min": -125.0, "max": -110.0}
-    YRange = {"min": 40.0, "max": 50.0}
+    YRange = {"min": 37.0, "max": 50.0}
     XYSteps = 50
     XSize = (XRange["max"] - XRange["min"]) / XYSteps
     YSize = (YRange["max"] - YRange["min"]) / XYSteps
-    RotEntryExclusions = [438, 3659] # clear outliers
-    #RotEntryExclusions = [2425, 438, 3659] # more consistent final path
+
+    #RotEntryExclusions = [] # no outliers taken out
+    #RotEntryExclusions = [438, 3659] # clear outliers
+    RotEntryExclusions = [2425, 438, 3659] # more consistent final path
 
     def __init__(self):
         self.rotSourceLayer = None
@@ -103,15 +107,13 @@ class RotData:
 
     def getLinearInterpSample(self, longitude, latitude):
         if longitude < self.XRange["min"] or longitude > self.XRange["max"]:
-            print("Longitude out of range: " + str(longitude))
-            return None
+            print("Longitude out of range: " + f"{longitude:.4f}" + ". Clamping.")
+            longitude = gh.clamp(longitude, self.XRange["min"], self.XRange["max"])
         if latitude < self.YRange["min"] or latitude > self.YRange["max"]:
-            print("latitude out of range: " + str(latitude))
-            return None
+            print("latitude out of range: " + f"{latitude:.4f}" + ". Clamping.")
+            latitude = gh.clamp(latitude, self.YRange["min"], self.YRange["max"])
 
         u, v = self.interp_func(longitude, latitude)
-
-        # note index set to zero - need to create a new QFeature array for interpolated rot display TO DO
         return PState(longitude, latitude, u, v, 0)
 
     # returns PState of closest rot vector

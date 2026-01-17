@@ -13,19 +13,6 @@
   <property name="windowTitle">
    <string>Pnw Rotation </string>
   </property>
-  <widget class="QPushButton" name="displayRotDataButton">
-   <property name="geometry">
-    <rect>
-     <x>-10</x>
-     <y>230</y>
-     <width>111</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Display Rot Data</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="clearDataButton">
    <property name="geometry">
     <rect>
@@ -423,7 +410,7 @@
     <number>1</number>
    </property>
    <property name="value">
-    <number>100</number>
+    <number>500</number>
    </property>
   </widget>
   <widget class="QLabel" name="StartLatLabel_4">
@@ -536,7 +523,7 @@
     <double>10.000000000000000</double>
    </property>
    <property name="value">
-    <double>-0.500000000000000</double>
+    <double>-0.100000000000000</double>
    </property>
   </widget>
   <widget class="QGroupBox" name="groupBox_5">

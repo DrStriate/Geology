@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 import math
 import numpy as np
-from .geoHelper import latutideFromDistN, longitudeFromDist
+from .geo_helper import GeoHelper as gh
 from .rot_data import PState
 
 # qGis versoion
@@ -98,8 +98,8 @@ class PlateMotion:
             print("Sum Ve: " + str(deltaState.vEast) + ", Vn: " + str(deltaState.vNorth) + ", az: ", math.degrees(azimuthS))
 
         #scale motion by time and convert distance to lat/long
-        deltaState.latitude = latutideFromDistN(deltaState.vNorth * abs(deltaT))
-        deltaState.longitude = longitudeFromDist(self.currentState.latitude + deltaState.latitude,
+        deltaState.latitude = gh.latutideFromDistN(deltaState.vNorth * abs(deltaT))
+        deltaState.longitude = gh.longitudeFromDist(self.currentState.latitude + deltaState.latitude,
                                                            deltaState.vEast * abs(deltaT))
         #update current state
         nextState = PState(0,0,0,0,0)
