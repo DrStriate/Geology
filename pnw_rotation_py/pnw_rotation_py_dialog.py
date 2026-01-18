@@ -33,8 +33,8 @@ from .rot_data import RotData
 from .plate_motion import PlateMotion, PState
 
 # Important constants
-NA_Speed = 35e-3    # m / yr (Current)
-NA_Bearing = 240.0  # degrees azimuth
+NA_Speed = 38e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
+NA_Bearing = 241.0  # degrees azimuth
 YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67
 Brothers_Lat = 47.652      # Mount Olympus

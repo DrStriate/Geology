@@ -38,14 +38,14 @@ class PlateMotion:
         self.naPlateVn = 0
         self.dataFile = None
 
-    def initialize(self, startT, initLat, initLong, naSpeed, naBearing, interpFunction, dataFile): # speed in m/yr, bearing is azimuth degrees
+    def initialize(self, startT, initLat, initLong, naSpeed, naBearing, interpFunction, dataFile = None): # speed in m/yr, bearing is azimuth degrees
         self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
         self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
         self.currentYr = startT
         self.currentState = PState(initLong, initLat, 0, 0, 0)
         self.interpFunction = interpFunction
         self.dataFile = dataFile
-        if dataFile:
+        if self.dataFile:
             dataFile.write("long, lat, Na-e, Na-n, Rot-e, Rot-n, Rot-idx, Delta-e, Delta-n, Delta-long, Delta-lat\n")
         return self.currentState
 
