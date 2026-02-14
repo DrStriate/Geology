@@ -173,26 +173,26 @@
      <x>260</x>
      <y>210</y>
      <width>111</width>
-     <height>31</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="title">
     <string/>
    </property>
-   <widget class="QRadioButton" name="rbApplyInterpolation">
+   <widget class="QRadioButton" name="rbApplyMaScaling">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>10</y>
+      <x>0</x>
+      <y>0</y>
       <width>101</width>
-      <height>21</height>
+      <height>18</height>
      </rect>
     </property>
     <property name="toolTipDuration">
      <number>-3</number>
     </property>
     <property name="text">
-     <string>Interpolate Rot</string>
+     <string>Apply Ma Scaling</string>
     </property>
     <property name="checked">
      <bool>true</bool>
@@ -353,38 +353,6 @@
     <double>0.000000000000000</double>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox_4">
-   <property name="geometry">
-    <rect>
-     <x>260</x>
-     <y>260</y>
-     <width>121</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string/>
-   </property>
-   <widget class="QRadioButton" name="rbApplyMaScaling">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>0</y>
-      <width>101</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="toolTipDuration">
-     <number>-3</number>
-    </property>
-    <property name="text">
-     <string>Apply Ma Scaling</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
-  </widget>
   <widget class="QSpinBox" name="sbSteps">
    <property name="geometry">
     <rect>
@@ -541,7 +509,7 @@
    <widget class="QRadioButton" name="rbDisplayRot">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>10</y>
       <width>91</width>
       <height>21</height>
@@ -554,7 +522,7 @@
      <string>Display Rot</string>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
    </widget>
   </widget>

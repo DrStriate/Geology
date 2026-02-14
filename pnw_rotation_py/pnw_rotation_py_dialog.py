@@ -74,7 +74,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.runYhsDataButton.clicked.connect(self.runYhsButtonClicked)
-        self.rbApplyInterpolation.clicked.connect(self.clearData)
         self.rbYHS.toggled.connect(self.setStartPoint)
         self.rbBrothers.toggled.connect(self.setStartPoint)
         self.rbME.toggled.connect(self.setStartPoint)
@@ -93,16 +92,11 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsRotFeatureList = []
         self.closeYhsLayer()
         self.closeRotLayer()
-        if self.rbApplyInterpolation.isChecked():
-            self.interpFunction = "LinearNDInterpolator"
-        else:
-            self.interpFunction = "ClosestEntry"
         return
 
     ####
     # Display Rotation Data
     ####
-
     def rbApplyRotationVClicked(self):
 
         if not self.setupRotDisplayLayer():
