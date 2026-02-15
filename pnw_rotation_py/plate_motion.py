@@ -34,15 +34,19 @@ class PlateMotion:
 
     def __init__(self):
         self.currentState = PState(0,0,0,0,0)
+        self.naState = PState(0,0,0,0,0)
         self.naPlateVe = 0
         self.naPlateVn = 0
         self.dataFile = None
+        self.blockRotationV = []
+        self.NAPlateV = []
 
     def initialize(self, startT, initLat, initLong, naSpeed, naBearing, interpFunction, dataFile = None): # speed in m/yr, bearing is azimuth degrees
         self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
         self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
         self.currentYr = startT
         self.currentState = PState(initLong, initLat, 0, 0, 0)
+        self.naState = PState(initLong, initLat, 0, 0, 0)
         self.interpFunction = interpFunction
         self.dataFile = dataFile
         if self.dataFile:
@@ -57,6 +61,20 @@ class PlateMotion:
         self.currentYr += deltaT
         #verbose = True
         motionSense = -1.0 if deltaT > 0 else 1.0
+
+        # first compute the unrotated update for nastate (the unrotated YHS path)
+        deltaNa.vNorth += motionSense * self.naPlateVn
+        deltaNa.vEast += motionSense * self.naPlateVe
+
+        deltaNalatitude = gh.latutideFromDistN(deltaNa.vNorth * abs(deltaT))
+        deltaNalongitude = gh.longitudeFromDist(self.naState.latitude + deltaNalatitude,
+                                                           deltaNa.vEast * abs(deltaT))
+        self.naState.vNorth = deltaNa.vNorth;
+        self.naState.vEast = deltaNa.vEast;
+        self.naState.latitude = self.naState.latitude + deltaNalatitude
+        self.naState.longitude = self.naState.longitude + deltaNalongitude
+
+        # next copute the combined NA + Block rotation path
         if (applyRotation and rotData):
             appliedMaScaling = 1.0
             if applyNaScaling and self.currentYr < 0.0:
@@ -82,8 +100,6 @@ class PlateMotion:
                 print("Rot Ve: " + str(deltaRot.vEast) + ", Vn: " + str(deltaRot.vNorth) + ", az: ", math.degrees(azimuthR))
 
         # Apply NA Motion
-        deltaNa.vNorth += motionSense * self.naPlateVn
-        deltaNa.vEast += motionSense * self.naPlateVe
 
         if verbose:
             azimuthNA = math.atan2(deltaNa.vEast, deltaNa.vNorth)

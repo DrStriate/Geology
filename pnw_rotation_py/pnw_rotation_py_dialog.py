@@ -25,7 +25,17 @@
 import os
 
 from qgis.PyQt import uic, QtWidgets
-from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature, QgsApplication
+from qgis._core import (QgsMessageLog,
+                        Qgis,
+                        QgsPoint,
+                        QgsVectorLayer,
+                        QgsFeature,
+                        QgsGeometry,
+                        QgsProject,
+                        QgsCategorizedSymbolRenderer,
+                        QgsRendererCategory,
+                        QgsSymbol,
+                        QgsWkbTypes)
 from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
 from qgis.utils import iface
 
@@ -68,7 +78,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsDestLayerSetup = False
         self.yhsDestLayer = None
         self.interpFunction = "LinearNDInterpolator"
-        self.yhsPoints = []
+        self.yhsPoints = [] # NA + Block YHS plot
+        self.naPoints = []  # NA only YHS plot
         self.yhsRotFeatureList = []
         self.plateMotion = PlateMotion()
         
@@ -89,6 +100,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def clearData(self):
         self.yhsPoints = []
+        self.naPoints = []
         self.yhsRotFeatureList = []
         self.closeYhsLayer()
         self.closeRotLayer()
@@ -169,8 +181,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.rotData.setupSampling(self.interpFunction)
                 self.plateMotion.initialize(startT, self.spbStartLatDD.value(), self.spbStartLongDD.value(),
                                     self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value(), self.interpFunction, dataFile)
-                self.yhsPoints.append(
-                    QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value()))  # Set initial point to current state
+                startPoint = QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value())
+                self.yhsPoints.append(startPoint)  # Set initial points
+                self.naPoints.append(startPoint)
 
             for i in range (self.sbSteps.value()):
                 deltaT = self.spbStepMa.value() * 1e6;
@@ -181,6 +194,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
                     break
 
                 self.yhsPoints.append(QgsPoint(currentState.longitude, currentState.latitude))
+                self.naPoints.append(QgsPoint(self.plateMotion.naState.longitude, self.plateMotion.naState.latitude))
 
                 feature = self.rotData.createRotFeature(currentState, 200.0)
                 self.yhsRotFeatureList.append(feature)
@@ -193,34 +207,49 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
         if self.yhsDestLayerSetup:
             return True
-
-        providerName = "memory"    # Or "ogr" for file - based data
-        uri = "LineString?crs=epsg:4326" # Example URI for memory provider
-
         if self.yhsDestLayer is None:
-            self.yhsDestLayer = QgsVectorLayer("LineString?crs=EPSG:4326", PnwRotPyDialog.destYhsLayerName, "memory");
+            layer_name = 'YHS Track'
+            uri = f"LineString?crs=epsg:4326&field=category_id:int&field=name:string"
+            self.yhsDestLayer  = QgsVectorLayer(uri, layer_name, 'memory')
+
         if not self.yhsDestLayer.isValid():
             QgsMessageLog.logMessage("Could not instantiate plugin target layer", tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
-        renderer = self.yhsDestLayer.renderer()
-        lineSymbol = renderer.symbol()
-        lineSymbol.setWidth(0.5)
-        lineSymbol.setColor(QColor(255, 0, 0))
-        self.yhsDestLayerSetup = True
+        categories = []
+        # Category for ID 1 (Red)
+        symbol1 = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
+        symbol1.setColor(QColor("red"))
+        symbol1.setWidth(0.5)
+        category1 = QgsRendererCategory(1, symbol1, 'NA+Block YHS (Red)')
+        categories.append(category1)
 
-        #self.displayRotData()
+        # Category for ID 2 (Blue)
+        symbol2 = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
+        symbol2.setColor(QColor("blue"))
+        symbol2.setWidth(0.5)
+        category2 = QgsRendererCategory(2, symbol2, 'NA only YHS (Blue)')
+        categories.append(category2)
+
+        renderer = QgsCategorizedSymbolRenderer('category_id', categories)
+        self.yhsDestLayer.setRenderer(renderer)
+        self.yhsDestLayerSetup = True
         return True
 
     def displayYhsData(self):
 
         #copy yhs data over
-        feature = QgsFeature(self.yhsDestLayer.fields())
-        feature.setGeometry(QgsGeometry.fromPolyline(self.yhsPoints))
+        feature1 = QgsFeature(self.yhsDestLayer.fields())
+        feature1.setGeometry(QgsGeometry.fromPolyline(self.yhsPoints))
+        feature1.setAttributes([1, 'NA+Block YHS'])
+
+        feature2 = QgsFeature(self.yhsDestLayer.fields())
+        feature2.setGeometry(QgsGeometry.fromPolyline(self.naPoints))
+        feature2.setAttributes([2, 'NA YHS'])
 
         # Add feature to layer
         self.yhsDestLayer.startEditing()
-        self.yhsDestLayer.addFeature(feature)
+        self.yhsDestLayer.addFeatures([feature1, feature2])
         self.yhsDestLayer.commitChanges()
         QgsProject.instance().addMapLayer(self.yhsDestLayer)
 
