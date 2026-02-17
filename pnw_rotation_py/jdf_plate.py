@@ -14,7 +14,7 @@ class JFP:
     clampedSubductionEast = maxSubductionDepth * math.tan(plateAngle / 180 * math.pi)
 
     @staticmethod
-    def leadingEdgeLongitude (date, longitude):   # date and longitude of YHS
+    def leadingEdgeLongitude (date):   # date of YHS
         if date < JFP.InitialSubductionDate:
             return JFP.trenchlongitude
 
@@ -26,7 +26,7 @@ class JFP:
         if plateMotionDepth > JFP.maxSubductionDepth:
             plateMotionEast = JFP.clampedSubductionEast
 
-        plateLongitudeCoverage = gh.longitudeFromDist(JFP.trackingLatitude, plateMotionEast)
+        plateLongitudeCoverage = gh.longitudeFromDistE(JFP.trackingLatitude, plateMotionEast)
         plateEdgeLongitude = JFP.trenchlongitude + plateLongitudeCoverage
 
         # print("date: " + str(date))

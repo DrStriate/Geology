@@ -16,8 +16,6 @@ class PState:
     latitude: float
     vEast: float
     vNorth: float
-    rotIdx: int
-
 
 class RotData:
     rotDataLayerName = 'nshm2023_GPS_velocity'
@@ -114,7 +112,7 @@ class RotData:
             latitude = gh.clamp(latitude, self.YRange["min"], self.YRange["max"])
 
         u, v = self.interp_func(longitude, latitude)
-        return PState(longitude, latitude, u, v, 0)
+        return PState(longitude, latitude, u, v)
 
     # returns PState of closest rot vector
     def getClosestRotEntry(self, longitude, latitude):
@@ -144,38 +142,18 @@ class RotData:
             self.rotFeatureList[closestIdx].attribute(0),
             self.rotFeatureList[closestIdx].attribute(1),
             self.rotFeatureList[closestIdx].attribute(2),
-            self.rotFeatureList[closestIdx].attribute(3),
-            closestIdx)
+            self.rotFeatureList[closestIdx].attribute(3))
 
-        u, v = self.interp_func(longitude, latitude)
-
-        # note index set to zero - need to create a new QFeature array for interpolated rot display TO DO
-        return PState(longitude, latitude, u, v, 0)
-
-    # samping using griddata - not yet complete
-
-    # Google guidance on 'python math library smooth 2d vector field'
-    #
-    # import numpy as np
-    # from scipy.interpolate import griddata
-    # import matplotlib.pyplot as plt
-    #
-    # # Assume you have scattered data points (x, y, u, v)
-    # # x = [...], y = [...], u = [...], v = [...]
-    #
-    # # Create a new, regular mesh grid for the smoothed field
-    # xx, yy = np.meshgrid(np.linspace(min(x), max(x), 50),
-    #                      np.linspace(min(y), max(y), 50))
-    #
-    # points = np.transpose(np.vstack((x, y)))
-    #
-    # # Interpolate the U and V components onto the new grid
-    # u_interp = griddata(points, u, (xx, yy), method='cubic')
-    # v_interp = griddata(points, v, (xx, yy), method='cubic')
-    #
-    # # Plot the smoothed vector field
-    # # plt.quiver(xx, yy, u_interp, v_interp)
-    # # plt.show()
+    def getRotationV(self, longitude, latitude, interpolate):
+        if (not interpolate):
+            # get the closest rotation entry velocity for current location
+            rotEntry = self.getClosestRotEntry(longitude, latitude)
+        else:  # Interpolated
+            rotEntry = self.getLinearInterpSample(longitude, latitude)
+        if rotEntry is None:
+            print('No close rotation entry found')
+            return [0, 0]
+        return[rotEntry.vEast / 1000.0, rotEntry.vNorth / 1000.0]  # m / yr
 
     def interpTest(self):
         x, y, u, v = [], [], [], []
@@ -210,17 +188,17 @@ class RotData:
             print("No interp found")
         return
 
-    def createRotFeature(self, pState, v_scaling = 1.0):
+    def createRotFeature(self, pLoc, pDist, d_scaling = 1.0):
         # --- Create a new QgsFeature instance ---
         new_feature = QgsFeature(self.rotSourceFields)
-        geometry = QgsGeometry.fromPointXY(QgsPointXY(pState.longitude, pState.latitude))
+        geometry = QgsGeometry.fromPointXY(QgsPointXY(pLoc.long, pLoc.lat))
 
         # Assign the created geometry to the feature
         new_feature.setGeometry(geometry)
 
         # --- Set the Attributes ---
         # Provide a list of values that match the field order defined above
-        attributes = [pState.longitude, pState.latitude, pState.vEast * v_scaling, pState.vNorth * v_scaling]
+        attributes = [pLoc.long, pLoc.lat, pDist.East * d_scaling, pDist.North * d_scaling]
 
         # Assign the attributes to the feature
         new_feature.setAttributes(attributes)
