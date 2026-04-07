@@ -1,10 +1,12 @@
 import math
-from rot_data import RotData
-from geo_helper import GeoHelper as gh
+
+from .rot_data import RotData
+from .geo_helper import GeoHelper as gh
+
 import csv
 import os
 
-def main():
+def test():
     rotData = RotData()
     rotData.load()
     rotData.setupSampling("LinearNDInterpolator")
@@ -59,7 +61,4 @@ def calculateGeoMagMove (point, R, T): #r in degrees, T in Ma returns m/yr
     d = r * math.atan(math.radians(R/(T*1e6))) # m / yr
     return d
 
-if __name__ == "__main__":
-    # The return value of main() is passed to sys.exit()
-    # to provide a proper exit code to the operating system.
-    sys.exit(main())
+

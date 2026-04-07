@@ -3,7 +3,6 @@ from qgis.core import QgsFeature, QgsPointXY,QgsGeometry
 from qgis.PyQt.QtCore import QVariant, QDateTime, Qt
 
 from dataclasses import dataclass
-from scipy.interpolate import griddata
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
@@ -53,7 +52,7 @@ class RotData:
         dataLayers = QgsProject.instance().mapLayersByName(self.rotDataLayerName)
         if len(dataLayers) == 0 :
             QgsMessageLog.logMessage('Could not access source data layer' +
-                                     self.rotDataLayerName, tag=RotData.name, level=Qgis.Info)
+                                     self.rotDataLayerName, tag="", level=Qgis.Info)
             return False
 
         self.rotSourceLayer = dataLayers[0]

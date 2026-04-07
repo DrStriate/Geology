@@ -42,7 +42,6 @@ from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion
 from .testGPSvsGeoMag import test
-from pnw_package import geo_helper as gh
 
 # Important constants
 NA_Speed = 38e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
