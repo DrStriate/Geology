@@ -1,4 +1,5 @@
 import math
+from haversine import haversine, Unit
 
 EarthRadius = 6371.01 * 1000  # m
 
@@ -24,6 +25,11 @@ class GeoHelper:
         latOut = GeoHelper.latitudeFromDistN(dn) + latitude
         longOut = GeoHelper.longitudeFromDistE(latOut, de) + longitude
         return [latOut, longOut]
+
+    def DistanceFromLatLong(point1, point2): # (lat, lon)
+        return haversine(point1, point2)
+
+
 
 
 

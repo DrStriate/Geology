@@ -41,6 +41,8 @@ from qgis.utils import iface
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion
+from .testGPSvsGeoMag import test
+from pnw_package import geo_helper as gh
 
 # Important constants
 NA_Speed = 38e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
@@ -49,6 +51,7 @@ YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67
 Brothers_Lat = 47.652      # Mount Olympus
 Brothers_Long = -123.141
+
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -91,6 +94,15 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.spbNaPlateSpeed.setValue(NA_Speed)
         self.rotData.load()
         self.setupRotDisplayLayer()
+
+        # plugin_dir = os.path.dirname(__file__)
+        # script_path = os.path.join(plugin_dir, "testGPSvsGeoMag.py")
+        # print(script_path)
+        # with open(script_path, 'r') as f:
+        #     exec(f.read())
+
+        #test()
+
         return
 
     def clearData(self):
@@ -149,15 +161,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         return True
 
     def displayRotData(self):
-        if self.rbApplyRotationV.isChecked():
-            if not self.rotDisplayLayerSetup:
-                self.setupRotDisplayLayer()
-            if self.rbDisplayRot.isChecked():
-                self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
-            else:
-                self.rotDestLayer.dataProvider().truncate()
-            QgsProject.instance().addMapLayer(self.rotDestLayer)
-            self.rotDestLayer.triggerRepaint()
+        if not self.rotDisplayLayerSetup:
+            self.setupRotDisplayLayer()
+        if self.rbDisplayRot.isChecked():
+            self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
+        else:
+            self.rotDestLayer.dataProvider().truncate()
+        QgsProject.instance().addMapLayer(self.rotDestLayer)
+        self.rotDestLayer.triggerRepaint()
 
     ####
     # run Yhs Button
@@ -183,7 +194,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             for i in range (self.sbSteps.value()):
                 deltaT = self.spbStepMa.value() * 1e6
                 locYhs = self.plateMotion.getNextState(deltaT,  self.rotData,
-                                    self.rbApplyMaScaling.isChecked(), self.rbApplyRotationV.isChecked())
+                                    self.rbApplyMaScaling.isChecked())
                 if not locYhs:
                     print("Something went wrong. No update to track")
                     break
@@ -194,7 +205,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
                         and self.rbShowJdFOcclusion.isChecked()):
                     self.yhsOccludedPoints.append(QgsPoint(locYhs.long, locYhs.lat))
 
-                self.naPoints.append(QgsPoint(self.plateMotion.locNa.long, self.plateMotion.locNa.lat))
+                if self.rbShowNA.isChecked():
+                    self.naPoints.append(QgsPoint(self.plateMotion.locNa.long, self.plateMotion.locNa.lat))
 
                 feature = self.rotData.createRotFeature(locYhs, self.plateMotion.distRot, 200.0 / -deltaT)
                 self.yhsRotFeatureList.append(feature)

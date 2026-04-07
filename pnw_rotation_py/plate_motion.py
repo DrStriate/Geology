@@ -32,7 +32,7 @@ class PlateMotion:
     # need to validate and refine these data using current studies
     ScalingMa = [
         1.0, # 0 Ma (current)
-        2,0, # 5 Ma
+        2.0, # 5 Ma
         4.0, # 10 Ma...
         6.0, # 15 Ma
         9.0, # 20 Ma
@@ -42,6 +42,25 @@ class PlateMotion:
         5.0, # 40 Ma
         4.5, # 45 Ma
         4.0] # 50 Ma
+
+    # ScalingMa = [
+    # 1.0,  # 0 Ma (current)
+    # 1.5,  # 5 Ma
+    # 2.0,  # 10 Ma - 12 Ma 1.95
+    # 3.8,  # 15 Ma - 15 Ma 2.66
+    # 3.5,  # 20 Ma
+    # 3.0,  # 25 Ma
+    # 2.5,  # 30 Ma
+    # 2.0,  # 35 Ma
+    # 2.0,  # 40 Ma
+    # 2.0,  # 45 Ma = 45 MA ~2.0
+    # 2.0]  # 50 Ma
+
+    def sqr(x):
+        return x * x
+
+    def scalingMa(self, Ma):
+        return -0.0088 * Ma * Ma + 0.4766 * Ma + 1;
 
     def __init__(self):
         self.locYhs = PLoc(0, 0)
@@ -65,7 +84,7 @@ class PlateMotion:
         #     dataFile.write("long, lat, Na-e, Na-n, Rot-e, Rot-n, Rot-idx, Delta-e, Delta-n, Delta-long, Delta-lat\n")
         return self.locYhs
 
-    def getNextState(self, deltaT, rotData, applyNaScaling, applyRotation, verbose=False):
+    def getNextState(self, deltaT, rotData, applyNaScaling, verbose=False):
         deltaDistNa = PDist(0,0)        # NA Plate component of delta dist
         deltaLocNa = PLoc(0,0)
         deltaDistYhs = PDist(0,0)       # combined delta vector
@@ -85,13 +104,15 @@ class PlateMotion:
         self.locNa.long +=  deltaLocNa.long
 
         # next compute the block rotation change
-        if (applyRotation and rotData):
+        if (rotData):
             rotV = rotData.getRotationV(self.locYhs.long, self.locYhs.lat,
                                         self.interpFunction != "ClosestEntry")
-            appliedMaScaling = 1.0
-            if applyNaScaling and self.currentYr < 0.0:
-                scaleIdx = min(-self.currentYr / 5.0e6,len(self.ScalingMa) -1.0)
-                appliedMaScaling = np.interp(scaleIdx, np.arange(len(self.ScalingMa)), self.ScalingMa)
+            # appliedMaScaling = 1.0
+            # if applyNaScaling and self.currentYr < 0.0:
+            #     scaleIdx = min(-self.currentYr / 5.0e6,len(self.ScalingMa) -1.0)
+            #     appliedMaScaling = np.interp(scaleIdx, np.arange(len(self.ScalingMa)), self.ScalingMa)
+
+            appliedMaScaling = self.scalingMa(-self.currentYr / 1.0e6)
 
             self.distRot.East  = motionSense * rotV[0] * appliedMaScaling  * abs(deltaT)# m / yr
             self.distRot.North = motionSense * rotV[1] * appliedMaScaling  * abs(deltaT)

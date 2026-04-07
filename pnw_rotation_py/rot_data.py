@@ -26,8 +26,8 @@ class RotData:
     YSize = (YRange["max"] - YRange["min"]) / XYSteps
 
     #RotEntryExclusions = [] # no outliers taken out
-    #RotEntryExclusions = [438, 3659] # clear outliers
-    RotEntryExclusions = [2425, 438, 3659] # more consistent final path
+    RotEntryExclusions = [438, 3659] # clear outliers
+    #RotEntryExclusions = [2425, 438, 3659] # more consistent final path
 
     def __init__(self):
         self.rotSourceLayer = None
