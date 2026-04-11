@@ -2,35 +2,39 @@ import csv
 import sys
 import numpy as np
 from geo_helper import GeoHelper as gh
+import matplotlib.pyplot as plt
 
 def main():
-    gh.clamp(1,2,3)
+    labels = []
     source = input("Enter source: 1 - Wells simpson, 2 - large set, 3 - quadratic test")
     if source == "1":
         print("parameters from csv from Wells Simpson paper (edited)")
-        file_path = "data/testData.csv"
+        file_path = "data/WellsSimpson2001.csv"
+        title = file_path;
         print(f"Selected file: {file_path}")
         with open(file_path, mode='r', newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             #print(reader.fieldnames)
-            TR = []
+            RT = []
             for row in reader:
-                if row["R"] != "" and row["T"] != "":
-                    TR.append([float(row["R"]),float(row["T"])])
-
+                if row["R"] != "" and row["T"] != "" and row["Use"] == "Y":
+                    RT.append([float(row["R"]),float(row["T"])])
+                    labels.append(row["Tag"])
     if source == "2":
         print("test parameters from csv using published paleo")
         file_path = "data/Unit,Sub-unitSite,Age_Ma,Rotation_d.csv"
+        title = file_path;
         print(f"Selected file: {file_path}")
         with open(file_path, mode='r', newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             #print(reader.fieldnames)
-            TR = []
+            RT = []
             for row in reader:
                 if row["Rotation_deg"] != "" and row["Age_Ma"] != "":
-                    TR.append([float(row["Rotation_deg"]), float(row["Age_Ma"])])
+                    RT.append([float(row["Rotation_deg"]), float(row["Age_Ma"])])
 
     if source == "3":
+        title = "quadratic fit test"
         print("test parameters from quadratic fit to graph:")
         a = -0.0088 # from quadratic fit
         b = 0.4766  # from quadratic fit
@@ -38,18 +42,54 @@ def main():
         print("a = ", a)
         print("b = ", b)
         print("w_o = ", w_0)
-        TR = createTestDataSet(a, b, w_0, 50, 10)
+        RT = createTestDataSet(a, b, w_0, 50, 10)
 
-    x = calculateRateCoeff(TR, normalize=True)
-    print("x: ", x)
+    c = calculateRateCoeff(RT, normalize=False)
+    print("coeffeciante c: ", c)
 
-def calculateRateCoeff(trArray, normalize = True):
-    T1 = T2 = T3 = T4 = T5 = T6 = RT1 = RT2 = RT3 = 0.0
+    # Create the plot2
+    #plt.xlim(left=0)  
+    fig, ax1 = plt.subplots()
+
+    Ri = col(RT, 0)
+    Ti = col(RT, 1)
+    ax1.scatter(Ti, Ri, label='Paleomag Data', color='blue')
+    ax1.set_ylim(0)
+    for i, txt in enumerate(labels):
+        pad = 1
+        ax1.annotate(txt, (Ti[i] + pad, Ri[i] + pad))
+    ax1.set_ylabel('Paleo Rot (Deg)', color='tab:blue')
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+
+    ax2 = ax1.twinx()
+    T = np.linspace(0, 50, 11)
+    R = calculateRotationFromCoeff(c, T)
+    ax2.plot(T, R, color='orange', linestyle='--')
+    ax2.set_ylim(0)
+    ax2.set_xlabel('T (Ma)')
+    ax2.set_ylabel('Quadratic Gain', color='tab:orange')
+
+    # 3. Add details
+    plt.title("Gain Curve From " + title) 
+    plt.legend()
+    plt.grid(True)
+
+    # 4. Display or save
+    plt.show()  # Opens a window to show the plot
+    # plt.savefig('my_plot.png') # Saves to file
     
-    for TR in trArray:
-        T = TR[1]
-        R = TR[0]
-        print (TR)
+    return
+
+def col(maRTix, colNo):
+    return [row[colNo] for row in maRTix]
+
+def calculateRateCoeff(RTArray, normalize = True):
+    T1 = T2 = T3 = T4 = T5 = T6 = RT1 = RT2 = RT3 = 0.0
+
+    for RT in RTArray:
+        T = RT[1]
+        R = RT[0]
+        # print (RT)
         T1 += T
         T2 += pow(T, 2)
         T3 += pow(T, 3)
@@ -57,15 +97,16 @@ def calculateRateCoeff(trArray, normalize = True):
         T5 += pow(T, 5)
         T6 += pow(T, 6)
 
-        RT1 += R * T
-        RT2 += R * T * T
-        RT3 += R * T * T * T
+        RT1 += R * T / 1.0
+        RT2 += R * T * T / 2.0
+        RT3 += R * T * T * T / 3.0
 
     A = np.array([
-        [T6 / 3, T5 / 2, T4],
-        [T5 / 3, T4 / 2, T3],
-        [T4 / 3, T3 / 2, T2]
+        [T6 / 9.0, T5 / 6.0, T4 / 3.0],
+        [T5 / 6.0, T4 / 4.0, T3 / 2.0],
+        [T4 / 3.0, T3 / 2.0, T2 / 1.0]
     ])
+
     #print("A: ", A)
 
     b = np.array([RT3, RT2, RT1])
@@ -76,6 +117,12 @@ def calculateRateCoeff(trArray, normalize = True):
         x = x / x[2]
     return x
 
+def calculateRotationFromCoeff(c, Tary):
+    R = []
+    for T in Tary:
+        R.append(T * T * c[0] + T * c[1] + c[2])
+    return R
+    
 def createTestDataSet(a, b, w_0, tMax, N):
     RT = []
     deltaT = tMax / N
