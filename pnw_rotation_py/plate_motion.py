@@ -60,7 +60,8 @@ class PlateMotion:
         return x * x
 
     def scalingMa(self, Ma):
-        return -0.0088 * Ma * Ma + 0.4766 * Ma + 1;
+        c = [-0.00201853,  0.06472946,  1.10872658]
+        return c[0] / c[2] * Ma * Ma + c[1] / c[2] * Ma + 1;
 
     def __init__(self):
         self.locYhs = PLoc(0, 0)
