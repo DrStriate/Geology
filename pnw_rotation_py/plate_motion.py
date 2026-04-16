@@ -1,8 +1,6 @@
 # Calculates estimated NA plate motion based on combined plate velocity and rotation data
 from dataclasses import dataclass
 import math
-import numpy as np
-from scipy.spatial.distance import pdist
 
 from .geo_helper import GeoHelper as gh
 
@@ -59,9 +57,12 @@ class PlateMotion:
     def sqr(x):
         return x * x
 
-    def scalingMa(self, Ma):
-        c = [-0.00201853,  0.06472946,  1.10872658]
-        return c[0] / c[2] * Ma * Ma + c[1] / c[2] * Ma + 1;
+    def scalingMa(self, Ma, normalize = True):
+        c = [-0.0088,  0.4766,  1.0]
+        if normalize:
+            return c[0] / c[2] * Ma * Ma + c[1] / c[2] * Ma + 1
+        else:
+            return c[0] * Ma * Ma + c[1] * Ma + c[2]
 
     def __init__(self):
         self.locYhs = PLoc(0, 0)
@@ -70,8 +71,7 @@ class PlateMotion:
         self.naPlateVe = 0
         self.naPlateVn = 0
         self.dataFile = None
-        self.blockRotationV = []
-        self.NAPlateV = []
+        self.OC_NAws  = {"lat" : 45.54, "lon" : 119.6, "AngVel": 1.32}
 
     def initialize(self, startT, initLat, initLong, naSpeed, naBearing, interpFunction, dataFile = None): # speed in m/yr, bearing is azimuth degrees
         self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
@@ -85,7 +85,7 @@ class PlateMotion:
         #     dataFile.write("long, lat, Na-e, Na-n, Rot-e, Rot-n, Rot-idx, Delta-e, Delta-n, Delta-long, Delta-lat\n")
         return self.locYhs
 
-    def getNextState(self, deltaT, rotData, applyNaScaling, verbose=False):
+    def getNextState(self, deltaT, rotData, applyNaScaling, useGpsData, verbose=False):
         deltaDistNa = PDist(0,0)        # NA Plate component of delta dist
         deltaLocNa = PLoc(0,0)
         deltaDistYhs = PDist(0,0)       # combined delta vector
@@ -104,24 +104,30 @@ class PlateMotion:
         self.locNa.lat +=  deltaLocNa.lat
         self.locNa.long +=  deltaLocNa.long
 
-        # next compute the block rotation change
-        if (rotData):
-            rotV = rotData.getRotationV(self.locYhs.long, self.locYhs.lat,
+        # next compute the block rotation change depending on rot model 
+        if useGpsData or self.locYhs.long > -119: # use gps if east of Eigen pole
+            rotV, isValid = rotData.getRotationV(self.locYhs.long, self.locYhs.lat,
                                         self.interpFunction != "ClosestEntry")
-            # appliedMaScaling = 1.0
-            # if applyNaScaling and self.currentYr < 0.0:
-            #     scaleIdx = min(-self.currentYr / 5.0e6,len(self.ScalingMa) -1.0)
-            #     appliedMaScaling = np.interp(scaleIdx, np.arange(len(self.ScalingMa)), self.ScalingMa)
+            
+        else: #using Wells Simpson 2001 Eigen pole for rotation
+            rotV = gh.getPoleRotationV(self.locYhs.lat, self.locYhs.long)
 
+        # appliedMaScaling = 1.0
+        # if applyNaScaling and self.currentYr < 0.0:
+        #     scaleIdx = min(-self.currentYr / 5.0e6,len(self.ScalingMa) -1.0)
+        #     appliedMaScaling = np.interp(scaleIdx, np.arange(len(self.ScalingMa)), self.ScalingMa)
+
+        if applyNaScaling:
             appliedMaScaling = self.scalingMa(-self.currentYr / 1.0e6)
+        else:
+            appliedMaScaling = 1.0
 
-            self.distRot.East  = motionSense * rotV[0] * appliedMaScaling  * abs(deltaT)# m / yr
-            self.distRot.North = motionSense * rotV[1] * appliedMaScaling  * abs(deltaT)
+        self.distRot.East  = motionSense * rotV[0] * appliedMaScaling  * abs(deltaT)# m / yr
+        self.distRot.North = motionSense * rotV[1] * appliedMaScaling  * abs(deltaT)
 
-            if verbose:
-                azimuthR = math.atan2(self.distRot.East, self.distRot.North)
-                print("Rot De: " + str(self.distRot.East) + ", Dn: " + str(self.distRot.North) + ", az: ", math.degrees(azimuthR))
-
+        if verbose:
+            azimuthR = math.atan2(self.distRot.East, self.distRot.North)
+            print("Rot De: " + str(self.distRot.East) + ", Dn: " + str(self.distRot.North) + ", az: ", math.degrees(azimuthR))
         # Apply NA Motion
         if verbose:
             azimuthNA = math.atan2(deltaDistNa.East, deltaDistNa.North)
@@ -160,6 +166,18 @@ class PlateMotion:
         #         f"{deltaState.longitude:.4f}" + ", " +
         #         f"{deltaState.latitude:.4f}" + "\n")
         return self.locYhs
+    
+    # def getPoleRotationV(self, lon, lat): 
+    #     OC_NAws = {"lat" : 45.54, "lon" : -119.6, "AngVel": 1.32} # OC_NA Eigen pole from Wells & Simpson 2001
+    #     g = Geod(ellps='WGS84') 
+    #     fwd_azimuth, back_azimuth, R = g.inv( OC_NAws["lon"],OC_NAws["lat"], lon, lat)
+    #     p_hat = (np.cos(np.radians(fwd_azimuth)), np.sin(np.radians(fwd_azimuth))) # unit vector from lat lon
+    #     d_hat = (p_hat[1], -p_hat[0]) # transpose is the rotation direction
+    #     d = R * np.tan(np.radians(OC_NAws["AngVel"])) * 1E-6 # convert Ma angle to annual
+    #     V = (d_hat[0] * d, d_hat[1] * d)
+    #     return V
+
+        
 
 
 

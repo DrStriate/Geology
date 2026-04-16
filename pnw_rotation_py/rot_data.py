@@ -149,10 +149,10 @@ class RotData:
             rotEntry = self.getClosestRotEntry(longitude, latitude)
         else:  # Interpolated
             rotEntry = self.getLinearInterpSample(longitude, latitude)
-        if rotEntry is None:
+        if rotEntry is None or np.isnan(rotEntry.vEast) or np.isnan(rotEntry.vNorth):
             print('No close rotation entry found')
-            return [0, 0]
-        return[rotEntry.vEast / 1000.0, rotEntry.vNorth / 1000.0]  # m / yr
+            return [0, 0], False
+        return[rotEntry.vEast / 1000.0, rotEntry.vNorth / 1000.0], True  # m / yr
 
     def interpTest(self):
         x, y, u, v = [], [], [], []

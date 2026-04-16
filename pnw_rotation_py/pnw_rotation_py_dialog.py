@@ -193,7 +193,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             for i in range (self.sbSteps.value()):
                 deltaT = self.spbStepMa.value() * 1e6
                 locYhs = self.plateMotion.getNextState(deltaT,  self.rotData,
-                                    self.rbApplyMaScaling.isChecked())
+                                    self.rbApplyMaScaling.isChecked(),
+                                    self.rbGpsModel.isChecked())
                 if not locYhs:
                     print("Something went wrong. No update to track")
                     break
@@ -211,7 +212,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.yhsRotFeatureList.append(feature)
 
             self.displayYhsData()
-            if self.rbDisplayRot.isChecked() and self.rbApplyRotationV.isChecked():
+            if self.rbDisplayRot.isChecked():
                 self.displayRotData()
         return
 
