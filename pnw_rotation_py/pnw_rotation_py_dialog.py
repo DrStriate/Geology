@@ -44,7 +44,7 @@ from .plate_motion import PlateMotion
 from .testGPSvsGeoMag import test
 
 # Important constants
-NA_Speed = 38e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
+NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
 NA_Bearing = 241.0  # degrees azimuth
 YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67

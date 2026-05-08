@@ -4,10 +4,6 @@ import math
 
 from .geo_helper import GeoHelper as gh
 
-# qGis versoion
-from .geo_helper import GeoHelper
-# test version
-#from geo_helper import geoHelper
 
 # Plate motion is measuring the change in position of an inertial reference point (e.g. the YHS) on the surface
 # of the NA Plate (lat/long). So a motion of the plate will result in the opposite motion of that point
@@ -58,7 +54,10 @@ class PlateMotion:
         return x * x
 
     def scalingMa(self, Ma, normalize = True):
-        c = [-0.0088,  0.4766,  1.0]
+        # c = [-0.00201853,  0.06472946,  1.10872658] # Wells-Simpson 2001 data
+        c = [ 1.41479993e-03, -8.41400103e-02,  2.00878470e+00] # large set
+        #c = [-0.0088,  0.4766,  1.0] # Miocene boost
+        
         if normalize:
             return c[0] / c[2] * Ma * Ma + c[1] / c[2] * Ma + 1
         else:
@@ -122,9 +121,8 @@ class PlateMotion:
         else:
             appliedMaScaling = 1.0
 
-        self.distRot.East  = motionSense * rotV[0] * appliedMaScaling  * abs(deltaT)# m / yr
+        self.distRot.East  = motionSense * rotV[0] * appliedMaScaling  * abs(deltaT)  # m / yr
         self.distRot.North = motionSense * rotV[1] * appliedMaScaling  * abs(deltaT)
-
         if verbose:
             azimuthR = math.atan2(self.distRot.East, self.distRot.North)
             print("Rot De: " + str(self.distRot.East) + ", Dn: " + str(self.distRot.North) + ", az: ", math.degrees(azimuthR))

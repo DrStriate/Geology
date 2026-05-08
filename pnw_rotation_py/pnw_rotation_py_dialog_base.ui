@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>PnwRotPyDialogBase</class>
  <widget class="QDialog" name="PnwRotPyDialogBase">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -180,6 +183,9 @@
     <string/>
    </property>
    <widget class="QRadioButton" name="rbApplyMaScaling">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -195,7 +201,7 @@
      <string>Apply Ma Scaling</string>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
    </widget>
   </widget>
