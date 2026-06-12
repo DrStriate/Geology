@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 def main():
     labels = [] 
-    RT = []
+    R = []
+    T = []
 
     source = input("Enter source: 1 - Wells Simpson, 2 - large set, 3 - quadratic test")
     if source == "1":
@@ -18,19 +19,21 @@ def main():
             reader = csv.DictReader(file)
             for row in reader:
                 if row["R"] != "" and row["T"] != "" and row["Use"] == "Y":
-                    RT.append([float(row["R"]),float(row["T"])])
+                    R.append(float(row["R"]))
+                    T.append(float(row["T"]))
                     labels.append(row["Tag"])
 
     if source == "2":
         print("test parameters from csv using published paleo")
-        file_path = "data/Unit,Sub-unitSite,Age_Ma,Rotation_d.csv"
+        file_path = "data/Large paleo rot set.csv"
         title = file_path;
         print(f"Selected file: {file_path}")
         with open(file_path, mode='r', newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if row["Rotation_deg"] != "" and row["Age_Ma"] != "":
-                    RT.append([float(row["Rotation_deg"]), float(row["Age_Ma"])])
+                if row["Rotation_deg"] != "" and row["Age_Ma"] != "" and int(row["Quality"]) > 0:
+                    R.append(float(row["Rotation_deg"]))
+                    T.append(float(row["Age_Ma"]))
 
     if source == "3":
         title = "quadratic fit test"
@@ -44,21 +47,19 @@ def main():
         RT = createTestDataSet(a, b, w_0, 50, 10)
 
     #print ("RT: ", RT)
-    c = calculateRateCoeff(RT, normalize=False)
-    print("coeffeciante c: ", c)
-    Erms = calculateRegressionRmsError(c, RT)
+    c = calculateRateCoeff(R, T, normalize=False)
+    print("coeffeciants c: ", c)
+    Erms = calculateRegressionRmsError(c, R, T)
     print("Calibration residual rms: ", Erms)
 
     # Create the plots 
     # Paleomag data plot
     fig, ax1 = plt.subplots()
-    Ri = col(RT, 0)
-    Ti = col(RT, 1)
-    ax1.scatter(Ti, Ri, label='Paleomag Data', color='blue')
+    ax1.scatter(T, R, label='Paleomag Data', color='blue')
     ax1.set_ylim(0)
     for i, txt in enumerate(labels):
         pad = 1
-        ax1.annotate(txt, (Ti[i] + pad, Ri[i] + pad))
+        ax1.annotate(txt, (T[i] + pad, R[i] + pad))
     ax1.set_ylabel('Total Rotation (Deg)', color='tab:blue')
     ax1.set_xlabel('T (Ma)')
     ax1.tick_params(axis='y', labelcolor='tab:blue')
@@ -66,7 +67,7 @@ def main():
     # quadratic coefficients speed plot
     ax2 = ax1.twinx()
     T = np.linspace(0, 50, 11)
-    w = calculateRotationSpeedFromCoeff(c, T)
+    w = calculateRotationRateFromCoeff(c, T)
     ax2.plot(T, w, color='orange', linestyle='--')
     ax2.set_ylim(0)
     ax2.set_xlabel('T (Ma)')
@@ -75,59 +76,43 @@ def main():
     # quadratic recalculation of total rotation
     Rc = calculateTotalRotationFromCoeff(c, T)
     ax1.plot(T, Rc, color='blue', linestyle='-')
+
+    # calculate average rate over 50 Ma
+    meanRate = sum(w) / len(w)
+    print ("Mean rate = ", meanRate)
     
     # 3. Add details
-    plt.title("Gain Curve From " + title) 
+    plt.title("Rotation Rate Curve From " + title) 
     plt.grid(True)
 
     # 4. Display or save
     plt.show()  # Opens a window to show the plot
     # plt.savefig('my_plot.png') # Saves to file
-    
+
     return
 
-def col(maRTix, colNo):
-    return [row[colNo] for row in maRTix]
+def col(matrix, colNo):
+    return [row[colNo] for row in matrix]
 
-def calculateRateCoeff(RTArray, normalize = False):
-    T1 = T2 = T3 = T4 = T5 = T6 = RT1 = RT2 = RT3 = 0.0
+def calculateRateCoeff(Ri, Ti, normalize = False):
+    Xi = []
+    for i in range(len(Ti)):
+        Xi.append([Ti[i] * Ti[i] * Ti[i] / 3.0, Ti[i] * Ti[i] / 2.0, Ti[i]])
+    
+    X = np.array(Xi)
+    Y = np.array(Ri)
 
-    for RT in RTArray:
-        T = RT[1]
-        R = RT[0]
-        # print (RT)
-        T1 += T
-        T2 += pow(T, 2)
-        T3 += pow(T, 3)
-        T4 += pow(T, 4)
-        T5 += pow(T, 5)
-        T6 += pow(T, 6)
-
-        RT1 += R * T / 1.0
-        RT2 += R * T * T / 2.0
-        RT3 += R * T * T * T / 3.0
-
-    A = np.array([
-        [T6 / 9.0, T5 / 6.0, T4 / 3.0],
-        [T5 / 6.0, T4 / 4.0, T3 / 2.0],
-        [T4 / 3.0, T3 / 2.0, T2 / 1.0]
-    ])
-
-    #print("A: ", A)
-
-    b = np.array([RT3, RT2, RT1])
+    A = X.T @ X
+    b = X.T @ Y
 
     x = np.linalg.solve(A, b)
+
     if (normalize):
         x = x / x[2]
 
-    # test inversion
-    # print("b: ", b)
-    # print("Ax: ", np.matmul(A, x) )
-
     return x
 
-def calculateRotationSpeedFromCoeff(c, Tary):
+def calculateRotationRateFromCoeff(c, Tary):
     w = []
     for T in Tary:
         w.append(pow(T, 2) * c[0] + T * c[1] + c[2])
@@ -139,14 +124,12 @@ def calculateTotalRotationFromCoeff(c, Tary):
         R.append((float)(pow(T,3) * c[0] / 3.0 + pow(T,2) * c[1] / 2.0 + T *c[2]))
     return R
 
-def calculateRegressionRmsError(c, RTlst):
-    RList = [row[0] for row in RTlst]
-    TList = [row[1] for row in RTlst]
-    Rc = calculateTotalRotationFromCoeff(c, TList)
-    N = len(TList)
+def calculateRegressionRmsError(c, R, T):
+    Rc = calculateTotalRotationFromCoeff(c, T)
+    N = len(T)
     sum = 0
     for i in range(N):
-        e = RList[i] - Rc[i]
+        e = R[i] - Rc[i]
         sum = e * e
     rms = np.sqrt(sum) / N
     return rms;
