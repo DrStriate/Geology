@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
+import geopandas as gpd
 
 from .geo_helper import GeoHelper as gh
 
@@ -38,6 +39,12 @@ class RotData:
         self.v_interp = None
         self.interp_func = None
         self.interpFunction = "ClosestEntry"
+        self.gdf = None
+
+    def loadFromFile(self):
+        gpsFIlePath = 'data/NSHM2023_GPS_velocity.zip'
+        self.gdf = gpd.read_file(f"zip://{gpsFIlePath}")
+        return
 
     def clearData(self):
         self.rotFieldList = []

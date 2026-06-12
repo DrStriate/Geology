@@ -1,9 +1,7 @@
 # Calculates estimated NA plate motion based on combined plate velocity and rotation data
 from dataclasses import dataclass
 import math
-
 from .geo_helper import GeoHelper as gh
-
 
 # Plate motion is measuring the change in position of an inertial reference point (e.g. the YHS) on the surface
 # of the NA Plate (lat/long). So a motion of the plate will result in the opposite motion of that point
@@ -57,7 +55,6 @@ class PlateMotion:
         # c = [-0.00201853,  0.06472946,  1.10872658] # Wells-Simpson 2001 data
         c = [ 1.41479993e-03, -8.41400103e-02,  2.00878470e+00] # large set
         #c = [-0.0088,  0.4766,  1.0] # Miocene boost
-        
         if normalize:
             return c[0] / c[2] * Ma * Ma + c[1] / c[2] * Ma + 1
         else:
@@ -80,6 +77,7 @@ class PlateMotion:
         self.locNa = PLoc(initLong, initLat)
         self.interpFunction = interpFunction
         self.dataFile = dataFile
+        self.step = 0
         # if self.dataFile:
         #     dataFile.write("long, lat, Na-e, Na-n, Rot-e, Rot-n, Rot-idx, Delta-e, Delta-n, Delta-long, Delta-lat\n")
         return self.locYhs
@@ -89,6 +87,7 @@ class PlateMotion:
         deltaLocNa = PLoc(0,0)
         deltaDistYhs = PDist(0,0)       # combined delta vector
         deltaLocYhs = PLoc(0,0)
+        self.step += 1
 
         self.currentYr += deltaT
         motionSense = -1.0 if deltaT > 0 else 1.0

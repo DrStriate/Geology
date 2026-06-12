@@ -272,6 +272,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         # Add feature to layer
         self.yhsDestLayer.startEditing()
         self.yhsDestLayer.addFeatures([feature1, feature2, feature3])
+        #self.yhsDestLayer.addFeatures([feature3])
+
         self.yhsDestLayer.commitChanges()
         QgsProject.instance().addMapLayer(self.yhsDestLayer)
 
