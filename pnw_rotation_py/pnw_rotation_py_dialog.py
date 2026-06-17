@@ -41,7 +41,6 @@ from qgis.utils import iface
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion
-from .tests.testGPSvsGeoMag import test
 
 # Important constants
 NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
@@ -93,14 +92,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.spbNaPlateSpeed.setValue(NA_Speed)
         self.rotData.load()
         self.setupRotDisplayLayer()
-
-        # plugin_dir = os.path.dirname(__file__)
-        # script_path = os.path.join(plugin_dir, "testGPSvsGeoMag.py")
-        # print(script_path)
-        # with open(script_path, 'r') as f:
-        #     exec(f.read())
-
-        #test()
 
         return
 
