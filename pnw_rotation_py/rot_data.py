@@ -8,7 +8,7 @@ import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 import geopandas as gpd
 
-from .geo_helper import GeoHelper as gh
+from .src.geo_helper import GeoHelper as gh
 
 @dataclass
 class PState:

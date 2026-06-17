@@ -1,7 +1,7 @@
 # First order simulator of Juan de Fuca plate occlusion of YHS in mantle
 # takes a date (number of Ma ago) and a longitude and determines ii occluded
 import math
-from .geo_helper import GeoHelper as gh
+from .src.geo_helper import GeoHelper as gh
 
 class JFP:
     InitialSubductionDate = -45e6  # Years ca

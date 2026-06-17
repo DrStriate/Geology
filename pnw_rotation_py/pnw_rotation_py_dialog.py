@@ -41,7 +41,7 @@ from qgis.utils import iface
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion
-from .testGPSvsGeoMag import test
+from .tests.testGPSvsGeoMag import test
 
 # Important constants
 NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 

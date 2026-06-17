@@ -34,7 +34,7 @@ class RotData:
         #     print(f"Field: {column_name:<15} | Type: {data_type}")
 
         # 4. Extract Data Vectors (Features)
-        for idx, row in gdf.iterrows():
+        for idx, row in gpd.iterrows():
             print(f"Station {idx} lon: {row.lon:.4f}, lat: {row.lat:.4f}, Ve: {row.Ve:.4f}, Vn: {row.Vn: .4f}")
     return
 
