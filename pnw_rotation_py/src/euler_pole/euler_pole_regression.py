@@ -10,7 +10,7 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs):
       v_east (list/array): East velocity components in mm/yr
       v_north (list/array): North velocity components in mm/yr
     """
-    R = 6371.0E03 # Earth's radius in m
+    R = 6371.0E3 # Earth's radius in m
     
     # Convert input coordinates to radians
     num_stations = len(lats)
@@ -60,19 +60,3 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs):
         "rate (deg/Ma)": omega_deg_myr
     }
 
-# --- Examplwe Usage ---
-sample_lons  = np.array([-90.0, -180.0, 90.0, 0.0])
-# sample_lats  = np.array([0.0, 0.0, 0.0, 0.0])
-# obs_ve = np.array([10.0, 10.0, 10.0, 10.0])
-# obs_vn = np.array([0.0, 0.0, 0.0, 0.0])
-
-sample_lats = np.array([48.23, 45.54, 42.844, 45.54])
-sample_Lons = np.array([-119.6, -115.748, -119.6, -123.452])
-obs_ve = np.array([62.256, 1.5, -66.227, 1.5])
-obs_vn = np.array([0.0, -62.470, 0.0, 62.47]) 
-
-found_pole = fit_euler_pole_linear(sample_lats, sample_lons, obs_ve, obs_vn)
-
-print(f"Latitude: {found_pole['latitude']:.2f}°N")
-print(f"Pole Longitude: {found_pole['longitude']:.2f}°E")
-print(f"Angular Velocity: {found_pole['rate (deg/Ma)']:.4f} °/Myr")
