@@ -29,4 +29,4 @@ def test_euler_kinematics():
   pole_result5 = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
   ek.print_result ("fit_euler_pole_linear", pole_result5)
 
-test_euler_kinematics()
+# test_euler_kinematics()
