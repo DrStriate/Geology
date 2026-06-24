@@ -1,6 +1,6 @@
 import numpy as np
 
-def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs):
+def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True):
     """
     Finds the exact best-fitting Euler pole using linear least squares.
     
@@ -9,6 +9,8 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs):
       lons (list/array): Longitudes of stations in decimal degrees
       v_east (list/array): East velocity components in mm/yr
       v_north (list/array): North velocity components in mm/yr
+
+      align_pole tests for euler pole pointing to incoming n/s hemisphere (i.e Omega pole flip)
     """
     R = 6371.0E3 # Earth's radius in m
     
@@ -19,10 +21,12 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs):
     # Each station provides 2 equations (East and North)
     A = np.zeros((2 * num_stations, 3))
     B = np.zeros(2 * num_stations)
+    sum_lats = 0;
     
     for i in range(num_stations):
         phi = np.radians(lats[i])
         lam = np.radians(lons[i])
+        sum_lats += lats[i]
         
         # East velocity row equations
         A[2*i, 0] = -R * np.sin(phi) * np.cos(lam)
@@ -35,12 +39,19 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs):
         A[2*i+1, 1] = -R * np.cos(lam)
         A[2*i+1, 2] = 0.0
         B[2*i+1] = v_north_obs[i]
+    
+    north_hemisphere = (sum_lats > 0.0)
         
     # Solve the linear system A * omega = B using standard least squares
     # This solves the normal equation: omega = (A^T * A)^(-1) * A^T * B
     omega_cartesian, residuals, rank, s = np.linalg.lstsq(A, B, rcond=None)
     
     wx, wy, wz = omega_cartesian
+
+    if (wz > 0) != north_hemisphere: # if w and incoming data not in the same N/S hemisphere
+        wx = -wx
+        wy = -wy
+        wz = -wz
     
     # Convert the Cartesian angular velocity vector back into Euler Pole parameters
     # 1. Total angular rotation magnitude (rad/yr converted back to deg/Myr)
