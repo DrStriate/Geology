@@ -12,6 +12,7 @@ def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist):
   sample_v_north = [] # mm/ yr
 
   Omega = {"omega": np.radians(euler_pole['omega']), "phi": np.radians(euler_pole['lat']), "lamb": np.radians(euler_pole['long'])}
+  print("")
   for i in range(len(sample_bearings)):
     sample = ek.create_sample(euler_pole['long'], euler_pole['lat'], sample_bearings[i], sample_dist)
     p = {"phi": np.radians(sample['lat']), "lamb": np.radians(sample['lon'])}
@@ -26,7 +27,7 @@ def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist):
 
   return sample_lats, sample_lons, sample_v_east, sample_v_north
 
-def create_random_sample_ring(euler_pole, count, max_dist):
+def create_random_sample_ring(euler_pole, count, max_dist, crop = 1.0):
   rng = np.random.default_rng(seed=42)
   rands = rng.random(size=(count, 2))
 
@@ -37,17 +38,24 @@ def create_random_sample_ring(euler_pole, count, max_dist):
 
   Omega = {"omega": np.radians(euler_pole['omega']), "phi": np.radians(euler_pole['lat']), "lamb": np.radians(euler_pole['long'])}
   print("")
+  max_long =  ek.create_sample(euler_pole['long'], euler_pole['lat'], 90.0, max_dist)['lon']
+  min_long =  ek.create_sample(euler_pole['long'], euler_pole['lat'], 270.0, max_dist)['lon']
+  crop_long = min_long + (max_long - min_long) * crop
+  cropped_samples = 0;
   for i in range(len(rands)):
 
     sample = ek.create_sample(euler_pole['long'], euler_pole['lat'], 360.0 * rands[i][0], max_dist * rands[i][1])
-    p = {"phi": np.radians(sample['lon']), "lamb": np.radians(sample['lat'])}
+    p = {"phi": np.radians(sample['lat']), "lamb": np.radians(sample['lon'])}
     v = ek.calculate_v_from_Eigen_pole(Omega, p); 
 
-    sample_lats.append(sample['lat'])
-    sample_lons.append(sample['lon'])
-    sample_v_east.append(v['v_e'])
-    sample_v_north.append(v['v_n'])
-    print(f"{i}: sample['lat']: {sample['lat']:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
+    if sample['lon'] < crop_long:
+      sample_lats.append(sample['lat'])
+      sample_lons.append(sample['lon'])
+      sample_v_east.append(v['v_e'])
+      sample_v_north.append(v['v_n'])
+      # print(f"{i}: sample['lat']: {sample['lat']:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
+      cropped_samples += 1
+  #print(f"samples = {cropped_samples} out of {count}")
   return sample_lats, sample_lons, sample_v_east, sample_v_north
 
 def get_GPS_rotation_data (center_lat, center_long, max_distance):
@@ -84,19 +92,35 @@ def test_euler_pole_from_quad():
   assert pole_result['latitude'] == pytest.approx(euler_pole['lat'])
   assert pole_result['longitude'] == pytest.approx(euler_pole['long'])
 
-# def test_euler_pole_from_random_ring():
-#   #test setup
-#   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
-#   sample_count = 4
-#   sample_dist = 50000 # m
+def test_euler_pole_from_random_disk():
+  #test setup
+  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  sample_count = 400
+  sample_dist = 50000 # m
+  crop = 1.0 # no crop
 
-#   sample_lats, sample_lons, sample_v_east, sample_v_north = create_random_sample_ring(euler_pole, sample_count, sample_dist)
-#   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
-#   #ek.print_result ("fit_euler_pole_linear", pole_result)
+  sample_lats, sample_lons, sample_v_east, sample_v_north = create_random_sample_ring(euler_pole, sample_count, sample_dist, crop)
+  pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
+  # ek.print_result ("fit_euler_pole_linear", pole_result)
 
-#   assert pole_result['rate (deg/Ma)'] == pytest.approx(euler_pole['omega'])
-#   assert pole_result['latitude'] == pytest.approx(euler_pole['lat'])
-#   assert pole_result['longitude'] == pytest.approx(euler_pole['long'])
+  assert pole_result['rate (deg/Ma)'] == pytest.approx(euler_pole['omega'])
+  assert pole_result['latitude'] == pytest.approx(euler_pole['lat'])
+  assert pole_result['longitude'] == pytest.approx(euler_pole['long'])
+
+def test_euler_pole_from_random_cropped_disk():
+  #test setup
+  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  sample_count = 400
+  sample_dist = 50000 # m
+  crop = 0.5 # no crop
+
+  sample_lats, sample_lons, sample_v_east, sample_v_north = create_random_sample_ring(euler_pole, sample_count, sample_dist, crop)
+  pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
+  # ek.print_result ("fit_euler_pole_linear", pole_result)
+
+  assert pole_result['rate (deg/Ma)'] == pytest.approx(euler_pole['omega'])
+  assert pole_result['latitude'] == pytest.approx(euler_pole['lat'])
+  assert pole_result['longitude'] == pytest.approx(euler_pole['long'])
 
 def test_GPS_pole_extraction():
   center_lat = 45.0
