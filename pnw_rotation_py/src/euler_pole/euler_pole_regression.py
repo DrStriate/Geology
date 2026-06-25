@@ -14,7 +14,6 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True
     """
     R = 6371.0E3 # Earth's radius in m
     
-    # Convert input coordinates to radians
     num_stations = len(lats)
     
     # Initialize design matrix A and observation vector B
@@ -24,6 +23,7 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True
     sum_lats = 0;
     
     for i in range(num_stations):
+        # Convert input coordinates to radians
         phi = np.radians(lats[i])
         lam = np.radians(lons[i])
         sum_lats += lats[i]
