@@ -66,8 +66,8 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True
     lon_pole = np.degrees(np.arctan2(wy, wx))
     
     return {
-        "latitude": lat_pole,
-        "longitude": lon_pole,
-        "rate (deg/Ma)": omega_deg_myr
+        "lat": lat_pole,
+        "long": lon_pole,
+        "omega": omega_deg_myr
     }
 

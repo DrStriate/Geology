@@ -95,9 +95,9 @@ def test_euler_pole_from_quad():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   #ek.print_result ("fit_euler_pole_linear", pole_result)
 
-  assert pole_result['rate (deg/Ma)'] == pytest.approx(euler_pole['omega'])
-  assert pole_result['latitude'] == pytest.approx(euler_pole['lat'])
-  assert pole_result['longitude'] == pytest.approx(euler_pole['long'])
+  assert pole_result['omega'] == pytest.approx(euler_pole['omega'])
+  assert pole_result['lat'] == pytest.approx(euler_pole['lat'])
+  assert pole_result['long'] == pytest.approx(euler_pole['long'])
 
 def test_euler_pole_from_random_disk():
   #test setup
@@ -111,9 +111,9 @@ def test_euler_pole_from_random_disk():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("fit_euler_pole_linear", pole_result)
 
-  assert pole_result['rate (deg/Ma)'] == pytest.approx(test_omega)
-  assert pole_result['latitude'] == pytest.approx(euler_pole['lat'])
-  assert pole_result['longitude'] == pytest.approx(euler_pole['long'])
+  assert pole_result['omega'] == pytest.approx(test_omega)
+  assert pole_result['lat'] == pytest.approx(euler_pole['lat'])
+  assert pole_result['long'] == pytest.approx(euler_pole['long'])
 
   x = gn.solve_gauss_newton_2D_transform(sample_lats, sample_lons, sample_v_north, sample_v_east)
   # print(f"x: {x}")
@@ -130,9 +130,9 @@ def test_euler_pole_from_random_cropped_disk():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("fit_euler_pole_linear", pole_result)
 
-  assert pole_result['rate (deg/Ma)'] == pytest.approx(test_omega)
-  assert pole_result['latitude'] == pytest.approx(euler_pole['lat'])
-  assert pole_result['longitude'] == pytest.approx(euler_pole['long'])
+  assert pole_result['omega'] == pytest.approx(test_omega)
+  assert pole_result['lat'] == pytest.approx(euler_pole['lat'])
+  assert pole_result['long'] == pytest.approx(euler_pole['long'])
 
 def test_euler_pole_using_north_rotation():
     #test setup
@@ -147,9 +147,9 @@ def test_euler_pole_using_north_rotation():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   #ek.print_result ("fit_euler_pole_linear", pole_result)
 
-  assert pole_result['rate (deg/Ma)'] == pytest.approx(test_omega)
-  assert pole_result['latitude'] == pytest.approx(eiler_n_pole['lat'])
-  assert pole_result['longitude'] == pytest.approx(eiler_n_pole['long'])
+  assert pole_result['omega'] == pytest.approx(test_omega)
+  assert pole_result['lat'] == pytest.approx(eiler_n_pole['lat'])
+  assert pole_result['long'] == pytest.approx(eiler_n_pole['long'])
 
 def test_GPS_pole_extraction():
   center_lat = 45.0

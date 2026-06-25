@@ -3,8 +3,10 @@ import pytest
 import src.gauss_newton_2d.gauss_newton as gn
 import test_euler_kinematics as tek
 
+# center at lat 512, long 512. Distance to center is 128
 longs = [512, 384, 512, 640]
 lats = [384, 512, 640, 512]
+dist_to_center = 128.0
 
 def test_translation_east():
   #test 1 = translate east
@@ -26,8 +28,8 @@ def test_translation_north():
 
 def test_rotation():
   #test 3 = rotate
-  dtheta = 0.01
-  dp = 128 * np.tan(dtheta)
+  dtheta = 0.01 # degrees (since point data in degrees)
+  dp = dist_to_center * np.tan(dtheta)
   v_e = [-dp, 0.0, dp, 0.0]
   v_n = [0.0, dp, 0.0, -dp]
   x = gn.solve_gauss_newton_2D_transform(lats, longs, v_n, v_e)

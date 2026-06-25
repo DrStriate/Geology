@@ -37,6 +37,6 @@ def calculate_v_from_Eigen_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {
 
 def print_result(name, pole_result):
   print(name)
-  print(f"Latitude:  {pole_result['latitude']:.4f}° N")
-  print(f"Longitude: {pole_result['longitude']:.4f}° E")
-  print(f"Rate:      {pole_result['rate (deg/Ma)']:.4f}° / Myr")
+  print(f"Latitude:  {pole_result['lat']:.4f}° N")
+  print(f"Longitude: {pole_result['long']:.4f}° E")
+  print(f"Rate:      {pole_result['omega']:.4f}° / Myr")
