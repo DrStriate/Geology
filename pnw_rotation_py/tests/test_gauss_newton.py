@@ -38,7 +38,7 @@ def test_rotation():
   #print(f"Rotate X:  {x}")
   assert x['r'] == pytest.approx(dtheta, abs=1e-6)
 
-def test_euler_test_quad(): # Need to reconcile gauss_newton rotations w. Euler rotations
+def test_euler_test_quad():
   #test setup
   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   bearings  = [45.0, 135.0, 225.0, 315.0]
@@ -82,7 +82,7 @@ def test_using_north_rotation():
   crop = 0.5 # 50% cropped out
 
   R = 6371.0E3 # Earth radius in m
-  north_v_for_pole_rot= np.sin(-np.radians(test_omega)) * R
+  north_v_for_pole_rot= np.sin(np.radians(test_omega)) * R
 
   sample_n, sample_e, v_east, v_north = \
     tek.create_random_sample_ring(euler_pole, 

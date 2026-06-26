@@ -27,10 +27,10 @@ def getHat(p): # returns a normal to the lat,long point
     np.sin(p['phi'])
     ])
 
-def get_northerly_easterly_from_lat_long_pts(lat1, lon1, lat2, lon2):
+def get_northerly_easterly_from_lat_long_pts(lon1, lat1, lon2, lat2):
     # inv() expects (lon1, lat1, lon2, lat2)
     # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
-    forward_azimuth, back_azimuth, distance_meters = geod.inv(lon1, lat1, lon2, lat2)
+    forward_azimuth, back_azimuth, distance_meters = geod.inv(lon2, lat2, lon1, lat1)
     
     # Convert azimuth to radians
     azimuth_rad = np.radians(forward_azimuth)

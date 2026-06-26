@@ -24,7 +24,7 @@ def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist, return_l
     v = ek.calculate_v_from_Eigen_pole(Omega, p, Omega['omega']);
     if return_locs_in_meters:
       # convert sample points to meters to match v
-      s_n, s_e = ek.get_northerly_easterly_from_lat_long_pts(sample['lat'], sample['lon'], euler_pole['lat'], euler_pole['long'])
+      s_n, s_e = ek.get_northerly_easterly_from_lat_long_pts(sample['lon'], sample['lat'], euler_pole['long'], euler_pole['lat'])
       sample_e.append(s_e)
       sample_n.append(s_n) 
     else:
@@ -32,8 +32,8 @@ def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist, return_l
       sample_n.append(sample['lat'])
       
     ### BUG = not sure why I have to negate the rot result from solve_gauss.. given clockwise omega rotation 
-    sample_v_east.append(-v['v_e'])
-    sample_v_north.append(-v['v_n'])
+    sample_v_east.append(v['v_e'])
+    sample_v_north.append(v['v_n'])
     #print(f"{i}: sample['lat']: {sample['lat']:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
 
   if return_locs_in_meters:
@@ -73,15 +73,15 @@ def create_random_sample_ring(euler_pole, count,
     if sample['lon'] < crop_long:
       if return_locs_in_meters:
         # convert sample points to meters to match v
-        s_n, s_e = ek.get_northerly_easterly_from_lat_long_pts(sample['lat'], sample['lon'], euler_pole['lat'], euler_pole['long'])
+        s_n, s_e = ek.get_northerly_easterly_from_lat_long_pts(sample['lon'], sample['lat'], euler_pole['long'], euler_pole['lat'])
         sample_e.append(s_e)
         sample_n.append(s_n) 
       else:
         sample_e.append(sample['lon'])
         sample_n.append(sample['lat'])
       
-      sample_v_east.append(-v['v_e'])
-      sample_v_north.append(-v['v_n'])
+      sample_v_east.append(v['v_e'])
+      sample_v_north.append(v['v_n'])
 
     # print(f"{i}: sample['lat']: {sample['lat']:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
     cropped_samples += 1
@@ -139,9 +139,6 @@ def test_euler_pole_from_random_disk():
   assert pole_result['omega'] == pytest.approx(test_omega)
   assert pole_result['lat'] == pytest.approx(euler_pole['lat'])
   assert pole_result['long'] == pytest.approx(euler_pole['long'])
-
-  x = gn.solve_gauss_newton_2D_transform(sample_lats, sample_lons, sample_v_north, sample_v_east)
-  # print(f"x: {x}")
 
 def test_euler_pole_from_random_cropped_disk():
   #test setup
