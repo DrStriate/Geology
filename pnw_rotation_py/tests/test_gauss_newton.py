@@ -49,16 +49,24 @@ def test_euler_test_quad(): # Need to reconcile gauss_newton rotations w. Euler 
   #print(f"\ntest_euler_test_quad x: {x}\n")
   assert x['r'] == pytest.approx(np.radians(euler_pole["omega"]), abs=1e-4)
 
-def test_rot_disk(): # Need to reconcile gauss_newton rotations w. Euler rotations
+def test_rot_disk(): 
   #test 4 = run euler kinematics random disk
   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   sample_count = 400
   sample_dist = 50000 # m
   test_omega = 1.23
-  return_locs_in_meters = True # Current euler pole code takes locs in lat/long
-
-  sample_e, sample_n, v_east, v_north = \
-      tek.create_random_sample_ring(euler_pole, sample_count, sample_dist, test_omega, return_locs_in_meters)
+  return_locs_in_meters = True 
+  
+  sample_n, sample_e, v_east, v_north = \
+      tek.create_random_sample_ring(
+        euler_pole, 
+        sample_count, 
+        sample_dist, 
+        test_omega, 
+        1.0, 
+        None, 
+        return_locs_in_meters)
   x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_east, v_north)
-  #print(f"test_rot_disk x: {x}\n")
+  # print(f"test_rot_disk x: {x}\n")
+  assert x['r'] == pytest.approx(np.radians(test_omega), abs=1e-4)
 
