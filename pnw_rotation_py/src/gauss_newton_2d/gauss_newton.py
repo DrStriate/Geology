@@ -86,24 +86,24 @@
 import numpy as np
 
 # lats and longs should be normalized relatice to center of rotation for best results
-def solve_gauss_newton_2D_transform(lats, longs, v_n, v_e, normalize = True): # degrees and mm/Y units 
-  N = len(lats)
+def solve_gauss_newton_2D_transform(sample_e, sanmple_n, v_e, v_n, normalize = True): # meters and mm/Y units 
+  N = len(sanmple_n)
   x = {'t_x' : 0, 't_y': 0, 's' : 0, 'r' : 0}
   if N < 4: # need at least 4 points to solve
     return x
   
   c = [0.0, 0.0]
   if normalize:
-    c[0] = np.mean(longs)
-    c[1] = np.mean(lats)
+    c[0] = np.mean(sample_e)
+    c[1] = np.mean(sanmple_n)
   
   j = np.zeros((2 * N, 4))
   r = np.zeros(2 * N)
 
   j_idx = 0
   for i in range(N):
-    u = longs[i] - c[0]
-    v = lats[i] - c[1]
+    u = sample_e[i] - c[0]
+    v = sanmple_n[i] - c[1]
 
     # Calculate Jacobian elements for Dx
     j[j_idx, 0] = 1.0

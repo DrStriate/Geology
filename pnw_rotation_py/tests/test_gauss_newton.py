@@ -4,8 +4,8 @@ import src.gauss_newton_2d.gauss_newton as gn
 import test_euler_kinematics as tek
 
 # center at lat 512, long 512. Distance to center is 128
-longs = [512, 384, 512, 640]
-lats = [384, 512, 640, 512]
+sample_e = [512, 384, 512, 640]
+sample_n = [384, 512, 640, 512]
 dist_to_center = 128.0
 
 def test_translation_east():
@@ -13,7 +13,7 @@ def test_translation_east():
   t_e = 1.0
   v_e = [t_e, t_e, t_e, t_e]
   v_n = [0.0, 0.0, 0.0, 0.0]
-  x = gn.solve_gauss_newton_2D_transform(lats, longs, v_n, v_e)
+  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n)
   #print(f"east translate X: {x}\n")
   assert x['t_x'] == t_e
 
@@ -22,30 +22,32 @@ def test_translation_north():
   t_n = 1.0
   v_e = [0.0, 0.0, 0.0, 0.0]
   v_n = [t_n, t_n, t_n, t_n]
-  x = gn.solve_gauss_newton_2D_transform(lats, longs, v_n, v_e)
+  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n)
   #print(f"North translate X: {x}\n")
   assert x['t_y'] == t_n
 
 def test_rotation():
   #test 3 = rotate
-  dtheta = 0.01 # degrees (since point data in degrees)
+  dtheta = 0.01 # radians 
   dp = dist_to_center * np.tan(dtheta)
   v_e = [-dp, 0.0, dp, 0.0]
   v_n = [0.0, dp, 0.0, -dp]
-  x = gn.solve_gauss_newton_2D_transform(lats, longs, v_n, v_e)
+  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n)
   #print(f"Rotate X:  {x}")
   assert x['r'] == pytest.approx(dtheta, abs=1e-6)
 
-def test_euler_test_quad():
+def test_euler_test_quad(): # Need to reconcile gauss_newton rotations w. Euler rotations
   #test setup
   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   bearings  = [45.0, 135.0, 225.0, 315.0]
   sample_dist = 50000 # m
+  return_locs_in_meters = True # Current euler pole code takes locs in lat/long vs gauss which takes cartesian
 
-  lats, lons, v_east, v_north = tek.create_simple_sample_quad(euler_pole, bearings, sample_dist)
+  sample_e, sample_n, v_east, v_north = tek.create_simple_sample_quad(euler_pole, bearings, sample_dist, return_locs_in_meters)
   #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
-  x = gn.solve_gauss_newton_2D_transform(lats, lons, v_north, v_east)
-  print(f"x: {x}")
+  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_east, v_north)
+  #print(f"\ntest_euler_test_quad x: {x}\n")
+  assert x['r'] == pytest.approx(np.radians(euler_pole["omega"]), abs=1e-4)
 
 def test_rot_disk(): # Need to reconcile gauss_newton rotations w. Euler rotations
   #test 4 = run euler kinematics random disk
@@ -53,7 +55,10 @@ def test_rot_disk(): # Need to reconcile gauss_newton rotations w. Euler rotatio
   sample_count = 400
   sample_dist = 50000 # m
   test_omega = 1.23
+  return_locs_in_meters = True # Current euler pole code takes locs in lat/long
 
-  lats, lons, v_east, v_north = tek.create_random_sample_ring(euler_pole, sample_count, sample_dist, test_omega)
-  x = gn.solve_gauss_newton_2D_transform(lats, lons, v_north, v_east)
-  print(f"x: {x}")
+  sample_e, sample_n, v_east, v_north = \
+      tek.create_random_sample_ring(euler_pole, sample_count, sample_dist, test_omega, return_locs_in_meters)
+  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_east, v_north)
+  #print(f"test_rot_disk x: {x}\n")
+

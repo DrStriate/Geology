@@ -1,11 +1,10 @@
 import numpy as np
 from pyproj import Geod
-# import euler_pole_regression as epr
 
+geod = Geod(ellps="WGS84")
 R = 6371.0E3 # Earth radius in m
   
 def create_sample (start_lon, start_lat, bearing, distance):
-    geod = Geod(ellps="WGS84")
     # Calculate the terminus point
     end_lon, end_lat, back_azimuth = geod.fwd(
         start_lon, 
@@ -27,6 +26,20 @@ def getHat(p): # returns a normal to the lat,long point
     np.cos(p['phi']) * np.sin(p['lamb']),
     np.sin(p['phi'])
     ])
+
+def get_northerly_easterly_from_lat_long_pts(lat1, lon1, lat2, lon2):
+    # inv() expects (lon1, lat1, lon2, lat2)
+    # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
+    forward_azimuth, back_azimuth, distance_meters = geod.inv(lon1, lat1, lon2, lat2)
+    
+    # Convert azimuth to radians
+    azimuth_rad = np.radians(forward_azimuth)
+    
+    # Calculate components
+    northerly = distance_meters * np.cos(azimuth_rad)
+    easterly = distance_meters * np.sin(azimuth_rad)
+    
+    return northerly, easterly
 
 def calculate_v_from_Eigen_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {phi, lamb, omega} radians
   P = R * getHat(p)
