@@ -4,6 +4,8 @@ import src.gauss_newton_2d.gauss_newton as gn
 import test_euler_kinematics as tek
 
 # center at lat 512, long 512. Distance to center is 128
+OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
+
 sample_e = [512, 384, 512, 640]
 sample_n = [384, 512, 640, 512]
 dist_to_center = 128.0
@@ -70,3 +72,28 @@ def test_rot_disk():
   # print(f"test_rot_disk x: {x}\n")
   assert x['r'] == pytest.approx(np.radians(test_omega), abs=1e-4)
 
+def test_using_north_rotation():
+  #test setup
+  euler_pole = OC_NA_Pole 
+  euler_n_pole = {"lat" : 0.0,  "long": OC_NA_Pole['long'] + 90, "omega" : 1.43 }
+  sample_count = 400
+  sample_dist = 50000 # m
+  test_omega = 0.001
+  crop = 0.5 # 50% cropped out
+
+  R = 6371.0E3 # Earth radius in m
+  north_v_for_pole_rot= np.sin(-np.radians(test_omega)) * R
+
+  sample_n, sample_e, v_east, v_north = \
+    tek.create_random_sample_ring(euler_pole, 
+                              sample_count, 
+                              sample_dist, 
+                              test_omega, 
+                              crop,
+                              euler_n_pole,
+                              True)
+  
+  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_east, v_north)
+  
+  # print(f"North translate X: {x['t_y']}\n")
+  assert x['t_y'] == pytest.approx(north_v_for_pole_rot, abs=1e-2)
