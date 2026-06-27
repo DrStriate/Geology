@@ -43,11 +43,10 @@ def test_euler_test_quad():
   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   bearings  = [45.0, 135.0, 225.0, 315.0]
   sample_dist = 50000 # m
-  return_locs_in_meters = True # Current euler pole code takes locs in lat/long vs gauss which takes cartesian
 
-  sample_e, sample_n, v_east, v_north = tek.create_simple_sample_quad(euler_pole, bearings, sample_dist, return_locs_in_meters)
+  sample_e, sample_n, v_east, v_north = tek.create_simple_sample_quad(euler_pole, bearings, sample_dist)
   #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
-  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_east, v_north)
+  x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
   #print(f"\ntest_euler_test_quad x: {x}\n")
   assert x['r'] == pytest.approx(np.radians(euler_pole["omega"]), abs=1e-4)
 
@@ -56,8 +55,7 @@ def test_rot_disk():
   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   sample_count = 400
   sample_dist = 50000 # m
-  test_omega = 1.23
-  return_locs_in_meters = True 
+  test_omega = 1.23 
   
   sample_n, sample_e, v_east, v_north = \
       tek.create_random_sample_ring(
@@ -66,9 +64,8 @@ def test_rot_disk():
         sample_dist, 
         test_omega, 
         1.0, 
-        None, 
-        return_locs_in_meters)
-  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_east, v_north)
+        None)
+  x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
   # print(f"test_rot_disk x: {x}\n")
   assert x['r'] == pytest.approx(np.radians(test_omega), abs=1e-4)
 
@@ -90,10 +87,9 @@ def test_using_north_rotation():
                               sample_dist, 
                               test_omega, 
                               crop,
-                              euler_n_pole,
-                              True)
+                              euler_n_pole)
   
-  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_east, v_north)
+  x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
   
   # print(f"North translate X: {x['t_y']}\n")
   assert x['t_y'] == pytest.approx(north_v_for_pole_rot, abs=1e-2)

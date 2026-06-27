@@ -1,10 +1,20 @@
+import euler_pole.euler_kinematics as ek
 
 # Gauss-Newton 2d solver for translation, rotation and scale in 2D 
 import numpy as np
+def solve_gauss_newton_2D_transform_geo(sample_long, sample_lat, v_e, v_n, euler_pole, normalize = True): # meters and mm/Y units 
+  sample_e = []
+  sample_n = []
+  for i in range(len(sample_long)):
+    # convert sample points to meters to match v
+    s_n, s_e = ek.get_northerly_easterly_from_lat_long_pts(sample_long[i], sample_lat[i], euler_pole['long'], euler_pole['lat'])
+    sample_e.append(s_e)
+    sample_n.append(s_n) 
+  return solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n, normalize)
 
 # lats and longs should be normalized relatice to center of rotation for best results
-def solve_gauss_newton_2D_transform(sample_e, sanmple_n, v_e, v_n, normalize = True): # meters and mm/Y units 
-  N = len(sanmple_n)
+def solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n, normalize = True): # meters and mm/Y units 
+  N = len(sample_n)
   x = {'t_x' : 0, 't_y': 0, 's' : 0, 'r' : 0}
   if N < 4: # need at least 4 points to solve
     return x
@@ -12,7 +22,7 @@ def solve_gauss_newton_2D_transform(sample_e, sanmple_n, v_e, v_n, normalize = T
   c = [0.0, 0.0]
   if normalize:
     c[0] = np.mean(sample_e)
-    c[1] = np.mean(sanmple_n)
+    c[1] = np.mean(sample_n)
   
   j = np.zeros((2 * N, 4))
   r = np.zeros(2 * N)
@@ -20,7 +30,7 @@ def solve_gauss_newton_2D_transform(sample_e, sanmple_n, v_e, v_n, normalize = T
   j_idx = 0
   for i in range(N):
     u = sample_e[i] - c[0]
-    v = sanmple_n[i] - c[1]
+    v = sample_n[i] - c[1]
 
     # Calculate Jacobian elements for Dx
     j[j_idx, 0] = 1.0

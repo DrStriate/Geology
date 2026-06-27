@@ -10,7 +10,7 @@ from shapely.geometry import box
 
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 
-def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist, return_locs_in_meters = False):
+def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist):
   sample_e = []
   sample_n = []
   sample_v_east = []
@@ -22,31 +22,18 @@ def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist, return_l
     sample = ek.create_sample(euler_pole['long'], euler_pole['lat'], sample_bearings[i], sample_dist)
     p = {"phi": np.radians(sample['lat']), "lamb": np.radians(sample['lon'])}
     v = ek.calculate_v_from_Eigen_pole(Omega, p, Omega['omega']);
-    if return_locs_in_meters:
-      # convert sample points to meters to match v
-      s_n, s_e = ek.get_northerly_easterly_from_lat_long_pts(sample['lon'], sample['lat'], euler_pole['long'], euler_pole['lat'])
-      sample_e.append(s_e)
-      sample_n.append(s_n) 
-    else:
-      sample_e.append(sample['lon'])
-      sample_n.append(sample['lat'])
-      
-    ### BUG = not sure why I have to negate the rot result from solve_gauss.. given clockwise omega rotation 
+    sample_e.append(sample['lon'])
+    sample_n.append(sample['lat'])
     sample_v_east.append(v['v_e'])
     sample_v_north.append(v['v_n'])
     #print(f"{i}: sample['lat']: {sample['lat']:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
-
-  if return_locs_in_meters:
-    return sample_e, sample_n, sample_v_east, sample_v_north
-  else:
-    return sample_e, sample_n, sample_v_east, sample_v_north
+  return sample_e, sample_n, sample_v_east, sample_v_north
   
 def create_random_sample_ring(euler_pole, count, 
                               max_dist, 
                               test_omega, 
                               crop = 1.0, 
-                              source_poll = None, 
-                              return_locs_in_meters = False):
+                              source_poll = None):
   rng = np.random.default_rng(seed=42)
   rands = rng.random(size=(count, 2))
 
@@ -71,15 +58,8 @@ def create_random_sample_ring(euler_pole, count,
     v = ek.calculate_v_from_Eigen_pole(Omega_source, p, test_omega); 
 
     if sample['lon'] < crop_long:
-      if return_locs_in_meters:
-        # convert sample points to meters to match v
-        s_n, s_e = ek.get_northerly_easterly_from_lat_long_pts(sample['lon'], sample['lat'], euler_pole['long'], euler_pole['lat'])
-        sample_e.append(s_e)
-        sample_n.append(s_n) 
-      else:
-        sample_e.append(sample['lon'])
-        sample_n.append(sample['lat'])
-      
+      sample_e.append(sample['lon'])
+      sample_n.append(sample['lat'])
       sample_v_east.append(v['v_e'])
       sample_v_north.append(v['v_n'])
 
@@ -155,8 +135,7 @@ def test_euler_pole_from_random_cropped_disk():
       sample_dist, 
       test_omega, 
       crop,
-      None,
-      False)
+      None)
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("test_euler_pole_from_random_cropped_disk", pole_result)
 
@@ -178,8 +157,7 @@ def test_euler_pole_using_north_rotation():
                               sample_dist, 
                               test_omega, 
                               crop,
-                              euler_n_pole,
-                              False)
+                              euler_n_pole)
 
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   #ek.print_result ("test_euler_pole_using_north_rotation", pole_result)
