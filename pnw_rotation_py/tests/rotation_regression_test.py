@@ -1,13 +1,7 @@
-# The following code stub will make the 'run Pyrthon file from a subfolder' work,
-# in VS Code but it is not recommended to use this in production code.
-from config_root import setRoot
-setRoot()
-
 import csv
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from src.geo_helper import GeoHelper as gh
 
 def main():
     labels = [] 

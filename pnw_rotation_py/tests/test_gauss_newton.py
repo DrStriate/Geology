@@ -28,7 +28,7 @@ def test_translation_north():
   #print(f"North translate X: {x}\n")
   assert x['t_y'] == t_n
 
-def test_rotation():
+def test_rotation_simple():
   #test 3 = rotate
   dtheta = 0.01 # radians 
   dp = dist_to_center * np.tan(dtheta)
@@ -50,7 +50,7 @@ def test_euler_test_quad():
   #print(f"\ntest_euler_test_quad x: {x}\n")
   assert x['r'] == pytest.approx(np.radians(euler_pole["omega"]), abs=1e-4)
 
-def test_rot_disk(): 
+def test_random_rot_disk(): 
   #test 4 = run euler kinematics random disk
   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   sample_count = 400
@@ -64,6 +64,26 @@ def test_rot_disk():
         sample_dist, 
         test_omega, 
         1.0, 
+        None)
+  x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
+  # print(f"test_rot_disk x: {x}\n")
+  assert x['r'] == pytest.approx(np.radians(test_omega), abs=1e-4)
+
+def test_random_cropped_rot_disk(): 
+  #test 4 = run euler kinematics random disk
+  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  sample_count = 400
+  sample_dist = 50000 # m
+  test_omega = 1.23 
+  crop = 0.5 # 50% cropped out
+  
+  sample_n, sample_e, v_east, v_north = \
+      tek.create_random_sample_ring(
+        euler_pole, 
+        sample_count, 
+        sample_dist, 
+        test_omega,
+        crop,
         None)
   x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
   # print(f"test_rot_disk x: {x}\n")
