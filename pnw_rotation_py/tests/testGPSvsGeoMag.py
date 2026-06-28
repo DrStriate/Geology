@@ -3,7 +3,7 @@ import math
 import csv
 import os
 from rot_data import RotData
-import src.geo_helper as gh
+import geo_helper as gh
 
 def test():
     rotData = RotData()

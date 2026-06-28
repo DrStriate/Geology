@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-import src.gauss_newton_2d.gauss_newton as gn
+import src.gauss_newton as gn
 import test_euler_kinematics as tek
 import test_base as tb
 

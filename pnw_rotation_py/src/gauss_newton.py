@@ -1,4 +1,4 @@
-import euler_pole.euler_kinematics as ek
+import euler_kinematics as ek
 
 # Gauss-Newton 2d solver for translation, rotation and scale in 2D 
 import numpy as np

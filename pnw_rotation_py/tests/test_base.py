@@ -21,7 +21,7 @@ def get_GPS_rotation_data (center_lat, center_long, max_distance):
   sample_v_east = []
   sample_v_north = [] # mm/ yr
   for i in range(len(list_lats)):
-    dist = gh.DistanceFromLatLong((list_lats[i], list_lons[i]), (center_lat, center_long))
+    dist = gh.DistanceFromLatLong((list_lats[i], list_lats[i]), (center_lat, center_long))
     if dist < max_distance:
       sample_lats.append(list_lats[i])
       sample_lons.append(list_lons[i])

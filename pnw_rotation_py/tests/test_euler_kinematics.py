@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 import test_base as tb
-import euler_pole.euler_pole_regression as epr
-import euler_pole.euler_kinematics as ek
+import euler_pole_regression as epr
+import euler_kinematics as ek
 
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 

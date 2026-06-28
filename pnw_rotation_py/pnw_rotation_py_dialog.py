@@ -42,6 +42,8 @@ from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion
 
+from .src import gauss_newton as gn
+
 # Important constants
 NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
 NA_Bearing = 241.0  # degrees azimuth
@@ -149,6 +151,18 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.rotDisplayLayerSetup = True
         return True
+    
+    def test_against_pnw_GPS_data():
+        euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+        center_lat = 45.0
+        center_long = -118
+        max_distance = 350000 # m
+        sample_lats, sample_lons, sample_v_east, sample_v_north = tb.get_GPS_rotation_data(center_lat, center_long, max_distance)
+
+        #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
+        x = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole)
+        gn.print_x(x)
+        #ek.print_result ("test_GPS_pole_extraction", pole_result)
 
     def displayRotData(self):
         if not self.rotDisplayLayerSetup:
@@ -199,12 +213,12 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
                 if self.rbShowNA.isChecked():
                     self.naPoints.append(QgsPoint(self.plateMotion.locNa.long, self.plateMotion.locNa.lat))
 
-                feature = self.rotData.createRotFeature(locYhs, self.plateMotion.distRot, 200.0 / -deltaT)
-                self.yhsRotFeatureList.append(feature)
+                # feature = self.rotData.createRotFeature(locYhs, self.plateMotion.distRot, 200.0 / -deltaT)
+                # self.yhsRotFeatureList.append(feature)
 
             self.displayYhsData()
-            if self.rbDisplayRot.isChecked():
-                self.displayRotData()
+            # if self.rbDisplayRot.isChecked():
+            #     self.displayRotData()
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
