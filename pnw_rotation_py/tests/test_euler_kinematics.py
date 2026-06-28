@@ -1,12 +1,8 @@
 import numpy as np
 import pytest
-import geopandas as gpd   
+import test_base as tb
 import euler_pole.euler_pole_regression as epr
 import euler_pole.euler_kinematics as ek
-import src.geo_helper as gh
-import src.gauss_newton_2d.gauss_newton as gn
-import geopandas as gpd
-from shapely.geometry import box
 
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 
@@ -47,7 +43,7 @@ def create_random_sample_ring(euler_pole, count,
     Omega_source = {"omega": source_poll['omega'], "phi": np.radians(source_poll['lat']), "lamb": np.radians(source_poll['long'])}
   else:
     Omega_source = Omega
-  #print("")
+    
   max_long =  ek.create_sample(euler_pole['long'], euler_pole['lat'], 90.0, max_dist)['lon']
   min_long =  ek.create_sample(euler_pole['long'], euler_pole['lat'], 270.0, max_dist)['lon']
   crop_long = min_long + (max_long - min_long) * crop
@@ -68,26 +64,6 @@ def create_random_sample_ring(euler_pole, count,
   #print(f"samples = {cropped_samples} out of {count}")
   
   return sample_n, sample_e, sample_v_east, sample_v_north
-
-def get_GPS_rotation_data (center_lat, center_long, max_distance):
-  gdf = gpd.read_file("zip://data/NSHM2023_GPS_velocity.zip")
-  list_lats = gdf['geometry'].y.values
-  list_lons = gdf['geometry'].x.values
-  list_v_east = gdf['Ve'].values       
-  list_v_north = gdf['Vn'].values    
-  
-  sample_lats = []
-  sample_lons = []
-  sample_v_east = []
-  sample_v_north = [] # mm/ yr
-  for i in range(len(list_lats)):
-    dist = gh.GeoHelper.DistanceFromLatLong((list_lats[i], list_lats[i]), (center_lat, center_long))
-    if dist < max_distance:
-      sample_lats.append(list_lats[i])
-      sample_lons.append(list_lons[i])
-      sample_v_east.append(list_v_east[i]) 
-      sample_v_north.append(list_v_north[i]) 
-  return sample_lats, sample_lons, sample_v_east, sample_v_north
 
 def test_euler_pole_from_quad():
   #test setup
@@ -170,9 +146,9 @@ def test_GPS_pole_extraction():
   center_lat = 45.0
   center_long = -118
   max_distance = 350000 # m
-  sample_lats, sample_lons, sample_v_east, sample_v_north = get_GPS_rotation_data(center_lat, center_long, max_distance)
+  sample_lats, sample_lons, sample_v_east, sample_v_north = tb.get_GPS_rotation_data(center_lat, center_long, max_distance)
 
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
-  ek.print_result ("test_GPS_pole_extraction", pole_result)
+  epr.print_result ("test_GPS_pole_extraction", pole_result)
   
   

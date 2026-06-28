@@ -7,8 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 import geopandas as gpd
-
-from .src.geo_helper import GeoHelper as gh
+from .src import geo_helper as gh
 
 @dataclass
 class PState:

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import src.gauss_newton_2d.gauss_newton as gn
 import test_euler_kinematics as tek
+import test_base as tb
 
 # center at lat 512, long 512. Distance to center is 128
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
@@ -113,3 +114,16 @@ def test_using_north_rotation():
   
   # print(f"North translate X: {x['t_y']}\n")
   assert x['t_y'] == pytest.approx(north_v_for_pole_rot, abs=1e-2)
+
+def test_against_pnw_GPS_data():
+  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  center_lat = 45.0
+  center_long = -118
+  max_distance = 350000 # m
+  sample_lats, sample_lons, sample_v_east, sample_v_north = tb.get_GPS_rotation_data(center_lat, center_long, max_distance)
+
+  #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
+  x = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole)
+  gn.print_x(x)
+  #ek.print_result ("test_GPS_pole_extraction", pole_result)
+

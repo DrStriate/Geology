@@ -51,3 +51,10 @@ def solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n, normalize = Tr
 
   x, residuals, rank, s = np.linalg.lstsq(j, r, rcond=None)
   return  {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : x[3]}
+
+def print_x(x):
+  r_deg = np.degrees(x['r'])
+  print(f"\nt_x:\t {x['t_x']:.5f}")
+  print(f"t_y:\t {x['t_y']:.5f}")
+  print(f"s:  \t {x['s']:.5f}")
+  print(f"r:  \t {r_deg:.5f}°")

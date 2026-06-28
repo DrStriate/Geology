@@ -1,7 +1,7 @@
 # Calculates estimated NA plate motion based on combined plate velocity and rotation data
 from dataclasses import dataclass
 import math
-from .src.geo_helper import GeoHelper as gh
+from .src import geo_helper as gh
 
 # Plate motion is measuring the change in position of an inertial reference point (e.g. the YHS) on the surface
 # of the NA Plate (lat/long). So a motion of the plate will result in the opposite motion of that point

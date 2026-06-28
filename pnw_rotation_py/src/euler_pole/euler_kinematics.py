@@ -20,12 +20,15 @@ def project_V_to_v (V, p): #V is 3D cartesion velocity, phi and lamb in radians
   v_n = np.dot(V, n_hat)
   return {"v_e" : v_e, "v_n" : v_n}
 
-def getHat(p): # returns a normal to the lat,long point
+def get_hat_p(p): # returns a normal to the phi,lamb point
   return np.array([ 
     np.cos(p['phi']) * np.cos(p['lamb']),
     np.cos(p['phi']) * np.sin(p['lamb']),
     np.sin(p['phi'])
     ])
+
+def get_hat(lat, long):
+   return get_hat_p({'lamb': np.radians(long), 'phi': np.radians(lat)})
 
 def get_northerly_easterly_from_lat_long_pts(lon1, lat1, lon2, lat2):
     # inv() expects (lon1, lat1, lon2, lat2)
@@ -42,14 +45,9 @@ def get_northerly_easterly_from_lat_long_pts(lon1, lat1, lon2, lat2):
     return northerly, easterly
 
 def calculate_v_from_Eigen_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {phi, lamb, omega} radians
-  P = R * getHat(p)
-  O = np.radians(omega) * getHat(Omega)
+  P = R * get_hat_p(p)
+  O = np.radians(omega) * get_hat_p(Omega)
   V = np.cross(P, O)
   v = project_V_to_v(V, p)
   return v
 
-def print_result(name, pole_result):
-  print(name)
-  print(f"Latitude:  {pole_result['lat']:.4f}° N")
-  print(f"Longitude: {pole_result['long']:.4f}° E")
-  print(f"Rate:      {pole_result['omega']:.4f}° / Myr")
