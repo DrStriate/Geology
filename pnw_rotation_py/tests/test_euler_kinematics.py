@@ -43,7 +43,7 @@ def create_random_sample_ring(euler_pole, count,
     Omega_source = {"omega": source_poll['omega'], "phi": np.radians(source_poll['lat']), "lamb": np.radians(source_poll['long'])}
   else:
     Omega_source = Omega
-    
+
   max_long =  ek.create_sample(euler_pole['long'], euler_pole['lat'], 90.0, max_dist)['lon']
   min_long =  ek.create_sample(euler_pole['long'], euler_pole['lat'], 270.0, max_dist)['lon']
   crop_long = min_long + (max_long - min_long) * crop
@@ -145,10 +145,10 @@ def test_euler_pole_using_north_rotation():
 def test_GPS_pole_extraction():
   center_lat = 45.0
   center_long = -118
-  max_distance = 350000 # m
+  max_distance = 550000 # m
   sample_lats, sample_lons, sample_v_east, sample_v_north = tb.get_GPS_rotation_data(center_lat, center_long, max_distance)
 
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
-  epr.print_result ("test_GPS_pole_extraction", pole_result)
+  epr.print_result ("test_GPS_pole_extraction", pole_result, len(sample_lats))
   
   

@@ -71,8 +71,8 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True
         "omega": omega_deg_myr
     }
 
-def print_result(name, pole_result):
-    print(name)
+def print_result(name, pole_result, point_count = 0):
+    print(f"{name} count: {point_count}")
     print(f"Latitude:  {pole_result['lat']:.5f}° N")
     print(f"Longitude: {pole_result['long']:.5f}° E")
     print(f"Rate:      {pole_result['omega']:.5f}° / Myr")

@@ -116,14 +116,15 @@ def test_using_north_rotation():
   assert x['t_y'] == pytest.approx(north_v_for_pole_rot, abs=1e-2)
 
 def test_against_pnw_GPS_data():
-  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  euler_pole = {"lat" : 45.0,  "long" : -118, "omega" : 1.23 }
   center_lat = 45.0
   center_long = -118
-  max_distance = 350000 # m
+  max_distance = 550000 # m
   sample_lats, sample_lons, sample_v_east, sample_v_north = tb.get_GPS_rotation_data(center_lat, center_long, max_distance)
 
   #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
   x = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole)
+  print(f"samples: {len(sample_lats)}")
   gn.print_x(x)
   #ek.print_result ("test_GPS_pole_extraction", pole_result)
 

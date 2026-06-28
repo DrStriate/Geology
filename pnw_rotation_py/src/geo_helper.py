@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from haversine import haversine
+from haversine import haversine, Unit
 from pyproj import Geod
 
 EarthRadius = 6371 * 1000  # m
@@ -24,7 +24,7 @@ def LatLongForDeDn(latitude, longitude, de, dn): #de, dn in meters
     return [latOut, longOut]
 
 def DistanceFromLatLong(point1, point2): # (lat, lon)
-    return haversine(point1, point2)
+    return haversine(point1, point2, unit=Unit.METERS)
 
 # OC_NA Eigen pole from Wells & Simpson 2001
 def getPoleRotationV(lat, lon): # angles in degrees, motion per Ma

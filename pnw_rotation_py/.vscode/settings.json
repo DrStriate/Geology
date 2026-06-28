@@ -2,7 +2,9 @@
   "python-envs.defaultEnvManager": "ms-python.python:system",
   "python.testing.pytestArgs": [
     "-s",
-    "tests"
+    "tests",
+    "--ignore=rot_data.py",
+    "--ignore=pnw_rotation_py.py",
   ],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true
