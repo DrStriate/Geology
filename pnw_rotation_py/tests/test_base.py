@@ -9,6 +9,8 @@ YHS_long = -110.67
 JdF_Lat = 48.25     # Center of Strait of Juan de Fuca
 JdF_Long = -124.0
 
+MM_PER_YEAR_TO_M_PER_MA = 1000.0
+
 def get_GPS_rotation_data (center_lat, center_long, max_distance):
   gdf = gpd.read_file("zip://data/NSHM2023_GPS_velocity.zip")
   list_lats = gdf['geometry'].y.values
@@ -25,8 +27,8 @@ def get_GPS_rotation_data (center_lat, center_long, max_distance):
     if dist < max_distance:
       sample_lats.append(list_lats[i])
       sample_lons.append(list_lons[i])
-      sample_v_east.append(list_v_east[i]) 
-      sample_v_north.append(list_v_north[i]) 
+      sample_v_east.append(list_v_east[i] * MM_PER_YEAR_TO_M_PER_MA)
+      sample_v_north.append(list_v_north[i] * MM_PER_YEAR_TO_M_PER_MA)
   return sample_lats, sample_lons, sample_v_east, sample_v_north
 
 def test_latitudeFromDistance():
@@ -48,3 +50,10 @@ def test_pole_rotation():
   assert V[0] == -0.0019364865124427936
   assert V[1] == -0.016349206364427868
   return
+
+def test_GPS_data():
+  center_pole = {'lat': 45.5, 'long': -118.5}
+  max_distance = 550000 # meters
+  lats, longs, ve_list, vn_list = get_GPS_rotation_data(center_pole['lat'], center_pole['long'], max_distance)
+  avg_angle = gh.find_moments(longs, lats, ve_list, vn_list, center_pole)
+  print(f"avg_angle: {avg_angle:5f}, length: {len(lats)}")

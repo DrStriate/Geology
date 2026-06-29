@@ -3,18 +3,64 @@ import numpy as np
 from haversine import haversine, Unit
 from pyproj import Geod
 
-EarthRadius = 6371 * 1000  # m
+geod = Geod(ellps="WGS84")
+R = 6371.0E3 # Earth radius in m
+
+def get_northerly_easterly_from_lat_long_pts(lon1, lat1, lon2, lat2):
+    # inv() expects (lon1, lat1, lon2, lat2)
+    # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
+    forward_azimuth, back_azimuth, distance_meters = geod.inv(lon2, lat2, lon1, lat1)
+    
+    # Convert azimuth to radians
+    azimuth_rad = np.radians(forward_azimuth)
+    
+    # Calculate components
+    northerly = distance_meters * np.cos(azimuth_rad)
+    easterly = distance_meters * np.sin(azimuth_rad)
+    
+    return northerly, easterly
+
+# gets lat and long converted to coordinate distances from pole
+def get_sample_pts(long_list, lat_list, pole):
+  pe_list = []
+  pn_list = []
+  for i in range(len(long_list)):
+    # convert sample points to meters
+    p_n, p_e = get_northerly_easterly_from_lat_long_pts(long_list[i], lat_list[i], pole['long'], pole['lat'])
+    pe_list.append(p_e)
+    pn_list.append(p_n)
+  return pe_list, pn_list 
+
+def find_moments(long_list, lat_list, ve_list, vn_list, pole):
+    sum_alpha = 0.0
+    avg_alpha = 0.0
+    count = len(ve_list) 
+    pe_list, pn_list = get_sample_pts(long_list, lat_list, pole)
+    for i in range(count):
+        v = np.array([ve_list[i], vn_list[i]])
+        p = np.array([pe_list[i], pn_list[i]])
+        s = p + v
+        norm_s = np.linalg.norm(s)
+        norm_p = np.linalg.norm(p)
+        dot_vp = np.dot(s, p)/(norm_p * norm_s)
+        angle_vp = np.degrees(np.acos(dot_vp))
+        # print(f"angle_vp: {angle_vp:.4f}")
+        sum_alpha += angle_vp
+    if count > 0:
+        avg_alpha = sum_alpha / count
+    return avg_alpha
+
 
 def clamp(value, minimum, maximum):
     return max(minimum, min(value, maximum))
 
 def latitudeFromDistN(dist): # dist in meters North
-    lat = math.atan2(dist, EarthRadius) * 180.0 / math.pi
+    lat = math.atan2(dist, R) * 180.0 / math.pi
     return lat
 
 def longitudeFromDistE(latitude, dist): # meters East
     latitudeRadians = math.radians(latitude)
-    radiusOfParallel = EarthRadius * math.cos(latitudeRadians) # m
+    radiusOfParallel = R * math.cos(latitudeRadians) # m
     longitudeDeltaRadians = dist / radiusOfParallel
     return math.degrees(longitudeDeltaRadians)
 
@@ -24,6 +70,8 @@ def LatLongForDeDn(latitude, longitude, de, dn): #de, dn in meters
     return [latOut, longOut]
 
 def DistanceFromLatLong(point1, point2): # (lat, lon)
+    if point1[0] < -90 or point1[0] > 90 or point2[0] < -90 or point1[0] > 90:
+        print("hello")
     return haversine(point1, point2, unit=Unit.METERS)
 
 # OC_NA Eigen pole from Wells & Simpson 2001

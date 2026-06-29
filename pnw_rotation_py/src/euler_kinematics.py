@@ -30,19 +30,6 @@ def get_hat_p(p): # returns a normal to the phi,lamb point
 def get_hat(lat, long):
    return get_hat_p({'lamb': np.radians(long), 'phi': np.radians(lat)})
 
-def get_northerly_easterly_from_lat_long_pts(lon1, lat1, lon2, lat2):
-    # inv() expects (lon1, lat1, lon2, lat2)
-    # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
-    forward_azimuth, back_azimuth, distance_meters = geod.inv(lon2, lat2, lon1, lat1)
-    
-    # Convert azimuth to radians
-    azimuth_rad = np.radians(forward_azimuth)
-    
-    # Calculate components
-    northerly = distance_meters * np.cos(azimuth_rad)
-    easterly = distance_meters * np.sin(azimuth_rad)
-    
-    return northerly, easterly
 
 def calculate_v_from_Eigen_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {phi, lamb, omega} radians
   P = R * get_hat_p(p)
