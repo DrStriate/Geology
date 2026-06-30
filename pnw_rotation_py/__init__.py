@@ -22,7 +22,16 @@
  ***************************************************************************/
  This script initializes the plugin, making it known to QGIS.
 """
+import os
+import sys
 
+# Get the path to your 'src' directory relative to this file
+plugin_dir = os.path.dirname(__file__)
+src_dir = os.path.abspath(os.path.join(plugin_dir, "src"))
+
+# Add it to sys.path so QGIS can see 'import package'
+if src_dir not in sys.path:
+    sys.path.insert(0, src_dir)
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name

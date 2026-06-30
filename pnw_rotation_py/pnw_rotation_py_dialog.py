@@ -41,7 +41,7 @@ from qgis.utils import iface
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion
-
+import test_utils as tu
 from .src import gauss_newton as gn
 
 # Important constants
@@ -165,6 +165,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         #ek.print_result ("test_GPS_pole_extraction", pole_result)
 
     def displayRotData(self):
+        data = tu.get_test_data()
+        
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
         if self.rbDisplayRot.isChecked():
