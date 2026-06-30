@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import euler_kinematics as ek
 import geopandas as gpd
@@ -5,18 +6,26 @@ import geo_helper as gh
 
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 
+def get_data_file_path(name):
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  plugin_root = os.path.dirname(current_dir)
+  data_folder_path = os.path.join(plugin_root, "data", name)
+  data_folder_path = os.path.normpath(data_folder_path).replace("\\", "/")
+  return data_folder_path
+
 def get_test_data():
   return get_GPS_rotation_data(OC_NA_Pole['lat'], OC_NA_Pole['long'], 6e5)
 
 MM_PER_YEAR_TO_M_PER_MA = 1000.0
 
 def get_GPS_rotation_data (center_lat, center_long, max_distance):
-  gdf = gpd.read_file("zip://NSHM2023_GPS_velocity.zip")
+  file_path = get_data_file_path("NSHM2023_GPS_velocity.zip")
+  gdf = gpd.read_file(f"/vsizip/{file_path}")
   list_lats = gdf['geometry'].y.values
   list_lons = gdf['geometry'].x.values
   list_v_east = gdf['Ve'].values       
   list_v_north = gdf['Vn'].values    
-  
+  "NSHM2023_GPS_velocity.zip"
   sample_lats = []
   sample_lons = []
   sample_v_east = []
