@@ -1,3 +1,35 @@
+import numpy as np
+import euler_kinematics as ek
+import geopandas as gpd
+import geo_helper as gh
+
+OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
+
+def get_test_data():
+  return get_GPS_rotation_data(OC_NA_Pole['lat'], OC_NA_Pole['long'], 6e5)
+
+MM_PER_YEAR_TO_M_PER_MA = 1000.0
+
+def get_GPS_rotation_data (center_lat, center_long, max_distance):
+  gdf = gpd.read_file("zip://NSHM2023_GPS_velocity.zip")
+  list_lats = gdf['geometry'].y.values
+  list_lons = gdf['geometry'].x.values
+  list_v_east = gdf['Ve'].values       
+  list_v_north = gdf['Vn'].values    
+  
+  sample_lats = []
+  sample_lons = []
+  sample_v_east = []
+  sample_v_north = [] # mm/ yr
+  for i in range(len(list_lats)):
+    dist = gh.DistanceFromLatLong((list_lats[i], list_lons[i]), (center_lat, center_long))
+    if dist < max_distance:
+      sample_lats.append(list_lats[i])
+      sample_lons.append(list_lons[i])
+      sample_v_east.append(list_v_east[i] * MM_PER_YEAR_TO_M_PER_MA)
+      sample_v_north.append(list_v_north[i] * MM_PER_YEAR_TO_M_PER_MA)
+  return sample_lats, sample_lons, sample_v_east, sample_v_north
+
 def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist):
   sample_e = []
   sample_n = []

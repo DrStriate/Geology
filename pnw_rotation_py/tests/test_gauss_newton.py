@@ -4,6 +4,8 @@ import src.gauss_newton as gn
 import test_euler_kinematics as tek
 import test_base as tb
 import gauss_newton as gn
+import src.test_utils as tu
+from pathlib import Path
 
 # center at lat 512, long 512. Distance to center is 128
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
@@ -46,7 +48,7 @@ def test_euler_test_quad():
   bearings  = [45.0, 135.0, 225.0, 315.0]
   sample_dist = 50000 # m
 
-  sample_e, sample_n, v_east, v_north = tek.create_simple_sample_quad(euler_pole, bearings, sample_dist)
+  sample_e, sample_n, v_east, v_north = tu.create_simple_sample_quad(euler_pole, bearings, sample_dist)
   #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
   #print(f"\ntest_euler_test_quad x: {x}\n")
@@ -60,7 +62,7 @@ def test_random_rot_disk():
   test_omega = 1.23 
   
   sample_n, sample_e, v_east, v_north = \
-      tek.create_random_sample_ring(
+      tu.create_random_sample_ring(
         euler_pole, 
         sample_count, 
         sample_dist, 
@@ -80,7 +82,7 @@ def test_random_cropped_rot_disk():
   crop = 0.5 # 50% cropped out
   
   sample_n, sample_e, v_east, v_north = \
-      tek.create_random_sample_ring(
+      tu.create_random_sample_ring(
         euler_pole, 
         sample_count, 
         sample_dist, 
@@ -104,7 +106,7 @@ def test_using_north_rotation():
   north_v_for_pole_rot= np.sin(np.radians(test_omega)) * R
 
   sample_n, sample_e, v_east, v_north = \
-    tek.create_random_sample_ring(euler_pole, 
+    tu.create_random_sample_ring(euler_pole, 
                               sample_count, 
                               sample_dist, 
                               test_omega, 
@@ -117,11 +119,15 @@ def test_using_north_rotation():
   assert x['t_y'] == pytest.approx(north_v_for_pole_rot, abs=1e-2)
 
 def test_against_pnw_GPS_data():
+  # Absolute path of the script
+  script_path = Path(__file__).resolve()
+  print(script_path)
+
   center_pole =  {"lat" : 45.5,  "long" : -118.5}
   max_distance = 550000 # m
 
   sample_lats, sample_lons, sample_v_east, sample_v_north = \
-    tb.get_GPS_rotation_data(center_pole['lat'], center_pole["long"], max_distance)
+    tu.get_GPS_rotation_data(center_pole['lat'], center_pole["long"], max_distance)
 
   #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
   x = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, center_pole)
