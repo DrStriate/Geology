@@ -40,7 +40,7 @@ from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this i
 from qgis.utils import iface
 from .jdf_plate import JFP
 from .rot_data import RotData
-from .plate_motion import PlateMotion
+from .plate_motion import PlateMotion, PLoc, PDist
 import test_utils as tu
 from .src import gauss_newton as gn
 
@@ -165,7 +165,13 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     #     #ek.print_result ("test_GPS_pole_extraction", pole_result)
 
     def displayRotData(self):
-        data = tu.get_test_data()
+        lat_list, long_list, ve_list, vn_list =\
+              tu.get_GPS_rotation_data(tu.OC_NA_Pole['lat'], tu.OC_NA_Pole['long'], 500000)
+        for i in range(len(lat_list)):
+            d_scaling = 0.001
+            feature = self.rotData.createRotFeature(
+                PLoc(long_list[i], lat_list[i]), PDist(ve_list[i], vn_list[i]), d_scaling)
+            self.yhsRotFeatureList.append(feature)
         
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
@@ -215,8 +221,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
                 if self.rbShowNA.isChecked():
                     self.naPoints.append(QgsPoint(self.plateMotion.locNa.long, self.plateMotion.locNa.lat))
 
-                feature = self.rotData.createRotFeature(locYhs, self.plateMotion.distRot, 200.0 / -deltaT)
-                self.yhsRotFeatureList.append(feature)
+                # feature = self.rotData.createRotFeature(locYhs, self.plateMotion.distRot, 200.0 / -deltaT)
+                # self.yhsRotFeatureList.append(feature)
 
             self.displayYhsData()
             if self.rbDisplayRot.isChecked():
