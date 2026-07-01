@@ -13,7 +13,7 @@ from qgis._core import (
     QgsField
 )
 from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtCore import QVariant
+from PyQt5.QtCore import QMetaType
 
 class GeoWhiteboard:
     def __init__(self, base_vector_layer):
@@ -36,7 +36,7 @@ class GeoWhiteboard:
 
         # 2. Add the attribute field using QgsField and QVariant
         self.annotation_layer.startEditing()
-        self.annotation_layer.addAttribute(QgsField("label_text", QVariant.String))
+        self.annotation_layer.addAttribute(QgsField("label_text", QMetaType.Type(QMetaType.QString))) 
         self.annotation_layer.commitChanges()
 
         # Configure the target symbology (Circle + Crosshairs)

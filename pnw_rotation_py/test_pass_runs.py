@@ -5,9 +5,11 @@ import gauss_newton as gn
 
 def run_GPS_test_pass(self):
   # get rot data
-  diam = 550 # km
+  diam = 500 # km
+  center_lat = 45.0
+  center_long = -118
   lat_list, long_list, ve_list, vn_list =\
-        tu.get_GPS_rotation_data(tu.OC_NA_Pole['lat'], tu.OC_NA_Pole['long'], diam * 1000)
+        tu.get_GPS_rotation_data(center_lat, center_long, diam * 1000)
   finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam)
 
 def run_quad_test_pass(self):
@@ -34,7 +36,7 @@ def run_cropped_disk_test_test_pass(self):
     #test setup
   euler_pole = tu.OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   sample_count = 400
-  diam = 400 # m
+  diam = 400 # km
   test_omega = 1.23
   crop = 0.5 # 50% cropped out
 
@@ -57,11 +59,9 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam):
 
   # get euler pole and gauss newton results and display
   pole = epr.fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list)
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(long_list, lat_list, ve_list, vn_list, tu.OC_NA_Pole)
-  e_km = gn_out['t_x'] / 1000
-  n_km = gn_out['t_y'] / 1000
-  label_text1 = f"{pole['long']:.4f}, {pole['lat']:.4f}, {pole['omega']:.2f} deg, "
-  label_text2 = f"e: {e_km:.2f} km, n: {n_km:.2f} km, {diam} km"
+  gn_out = gn.solve_gauss_newton_2D_transform_geo(long_list, lat_list, ve_list, vn_list, pole)
+  label_text1 = f"{pole['long']:.4f}, {pole['lat']:.4f}, {pole['omega']:.3f} deg, "
+  label_text2 = f"e: {(gn_out['t_x'] / 1E3):.2f} km, n: {(gn_out['t_y'] / 1E3):.2f} km, {diam} km"
   
   #show results in Qgis
   self.geoWhiteboard.draw_target(pole['long'], pole['lat'], label_text1 + label_text2)

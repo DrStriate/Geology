@@ -25,12 +25,13 @@ def test_euler_pole_from_random_disk():
   #test setup
   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   sample_count = 400
-  sample_dist = 50000 # m
+  diam = 550 # km
   crop = 1.0 # no crop
   test_omega = 1.23
 
   sample_lats, sample_lons, sample_v_east, sample_v_north = \
-    tu.create_random_sample_ring(euler_pole, sample_count, sample_dist, test_omega, crop)
+    tu.create_random_sample_ring(euler_pole, sample_count, diam * 1000, test_omega, crop)
+  
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("test_euler_pole_from_random_disk", pole_result)
 
@@ -88,9 +89,9 @@ def test_GPS_pole_extraction():
   center_lat = 45.0
   center_long = -118
   max_distance = 550000 # m
-  sample_lats, sample_lons, sample_v_east, sample_v_north = tu.get_GPS_rotation_data(center_lat, center_long, max_distance)
+  lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_lat, center_long, max_distance)
 
-  pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
-  epr.print_result ("test_GPS_pole_extraction", pole_result, len(sample_lats))
+  pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths)
+  epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
   
   

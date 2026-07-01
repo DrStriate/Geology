@@ -24,39 +24,46 @@ def get_GPS_rotation_data (center_lat, center_long, max_distance):
   list_lats = gdf['geometry'].y.values
   list_lons = gdf['geometry'].x.values
   list_v_east = gdf['Ve'].values       
-  list_v_north = gdf['Vn'].values    
+  list_v_north = gdf['Vn'].values   
+  list_s_east = gdf['Se'].values       
+  list_s_north = gdf['Sn'].values 
   "NSHM2023_GPS_velocity.zip"
-  sample_lats = []
-  sample_lons = []
-  sample_v_east = []
-  sample_v_north = [] # mm/ yr
+  lats = []
+  lons = []
+  v_east = [] # mm/ yr
+  v_north = [] # mm/ yr
+  s_east = []
+  s_north = []
+
   for i in range(len(list_lats)):
     dist = gh.DistanceFromLatLong((list_lats[i], list_lons[i]), (center_lat, center_long))
     if dist < max_distance:
-      sample_lats.append(list_lats[i])
-      sample_lons.append(list_lons[i])
-      sample_v_east.append(list_v_east[i] * MM_PER_YEAR_TO_M_PER_MA)
-      sample_v_north.append(list_v_north[i] * MM_PER_YEAR_TO_M_PER_MA)
-  return sample_lats, sample_lons, sample_v_east, sample_v_north
+      lats.append(list_lats[i])
+      lons.append(list_lons[i])
+      v_east.append(list_v_east[i] * MM_PER_YEAR_TO_M_PER_MA)
+      v_north.append(list_v_north[i] * MM_PER_YEAR_TO_M_PER_MA)
+      s_east.append(list_s_east[i] * MM_PER_YEAR_TO_M_PER_MA)
+      s_north.append(list_s_north[i] * MM_PER_YEAR_TO_M_PER_MA)
+  return lats, lons, v_east, v_north, s_east, s_north
 
-def create_simple_sample_quad(euler_pole, sample_bearings, sample_dist):
-  sample_e = []
-  sample_n = []
-  sample_v_east = []
-  sample_v_north = [] # mm/ yr
+def create_simple_sample_quad(euler_pole, bearings, dist):
+  longs = []
+  lats = []
+  v_easts = []  # mm/ yr
+  v_norths = [] # mm/ yr
 
   Omega = {"omega": euler_pole['omega'], "phi": np.radians(euler_pole['lat']), "lamb": np.radians(euler_pole['long'])}
   # print("")
-  for i in range(len(sample_bearings)):
-    sample = ek.create_sample(euler_pole['long'], euler_pole['lat'], sample_bearings[i], sample_dist)
+  for i in range(len(bearings)):
+    sample = ek.create_sample(euler_pole['long'], euler_pole['lat'], bearings[i], dist)
     p = {"phi": np.radians(sample['lat']), "lamb": np.radians(sample['lon'])}
     v = ek.calculate_v_from_Eigen_pole(Omega, p, Omega['omega']);
-    sample_e.append(sample['lon'])
-    sample_n.append(sample['lat'])
-    sample_v_east.append(v['v_e'])
-    sample_v_north.append(v['v_n'])
+    longs.append(sample['lon'])
+    lats.append(sample['lat'])
+    v_easts.append(v['v_e'])
+    v_norths.append(v['v_n'])
     #print(f"{i}: sample['lat']: {sample['lat']:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
-  return sample_e, sample_n, sample_v_east, sample_v_north
+  return longs, lats, v_easts, v_norths
   
 def create_random_sample_ring(euler_pole, count, 
                               max_dist, 

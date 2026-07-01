@@ -163,10 +163,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
 
+        run_GPS_test_pass(self)
         #run_quad_test_pass(self)
         # run_rand_disk_test_pass(self)
-        run_cropped_disk_test_test_pass(self)
-        #run_GPS_test_pass(self)
+        #run_cropped_disk_test_test_pass(self)
 
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()

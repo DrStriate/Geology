@@ -126,11 +126,10 @@ def test_against_pnw_GPS_data():
   center_pole =  {"lat" : 45.5,  "long" : -118.5}
   max_distance = 550000 # m
 
-  sample_lats, sample_lons, sample_v_east, sample_v_north = \
+  lats, lons, v_easts, v_norths, s_e, s_n = \
     tu.get_GPS_rotation_data(center_pole['lat'], center_pole["long"], max_distance)
 
-  #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
-  x = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, center_pole)
-  print(f"samples: {len(sample_lats)}")
+  x = gn.solve_gauss_newton_2D_transform_geo(lons, lats, v_easts, v_norths, center_pole)
+  print(f"samples: {len(lats)}")
   gn.print_x(x)
 
