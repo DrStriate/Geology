@@ -90,7 +90,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rbDisplayRot.clicked.connect(self.displayRotData)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
 
-        self.clearData()
         self.setStartPoint()
         self.spbNaPlateBearing.setValue(NA_Bearing)
         self.spbNaPlateSpeed.setValue(NA_Speed)
@@ -104,8 +103,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.naPoints = []
         self.yhsOccludedPoints = []
         self.yhsRotFeatureList = []
-        self.closeYhsLayer()
-        self.closeRotLayer()
+        self.clearRotDataLayer()
+        self.clearYhsDataLayer()
         return
 
     ####
@@ -169,6 +168,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     #     #ek.print_result ("test_GPS_pole_extraction", pole_result)
 
     def displayRotData(self):
+        if not self.rotDisplayLayerSetup:
+            self.setupRotDisplayLayer()
+
+        # if self.rotDestLayer != None:
         # get gps data within 500 km
         lat_list, long_list, ve_list, vn_list =\
               tu.get_GPS_rotation_data(tu.OC_NA_Pole['lat'], tu.OC_NA_Pole['long'], 500000)
@@ -188,8 +191,13 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.rbDisplayRot.isChecked():
             self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
         else:
-            self.rotDestLayer.dataProvider().truncate()
+            self.clearRotDataLayer()
         QgsProject.instance().addMapLayer(self.rotDestLayer)
+        self.rotDestLayer.triggerRepaint()
+    
+    def clearRotDataLayer(self):
+        self.rotDestLayer.dataProvider().truncate()
+        self.geoWhiteboard.erase_everything()
         self.rotDestLayer.triggerRepaint()
 
     ####
@@ -201,6 +209,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return
 
+        dataFile = None
         # plugin_dir_os = os.path.dirname(os.path.realpath(__file__)) # point to plugin dir
         # file_path = os.path.join(plugin_dir_os, "rotation_run.csv")
         # with open(file_path, "w") as dataFile:
@@ -302,6 +311,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.yhsDestLayer.triggerRepaint()
         return True
+    
+    def clearYhsDataLayer(self):
+        self.yhsDestLayer.dataProvider().truncate()
+        self.yhsDestLayer.triggerRepaint()
 
     def setStartPoint(self):
         if  self.rbYHS.isChecked():
@@ -338,8 +351,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         return
 
     def closeEvent(self, event: QCloseEvent):
+        self.clearData()
         self.closeRotLayer()
         self.closeYhsLayer()
-        self.clearData()
         return
 
