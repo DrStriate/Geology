@@ -38,12 +38,16 @@ from qgis._core import (QgsMessageLog,
                         QgsWkbTypes)
 from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
 from qgis.utils import iface
+
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion, PLoc, PDist
-import test_utils as tu
 from .geo_whiteboard import GeoWhiteboard
+
+import test_utils as tu
+from .test_pass_runs import *
 import euler_pole_regression as epr
+import gauss_newton as gn
 
 # Important constants
 NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
@@ -155,36 +159,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotDisplayLayerSetup = True
         return True
     
-    # def test_against_pnw_GPS_data():
-    #     euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
-    #     center_lat = 45.0
-    #     center_long = -118
-    #     max_distance = 350000 # m
-    #     sample_lats, sample_lons, sample_v_east, sample_v_north = tb.get_GPS_rotation_data(center_lat, center_long, max_distance)
-
-    #     #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
-    #     x = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole)
-    #     gn.print_x(x)
-    #     #ek.print_result ("test_GPS_pole_extraction", pole_result)
-
     def displayRotData(self):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
 
-        # if self.rotDestLayer != None:
-        # get gps data within 500 km
-        lat_list, long_list, ve_list, vn_list =\
-              tu.get_GPS_rotation_data(tu.OC_NA_Pole['lat'], tu.OC_NA_Pole['long'], 500000)
-        for i in range(len(lat_list)):
-            d_scaling = 0.001
-            feature = self.rotData.createRotFeature(
-                PLoc(long_list[i], lat_list[i]), PDist(ve_list[i], vn_list[i]), d_scaling)
-            self.yhsRotFeatureList.append(feature)
-
-        # get euler pole and display
-        pole = epr.fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list)
-        label_text = f"{pole['long']:.4f}, {pole['lat']:.4f}, {pole['omega']:.4f} deg"
-        self.geoWhiteboard.draw_target(pole['long'], pole['lat'], label_text)
+        #run_quad_test_pass(self)
+        # run_rand_disk_test_pass(self)
+        run_cropped_disk_test_test_pass(self)
+        #run_GPS_test_pass(self)
 
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
@@ -196,9 +178,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotDestLayer.triggerRepaint()
     
     def clearRotDataLayer(self):
-        self.rotDestLayer.dataProvider().truncate()
-        self.geoWhiteboard.erase_everything()
-        self.rotDestLayer.triggerRepaint()
+        if self.rotDestLayer != None: 
+            self.rotDestLayer.dataProvider().truncate()
+            self.geoWhiteboard.erase_everything()
+            self.rotDestLayer.triggerRepaint()
 
     ####
     # run Yhs Button
@@ -313,8 +296,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         return True
     
     def clearYhsDataLayer(self):
-        self.yhsDestLayer.dataProvider().truncate()
-        self.yhsDestLayer.triggerRepaint()
+        if self.yhsDestLayer != None:
+            self.yhsDestLayer.dataProvider().truncate()
+            self.yhsDestLayer.triggerRepaint()
 
     def setStartPoint(self):
         if  self.rbYHS.isChecked():

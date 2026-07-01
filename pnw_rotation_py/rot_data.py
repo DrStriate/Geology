@@ -105,7 +105,8 @@ class RotData:
 
         points = np.column_stack((x, y))  # (N, 2)
         values = np.column_stack((u, v))  # (N, 2)
-        self.interp_func = LinearNDInterpolator(points, values)
+        if len(points) > 0:
+            self.interp_func = LinearNDInterpolator(points, values)
         return
 
     def getLinearInterpSample(self, longitude, latitude):
