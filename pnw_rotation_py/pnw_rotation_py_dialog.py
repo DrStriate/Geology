@@ -42,7 +42,8 @@ from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion, PLoc, PDist
 import test_utils as tu
-from .src import gauss_newton as gn
+from .geo_whiteboard import GeoWhiteboard
+import euler_pole_regression as epr
 
 # Important constants
 NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
@@ -79,6 +80,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.naPoints = []  # NA only YHS plot
         self.yhsRotFeatureList = []
         self.plateMotion = PlateMotion()
+        self.geoWhiteboard = None
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.runYhsDataButton.clicked.connect(self.runYhsButtonClicked)
@@ -135,6 +137,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage("Couldn't create rotDestLayer", tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
+        self.geoWhiteboard = GeoWhiteboard(self.rotDestLayer)
+        
         #Copy over symbology from rot data layer
         sourceRenderer = self.rotData.rotSourceLayer.renderer()
         if not sourceRenderer is None:
@@ -165,6 +169,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     #     #ek.print_result ("test_GPS_pole_extraction", pole_result)
 
     def displayRotData(self):
+        # get gps data within 500 km
         lat_list, long_list, ve_list, vn_list =\
               tu.get_GPS_rotation_data(tu.OC_NA_Pole['lat'], tu.OC_NA_Pole['long'], 500000)
         for i in range(len(lat_list)):
@@ -172,7 +177,12 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             feature = self.rotData.createRotFeature(
                 PLoc(long_list[i], lat_list[i]), PDist(ve_list[i], vn_list[i]), d_scaling)
             self.yhsRotFeatureList.append(feature)
-        
+
+        # get euler pole and display
+        pole = epr.fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list)
+        label_text = f"{pole['long']:.4f}, {pole['lat']:.4f}, {pole['omega']:.4f} deg"
+        self.geoWhiteboard.draw_target(pole['long'], pole['lat'], label_text)
+
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
         if self.rbDisplayRot.isChecked():
@@ -191,42 +201,42 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return
 
-        plugin_dir_os = os.path.dirname(os.path.realpath(__file__)) # point to plugin dir
-        file_path = os.path.join(plugin_dir_os, "rotation_run.csv")
-        with open(file_path, "w") as dataFile:
-            startT = float(self.sbStartMa.value()) * 1e6
-            if len(self.yhsPoints) == 0:
-                self.rotData.setupSampling(self.interpFunction)
-                self.plateMotion.initialize(startT, self.spbStartLatDD.value(), self.spbStartLongDD.value(),
-                                    self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value(), self.interpFunction, dataFile)
-                startPoint = QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value())
-                self.yhsPoints.append(startPoint)  # Set initial points
-                self.naPoints.append(startPoint)
+        # plugin_dir_os = os.path.dirname(os.path.realpath(__file__)) # point to plugin dir
+        # file_path = os.path.join(plugin_dir_os, "rotation_run.csv")
+        # with open(file_path, "w") as dataFile:
+        startT = float(self.sbStartMa.value()) * 1e6
+        if len(self.yhsPoints) == 0:
+            self.rotData.setupSampling(self.interpFunction)
+            self.plateMotion.initialize(startT, self.spbStartLatDD.value(), self.spbStartLongDD.value(),
+                                self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value(), self.interpFunction, dataFile)
+            startPoint = QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value())
+            self.yhsPoints.append(startPoint)  # Set initial points
+            self.naPoints.append(startPoint)
 
-            for i in range (self.sbSteps.value()):
-                deltaT = self.spbStepMa.value() * 1e6
-                locYhs = self.plateMotion.getNextState(deltaT,  self.rotData,
-                                    self.rbApplyMaScaling.isChecked(),
-                                    self.rbGpsModel.isChecked())
-                if not locYhs:
-                    print("Something went wrong. No update to track")
-                    break
+        for i in range (self.sbSteps.value()):
+            deltaT = self.spbStepMa.value() * 1e6
+            locYhs = self.plateMotion.getNextState(deltaT,  self.rotData,
+                                self.rbApplyMaScaling.isChecked(),
+                                self.rbGpsModel.isChecked())
+            if not locYhs:
+                print("Something went wrong. No update to track")
+                break
 
-                self.yhsPoints.append(QgsPoint(locYhs.long, locYhs.lat))
+            self.yhsPoints.append(QgsPoint(locYhs.long, locYhs.lat))
 
-                if (locYhs.long < JFP.leadingEdgeLongitude(self.plateMotion.currentYr)
-                        and self.rbShowJdFOcclusion.isChecked()):
-                    self.yhsOccludedPoints.append(QgsPoint(locYhs.long, locYhs.lat))
+            if (locYhs.long < JFP.leadingEdgeLongitude(self.plateMotion.currentYr)
+                    and self.rbShowJdFOcclusion.isChecked()):
+                self.yhsOccludedPoints.append(QgsPoint(locYhs.long, locYhs.lat))
 
-                if self.rbShowNA.isChecked():
-                    self.naPoints.append(QgsPoint(self.plateMotion.locNa.long, self.plateMotion.locNa.lat))
+            if self.rbShowNA.isChecked():
+                self.naPoints.append(QgsPoint(self.plateMotion.locNa.long, self.plateMotion.locNa.lat))
 
-                # feature = self.rotData.createRotFeature(locYhs, self.plateMotion.distRot, 200.0 / -deltaT)
-                # self.yhsRotFeatureList.append(feature)
+            # feature = self.rotData.createRotFeature(locYhs, self.plateMotion.distRot, 200.0 / -deltaT)
+            # self.yhsRotFeatureList.append(feature)
 
-            self.displayYhsData()
-            if self.rbDisplayRot.isChecked():
-                self.displayRotData()
+        self.displayYhsData()
+        if self.rbDisplayRot.isChecked():
+            self.displayRotData()
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
@@ -314,6 +324,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def closeRotLayer(self):
         if self.rotDestLayer:
+            self.geoWhiteboard.erase_everything()
             self.removeLayer(self.rotDestLayer)
             self.rotDestLayer = None
             self.rotDisplayLayerSetup = False
