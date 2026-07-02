@@ -1,16 +1,28 @@
 import test_utils as tu
+import numpy as np
 from .plate_motion import PLoc, PDist
 import euler_pole_regression as epr
 import gauss_newton as gn
 
+delta_ve = 0.0
+delta_vn = 0.0
+
+def clear_test_run_pass():
+  global delta_ve, delta_vn
+  delta_ve = 0.0
+  delta_vn = 0.0  
+
 def run_GPS_test_pass(self):
+  global delta_ve, delta_vn
   # get rot data
   diam = 500 # km
   center_lat = 45.0
   center_long = -118
-  lat_list, long_list, ve_list, vn_list =\
-        tu.get_GPS_rotation_data(center_lat, center_long, diam * 1000)
-  finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam)
+  lat_list, long_list, ve_list, vn_list, se, sn =\
+    tu.get_GPS_rotation_data(center_lat, center_long, diam * 1000)
+  mod_ve_list = np.array(ve_list) - delta_ve
+  mod_vn_list = np.array(vn_list) - delta_vn
+  delta_ve, delta_vn = finish_test_setup(self, lat_list, long_list, mod_ve_list, mod_vn_list, diam)
 
 def run_quad_test_pass(self):
   # get rot data
@@ -50,8 +62,10 @@ def run_cropped_disk_test_test_pass(self):
       None)
   finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam)
   
-def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam):
-     # set rot data in Qgis
+def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, delta_ve = None, delta_vn = None):
+  # clear and set rot data in Qgis
+  self.rotDestLayer.dataProvider().truncate()
+  self.yhsRotFeatureList = []
   for i in range(len(lat_list)):
     feature = self.rotData.createRotFeature(
         PLoc(long_list[i], lat_list[i]), PDist(ve_list[i], vn_list[i]), 0.001)
@@ -65,3 +79,5 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam):
   
   #show results in Qgis
   self.geoWhiteboard.draw_target(pole['long'], pole['lat'], label_text1 + label_text2)
+  
+  return gn_out['t_x'], gn_out['t_y']

@@ -91,7 +91,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rbYHS.toggled.connect(self.setStartPoint)
         self.rbBrothers.toggled.connect(self.setStartPoint)
         self.rbME.toggled.connect(self.setStartPoint)
-        self.rbDisplayRot.clicked.connect(self.displayRotData)
+        self.pbDisplayRot.clicked.connect(self.displayRotData)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
 
         self.setStartPoint()
@@ -168,12 +168,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         # run_rand_disk_test_pass(self)
         #run_cropped_disk_test_test_pass(self)
 
-        if not self.rotDisplayLayerSetup:
-            self.setupRotDisplayLayer()
-        if self.rbDisplayRot.isChecked():
-            self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
-        else:
-            self.clearRotDataLayer()
+        self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
         QgsProject.instance().addMapLayer(self.rotDestLayer)
         self.rotDestLayer.triggerRepaint()
     
@@ -181,6 +176,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.rotDestLayer != None: 
             self.rotDestLayer.dataProvider().truncate()
             self.geoWhiteboard.erase_everything()
+            clear_test_run_pass()
             self.rotDestLayer.triggerRepaint()
 
     ####
