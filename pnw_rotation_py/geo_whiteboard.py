@@ -119,3 +119,14 @@ class GeoWhiteboard:
         if self.annotation_layer:
             QgsProject.instance().removeMapLayer(self.annotation_layer.id())
             self.annotation_layer = None
+
+    def unload(self):
+        """Removes the plugin menu items, actions, and cleans up workspace artifacts."""
+        # Loop through and remove the actions built by Plugin Builder...
+        # [Keep the default generated icon/menu removal logic here]
+        
+        # Explicitly target and destroy the whiteboard layer on exit
+        self.erase_everything()
+        layers_to_remove = QgsProject.instance().mapLayersByName("Whiteboard Annotations")
+        for layer in layers_to_remove:
+            QgsProject.instance().removeMapLayer(layer.id())

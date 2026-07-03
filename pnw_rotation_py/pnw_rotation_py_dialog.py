@@ -139,8 +139,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.rotDestLayer.isValid():
             QgsMessageLog.logMessage("Couldn't create rotDestLayer", tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
-
-        self.geoWhiteboard = GeoWhiteboard(self.rotDestLayer)
         
         #Copy over symbology from rot data layer
         sourceRenderer = self.rotData.rotSourceLayer.renderer()
@@ -155,6 +153,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             QgsMessageLog.logMessage('failed to copy rot data', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
+
+        self.geoWhiteboard = GeoWhiteboard(self.rotDestLayer)
 
         self.rotDisplayLayerSetup = True
         return True
@@ -175,7 +175,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     def clearRotDataLayer(self):
         if self.rotDestLayer != None: 
             self.rotDestLayer.dataProvider().truncate()
-            self.geoWhiteboard.erase_everything()
+            self.geoWhiteboard.clear_annotations()
             clear_test_run_pass()
             self.rotDestLayer.triggerRepaint()
 
@@ -317,7 +317,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def closeRotLayer(self):
         if self.rotDestLayer:
-            self.geoWhiteboard.erase_everything()
+            self.geoWhiteboard.unload()
             self.removeLayer(self.rotDestLayer)
             self.rotDestLayer = None
             self.rotDisplayLayerSetup = False
