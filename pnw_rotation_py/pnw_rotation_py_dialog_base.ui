@@ -384,7 +384,7 @@
     <number>1</number>
    </property>
    <property name="value">
-    <number>500</number>
+    <number>1</number>
    </property>
   </widget>
   <widget class="QLabel" name="StartLatLabel_4">

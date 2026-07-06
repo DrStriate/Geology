@@ -2,9 +2,31 @@ import math
 import numpy as np
 from haversine import haversine, Unit
 from pyproj import Geod
+from dataclasses import dataclass
 
 geod = Geod(ellps="WGS84")
 R = 6371.0E3 # Earth radius in m
+
+@dataclass
+class PLoc:
+    long: float
+    lat: float
+    def print(self, label): 
+        print (f"{label} long: {self.long:0.3f}, lat:  {self.lat:0.3f}")
+    
+    def __iadd__(self, other):  # Overriding the += operator
+        if isinstance(other, PLoc):
+            self.long += other.long
+            self.lat += other.lat
+            return self 
+        return NotImplemented
+
+@dataclass
+class PDist:
+    east: float
+    north: float
+    def print(self, label): 
+        print (f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
 def get_northerly_easterly_from_lat_long_pts(lon1, lat1, lon2, lat2):
     # inv() expects (lon1, lat1, lon2, lat2)
@@ -30,26 +52,6 @@ def get_sample_pts(long_list, lat_list, pole):
     pe_list.append(p_e)
     pn_list.append(p_n)
   return pe_list, pn_list 
-
-def find_moments(long_list, lat_list, ve_list, vn_list, pole):
-    sum_alpha = 0.0
-    avg_alpha = 0.0
-    count = len(ve_list) 
-    pe_list, pn_list = get_sample_pts(long_list, lat_list, pole)
-    for i in range(count):
-        v = np.array([ve_list[i], vn_list[i]])
-        p = np.array([pe_list[i], pn_list[i]])
-        s = p + v
-        norm_s = np.linalg.norm(s)
-        norm_p = np.linalg.norm(p)
-        dot_vp = np.dot(s, p)/(norm_p * norm_s)
-        angle_vp = np.degrees(np.acos(dot_vp))
-        # print(f"angle_vp: {angle_vp:.4f}")
-        sum_alpha += angle_vp
-    if count > 0:
-        avg_alpha = sum_alpha / count
-    return avg_alpha
-
 
 def clamp(value, minimum, maximum):
     return max(minimum, min(value, maximum))
@@ -93,6 +95,25 @@ def get_pole_rotation_velocity(pole_lat, pole_lon, rotation_rate_deg_per_myr, la
     d = R * np.tan(np.radians(rotation_rate_deg_per_myr)) * 10E-3 # m / Ma
     V = (d_hat[0] * d, d_hat[1] * d)  # mm / Yr
     return V
+
+def find_moments(long_list, lat_list, ve_list, vn_list, pole):
+    sum_alpha = 0.0
+    avg_alpha = 0.0
+    count = len(ve_list) 
+    pe_list, pn_list = get_sample_pts(long_list, lat_list, pole)
+    for i in range(count):
+        v = np.array([ve_list[i], vn_list[i]])
+        p = np.array([pe_list[i], pn_list[i]])
+        s = p + v
+        norm_s = np.linalg.norm(s)
+        norm_p = np.linalg.norm(p)
+        dot_vp = np.dot(s, p)/(norm_p * norm_s)
+        angle_vp = np.degrees(np.acos(dot_vp))
+        # print(f"angle_vp: {angle_vp:.4f}")
+        sum_alpha += angle_vp
+    if count > 0:
+        avg_alpha = sum_alpha / count
+    return avg_alpha
 
 
 

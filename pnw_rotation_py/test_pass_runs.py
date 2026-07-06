@@ -1,5 +1,3 @@
-from qgis.core import QgsField, QgsProperty, QgsFeature, QgsGeometry, QgsPointXY
-from PyQt5.QtCore import QMetaType
 import test_utils as tu
 import numpy as np
 from .plate_motion import PLoc, PDist

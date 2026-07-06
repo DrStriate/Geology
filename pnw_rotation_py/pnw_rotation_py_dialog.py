@@ -39,15 +39,13 @@ from qgis._core import (QgsMessageLog,
 from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
 from qgis.utils import iface
 
+from .yhs_path import YhsPath
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .plate_motion import PlateMotion, PLoc, PDist
 from .geo_whiteboard import GeoWhiteboard
 
-import test_utils as tu
 from .test_pass_runs import *
-import euler_pole_regression as epr
-import gauss_newton as gn
 
 # Important constants
 NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
@@ -83,7 +81,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsOccludedPoints = [] # occluded by JdF
         self.naPoints = []  # NA only YHS plot
         self.yhsRotFeatureList = []
-        self.plateMotion = PlateMotion()
+        self.yhsPath = YhsPath()
         self.geoWhiteboard = None
         
         self.clearDataButton.clicked.connect(self.clearData)
@@ -195,36 +193,26 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         startT = float(self.sbStartMa.value()) * 1e6
         if len(self.yhsPoints) == 0:
             self.rotData.setupSampling(self.interpFunction)
-            self.plateMotion.initialize(startT, self.spbStartLatDD.value(), self.spbStartLongDD.value(),
-                                self.spbNaPlateSpeed.value(), self.spbNaPlateBearing.value(), self.interpFunction, dataFile)
             startPoint = QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value())
             self.yhsPoints.append(startPoint)  # Set initial points
             self.naPoints.append(startPoint)
-
+        currentYr = startT
+        deltaT = self.spbStepMa.value() * 1e6
         for i in range (self.sbSteps.value()):
-            deltaT = self.spbStepMa.value() * 1e6
-            locYhs = self.plateMotion.getNextState(deltaT,  self.rotData,
-                                self.rbApplyMaScaling.isChecked(),
-                                self.rbGpsModel.isChecked())
+            currentYr += deltaT
+            locYhs = self.yhsPath.get_yhs_loc(currentYr)
             if not locYhs:
                 print("Something went wrong. No update to track")
                 break
 
             self.yhsPoints.append(QgsPoint(locYhs.long, locYhs.lat))
 
-            if (locYhs.long < JFP.leadingEdgeLongitude(self.plateMotion.currentYr)
+            if (locYhs.long < JFP.leadingEdgeLongitude(currentYr)
                     and self.rbShowJdFOcclusion.isChecked()):
                 self.yhsOccludedPoints.append(QgsPoint(locYhs.long, locYhs.lat))
 
-            if self.rbShowNA.isChecked():
-                self.naPoints.append(QgsPoint(self.plateMotion.locNa.long, self.plateMotion.locNa.lat))
-
-            # feature = self.rotData.createRotFeature(locYhs, self.plateMotion.distRot, 200.0 / -deltaT)
-            # self.yhsRotFeatureList.append(feature)
 
         self.displayYhsData()
-        if self.rbDisplayRot.isChecked():
-            self.displayRotData()
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
