@@ -42,7 +42,6 @@ from qgis.utils import iface
 from .yhs_path import YhsPath
 from .jdf_plate import JFP
 from .rot_data import RotData
-from .plate_motion import PlateMotion, PLoc, PDist
 from .geo_whiteboard import GeoWhiteboard
 
 from .test_pass_runs import *
@@ -81,7 +80,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsOccludedPoints = [] # occluded by JdF
         self.naPoints = []  # NA only YHS plot
         self.yhsRotFeatureList = []
-        self.yhsPath = YhsPath()
         self.geoWhiteboard = None
         
         self.clearDataButton.clicked.connect(self.clearData)
@@ -97,6 +95,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.spbNaPlateSpeed.setValue(NA_Speed)
         self.rotData.load()
         self.setupRotDisplayLayer()
+        self.yhsPath = YhsPath(self)
 
         return
 

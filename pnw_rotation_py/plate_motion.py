@@ -8,15 +8,16 @@ from .src import geo_helper as gh
 #
 # Velocities of the inertial points on the plate are measured in meters per year while the Lat/Lon are scaled by DeltaT
 
-@dataclass
-class PLoc:
-    long: float
-    lat: float
+# PLoc and PDist moved to geo_helper
+# @dataclass
+# class PLoc:
+#     long: float
+#     lat: float
 
-@dataclass
-class PDist:
-    East: float
-    North: float
+# @dataclass
+# class PDist:
+#     East: float
+#     North: float
 
 class PlateMotion:
     # Historic estimates of rates compared to current (0 Ma)

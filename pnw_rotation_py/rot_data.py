@@ -8,6 +8,7 @@ import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 import geopandas as gpd
 from .src import geo_helper as gh
+from .src.geo_helper import PLoc, PDist
 
 @dataclass
 class PState:
@@ -204,7 +205,7 @@ class RotData:
 
         # --- Set the Attributes ---
         # Provide a list of values that match the field order defined above
-        attributes = [pLoc.long, pLoc.lat, pDist.East * d_scaling, pDist.North * d_scaling]
+        attributes = [pLoc.long, pLoc.lat, pDist.east * d_scaling, pDist.north * d_scaling]
 
         # Assign the attributes to the feature
         new_feature.setAttributes(attributes)

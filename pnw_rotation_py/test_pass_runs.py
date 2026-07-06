@@ -1,6 +1,6 @@
 import test_utils as tu
 import numpy as np
-from .plate_motion import PLoc, PDist
+from .src.geo_helper import PLoc, PDist
 import euler_pole_regression as epr
 import gauss_newton as gn
 
@@ -80,6 +80,7 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = 
   label_text1 = f"{pole['long']:.4f}, {pole['lat']:.4f}, {pole['omega']:.3f} deg, "
   label_text2 = f"e: {(gn_out['t_x'] / 1E3):.2f} km, n: {(gn_out['t_y'] / 1E3):.2f} km, {diam} km"
   self.geoWhiteboard.draw_target(pole['long'], pole['lat'], label_text1 + label_text2)
+  print(label_text1 + label_text2)
 
   # if translation correction added, add a delta_V vector to the target to sho that
   if d_ve != 0.0 or d_vn != 0.0:    

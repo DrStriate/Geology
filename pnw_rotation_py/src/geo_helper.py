@@ -21,7 +21,8 @@ class PLoc:
             return self 
         return NotImplemented
 
-@dataclass
+@dataclass 
+# PDist can be used for distance (meters) or Velocity. For V the standard is mm/Yr (= km/ma) 
 class PDist:
     east: float
     north: float
@@ -70,6 +71,10 @@ def LatLongForDeDn(latitude, longitude, de, dn): #de, dn in meters
     latOut = latitudeFromDistN(dn) + latitude
     longOut = longitudeFromDistE(latOut, de) + longitude
     return [latOut, longOut]
+
+def getPlocForPdist(ploc, pdist): #PLoc is start lat, long and PDist is dist e and n in m (returns a PLoc)
+    latlong_out = LatLongForDeDn(ploc.lat, ploc.long, pdist.east, pdist.north)
+    return PLoc(latlong_out[1], latlong_out[0])
 
 def DistanceFromLatLong(point1, point2): # (lat, lon)
     if point1[0] < -90 or point1[0] > 90 or point2[0] < -90 or point1[0] > 90:
