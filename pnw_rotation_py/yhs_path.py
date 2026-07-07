@@ -3,6 +3,7 @@ from .src import geo_helper as gh
 from .src import test_utils as tu
 from .src import euler_pole_regression as epr
 from .src import gauss_newton as gn
+from . import path_layer as pl
 
 PLoc = gh.PLoc  # 3. Now it is safe to assign your class
 PDist = gh.PDist
@@ -28,17 +29,19 @@ class YhsPath:
     self.pnw_rot_pole, self.pnw_rot_pole_v = self.getRotPoleAndVelocity(self.Rot_Data_Sample_center, self.sample_radius)
     self.setup_graphics(parent)
 
+    self.path_layer = None
+
   def setup_graphics(self, parent):
     parent.rotDestLayer.dataProvider().truncate()
     parent.yhsRotFeatureList = []
 
-  def reset_data(self): # any statefulness that changes with runs should be resettable
+  def erase_everything(self): # any statefulness that changes with runs should be resettable
+    self.path_layer.clear_layer()
     return
-
-  def draw_translation_vector(self, pStart, pdist):
-    feature = self.parent.rotData.createRotFeature(pStart, pdist, 0.001) 
-    self.parent.yhsRotFeatureList.append(feature)
-    
+  
+  def closeLayer(self):
+    self.path_layer.unload()
+  
   def getRotPoleAndVelocity(self, raw_data_center, distance):
     # get rot data
     lat_list, long_list, ve_list, vn_list, se, sn =\
@@ -62,15 +65,23 @@ class YhsPath:
   
   def get_yhs_loc(self, yrs): # yrs is years
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location
-    delta_d = PDist(-self.na_plate_v['e'] * yrs, -self.na_plate_v['n'] * yrs)
+    delta_d = PDist(-self.na_plate_v['e'] * yrs / SF, -self.na_plate_v['n'] * yrs / SF) 
     ma_yhs_lat, ma_yhs_long = gh.LatLongForDeDn(self.yhs_loc.lat,self.yhs_loc.long, delta_d.east, delta_d.north)
     new_yhs_loc1 = PLoc(ma_yhs_long, ma_yhs_lat)
     new_yhs_loc1.print("get_yhs_loc new_yhs_loc1")
 
     # 2: Move up by pole velocity scaled by ma from 0 Ma location
-    dist_moved_by_pole_v = PDist(self.pnw_rot_pole_v.east * yrs / SF, self.pnw_rot_pole_v.north * yrs / SF)
+    dist_moved_by_pole_v = PDist(-self.pnw_rot_pole_v.east * yrs / SF, -self.pnw_rot_pole_v.north * yrs / SF)
     new_yhs_loc2 = gh.getPlocForPdist(new_yhs_loc1, dist_moved_by_pole_v)
     new_yhs_loc2.print("get_yhs_loc new_yhs_loc2 ")
-    self.draw_translation_vector(new_yhs_loc1, dist_moved_by_pole_v)
+
+    if self.path_layer == None:
+        self.path_layer = pl.PathLayer()
+        self.path_layer.create_path_layer("Yhs Path Layer")
+    
+    yhs_v_paths = [
+        [(new_yhs_loc1.long, new_yhs_loc1.lat), (new_yhs_loc2.long, new_yhs_loc2.lat), "translation v"]
+    ]
+    self.path_layer.add_run_paths_to_path_layer(yhs_v_paths)
 
     return new_yhs_loc1

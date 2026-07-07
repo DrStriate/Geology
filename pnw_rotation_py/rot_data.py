@@ -76,6 +76,25 @@ class RotData:
 
         self.rotDataLoaded = True
         return True
+    
+    def createRotFeature(self, pLoc, pDist, d_scaling = 1.0):
+        # --- Create a new QgsFeature instance ---
+        new_feature = QgsFeature(self.rotSourceFields)
+        geometry = QgsGeometry.fromPointXY(QgsPointXY(pLoc.long, pLoc.lat))
+
+        # Assign the created geometry to the feature
+        new_feature.setGeometry(geometry)
+
+        # --- Set the Attributes ---
+        # Provide a list of values that match the field order defined above
+        attributes = [pLoc.long, pLoc.lat, pDist.east * d_scaling, pDist.north * d_scaling]
+
+        # Assign the attributes to the feature
+        new_feature.setAttributes(attributes)
+
+        return new_feature
+
+
 
     # Setup routines to prep for sampling depending on interpFunction
     def setupSampling(self, interpFunction):
@@ -194,21 +213,3 @@ class RotData:
         else:
             print("No interp found")
         return
-
-    def createRotFeature(self, pLoc, pDist, d_scaling = 1.0):
-        # --- Create a new QgsFeature instance ---
-        new_feature = QgsFeature(self.rotSourceFields)
-        geometry = QgsGeometry.fromPointXY(QgsPointXY(pLoc.long, pLoc.lat))
-
-        # Assign the created geometry to the feature
-        new_feature.setGeometry(geometry)
-
-        # --- Set the Attributes ---
-        # Provide a list of values that match the field order defined above
-        attributes = [pLoc.long, pLoc.lat, pDist.east * d_scaling, pDist.north * d_scaling]
-
-        # Assign the attributes to the feature
-        new_feature.setAttributes(attributes)
-
-        return new_feature
-

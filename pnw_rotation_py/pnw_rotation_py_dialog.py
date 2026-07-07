@@ -106,6 +106,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsRotFeatureList = []
         self.clearRotDataLayer()
         self.clearYhsDataLayer()
+        self.yhsPath.erase_everything()
         return
 
     ####
@@ -321,5 +322,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.clearData()
         self.closeRotLayer()
         self.closeYhsLayer()
+        self.yhsPath.closeLayer()
         return
 
