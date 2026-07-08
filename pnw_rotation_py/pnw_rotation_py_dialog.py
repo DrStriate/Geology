@@ -107,6 +107,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.clearRotDataLayer()
         self.clearYhsDataLayer()
         self.yhsPath.erase_everything()
+        self.geoWhiteboard.clear_annotations()
         return
 
     ####
@@ -171,11 +172,11 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotDestLayer.triggerRepaint()
     
     def clearRotDataLayer(self):
-        if self.rotDestLayer != None: 
+        if self.rotDestLayer: 
             self.rotDestLayer.dataProvider().truncate()
-            self.geoWhiteboard.clear_annotations()
-            clear_test_run_pass()
             self.rotDestLayer.triggerRepaint()
+            clear_test_run_pass()
+
 
     ####
     # run Yhs Button

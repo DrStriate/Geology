@@ -3,7 +3,7 @@ import geo_helper as gh
 # Gauss-Newton 2d solver for translation, rotation and scale in 2D 
 import numpy as np
 def solve_gauss_newton_2D_transform_geo(sample_long, sample_lat, v_e, v_n, euler_pole, normalize = True): # meters and mm/Y units 
-  sample_e, sample_n = gh.get_sample_pts(sample_long, sample_lat, euler_pole)
+  sample_e, sample_n = gh.getSamplePoints(sample_long, sample_lat, euler_pole)
   return solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n, normalize)
 
 # lats and longs should be normalized relatice to center of rotation for best results

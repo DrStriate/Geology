@@ -29,7 +29,23 @@ class PDist:
     def print(self, label): 
         print (f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
-def get_northerly_easterly_from_lat_long_pts(lon1, lat1, lon2, lat2):
+###
+
+def getPoleRotationOfPoint(pole, point, ma):
+    pole_center = PLoc(pole['long'], pole['lat'])
+    total_angle =  pole['omega'] * ma
+    radius = getDistanceBetweenPoints(point, pole_center)
+    bearing1 = getBearingFromLocations(point, pole_center)
+    bearing2 = bearing1 + total_angle
+    outPoint = getPointFromBearingDistanceFromPoint(pole_center, bearing2, radius)
+    return outPoint
+
+def getPointFromBearingDistanceFromPoint(point, bearing, distance):
+    dVector = PDist(distance * np.sin(bearing), distance * np.cos(bearing)) 
+    outPoint = getPlocForPdistFromPoint(point, dVector)
+    return outPoint
+
+def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
     # inv() expects (lon1, lat1, lon2, lat2)
     # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
     forward_azimuth, back_azimuth, distance_meters = geod.inv(lon2, lat2, lon1, lat1)
@@ -43,13 +59,22 @@ def get_northerly_easterly_from_lat_long_pts(lon1, lat1, lon2, lat2):
     
     return northerly, easterly
 
+def getNortherlyEasterlyFromPoints(point1, point2):
+    northerly, easterly = getNortherlyEasterlyFromLatLongPoints(point1.long, point1.lat, point2.long, point2.lat)
+    return PDist(easterly, northerly)
+
+def getBearingFromLocations (point1, point2):
+    ray1 = getNortherlyEasterlyFromPoints(point1, point2)
+    bearing = np.degrees(np.arctan2(ray1.east, ray1.north))
+    return bearing
+
 # gets lat and long converted to coordinate distances from pole
-def get_sample_pts(long_list, lat_list, pole):
+def getSamplePoints(long_list, lat_list, pole):
   pe_list = []
   pn_list = []
   for i in range(len(long_list)):
     # convert sample points to meters
-    p_n, p_e = get_northerly_easterly_from_lat_long_pts(long_list[i], lat_list[i], pole['long'], pole['lat'])
+    p_n, p_e = getNortherlyEasterlyFromLatLongPoints(long_list[i], lat_list[i], pole['long'], pole['lat'])
     pe_list.append(p_e)
     pn_list.append(p_n)
   return pe_list, pn_list 
@@ -72,13 +97,19 @@ def LatLongForDeDn(latitude, longitude, de, dn): #de, dn in meters
     longOut = longitudeFromDistE(latOut, de) + longitude
     return [latOut, longOut]
 
-def getPlocForPdist(ploc, pdist): #PLoc is start lat, long and PDist is dist e and n in m (returns a PLoc)
+def getPlocForPdistFromPoint(ploc, pdist): #PLoc is start lat, long and PDist is dist e and n in m (returns a PLoc)
     latlong_out = LatLongForDeDn(ploc.lat, ploc.long, pdist.east, pdist.north)
     return PLoc(latlong_out[1], latlong_out[0])
 
+def getDistanceBetweenPoints(point1, point2): #both PLocs
+    if point1.lat < -90 or point1.lat > 90 or point2.lat < -90 or point1.lat > 90:
+        print("bounding error")
+    return haversine((point1.lat, point1.long), (point2.lat, point2.long), unit=Unit.METERS)
+
+# depricated - we don't use this packaging of lat long. Use getDistanceBetweenPoints
 def DistanceFromLatLong(point1, point2): # (lat, lon)
     if point1[0] < -90 or point1[0] > 90 or point2[0] < -90 or point1[0] > 90:
-        print("hello")
+        print("bounding error")
     return haversine(point1, point2, unit=Unit.METERS)
 
 # OC_NA Eigen pole from Wells & Simpson 2001
@@ -105,7 +136,7 @@ def find_moments(long_list, lat_list, ve_list, vn_list, pole):
     sum_alpha = 0.0
     avg_alpha = 0.0
     count = len(ve_list) 
-    pe_list, pn_list = get_sample_pts(long_list, lat_list, pole)
+    pe_list, pn_list = getSamplePoints(long_list, lat_list, pole)
     for i in range(count):
         v = np.array([ve_list[i], vn_list[i]])
         p = np.array([pe_list[i], pn_list[i]])

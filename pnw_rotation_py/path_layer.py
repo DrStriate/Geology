@@ -70,6 +70,8 @@ class PathLayer():
     # 6. Add the layer to the current QGIS Project so it draws on screen
     QgsProject.instance().addMapLayer(self.path_layer)
 
+    self.path_layer.triggerRepaint()
+  
   def clear_layer(self):
     if self.path_layer and self.path_layer.isValid():
       provider = self.path_layer.dataProvider()

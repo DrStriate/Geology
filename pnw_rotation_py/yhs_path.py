@@ -1,3 +1,5 @@
+from qgis._core import QgsProject
+
 import numpy as np
 from .src import geo_helper as gh
 from .src import test_utils as tu
@@ -36,11 +38,13 @@ class YhsPath:
     parent.yhsRotFeatureList = []
 
   def erase_everything(self): # any statefulness that changes with runs should be resettable
-    self.path_layer.clear_layer()
+    if self.path_layer:
+      self.path_layer.clear_layer()
     return
   
   def closeLayer(self):
-    self.path_layer.unload()
+    if self.path_layer:
+      self.path_layer.unload()
   
   def getRotPoleAndVelocity(self, raw_data_center, distance):
     # get rot data
@@ -64,24 +68,27 @@ class YhsPath:
     return rot_pole, PDist(gn_out['t_x'] / SF, gn_out['t_y'] / SF)
   
   def get_yhs_loc(self, yrs): # yrs is years
-    # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location
+    if self.path_layer == None:
+      path_layer_name = "Yhs Path Layer"
+      self.path_layer = pl.PathLayer()
+      self.path_layer.create_path_layer(path_layer_name)
+
+    # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
     delta_d = PDist(-self.na_plate_v['e'] * yrs / SF, -self.na_plate_v['n'] * yrs / SF) 
     ma_yhs_lat, ma_yhs_long = gh.LatLongForDeDn(self.yhs_loc.lat,self.yhs_loc.long, delta_d.east, delta_d.north)
     new_yhs_loc1 = PLoc(ma_yhs_long, ma_yhs_lat)
-    new_yhs_loc1.print("get_yhs_loc new_yhs_loc1")
+    #new_yhs_loc1.print("get_yhs_loc new_yhs_loc1")
 
-    # 2: Move up by pole velocity scaled by ma from 0 Ma location
+    # 2: Move by ma scaled pole translation v (black arc)
     dist_moved_by_pole_v = PDist(-self.pnw_rot_pole_v.east * yrs / SF, -self.pnw_rot_pole_v.north * yrs / SF)
-    new_yhs_loc2 = gh.getPlocForPdist(new_yhs_loc1, dist_moved_by_pole_v)
-    new_yhs_loc2.print("get_yhs_loc new_yhs_loc2 ")
-
-    if self.path_layer == None:
-        self.path_layer = pl.PathLayer()
-        self.path_layer.create_path_layer("Yhs Path Layer")
-    
+    new_yhs_loc2 = gh.getPlocForPdistFromPoint(new_yhs_loc1, dist_moved_by_pole_v)
+    #new_yhs_loc2.print("get_yhs_loc new_yhs_loc2 ")
     yhs_v_paths = [
-        [(new_yhs_loc1.long, new_yhs_loc1.lat), (new_yhs_loc2.long, new_yhs_loc2.lat), "translation v"]
-    ]
+        [(new_yhs_loc1.long, new_yhs_loc1.lat), (new_yhs_loc2.long, new_yhs_loc2.lat), "translation v"]]
     self.path_layer.add_run_paths_to_path_layer(yhs_v_paths)
 
-    return new_yhs_loc1
+    # 3: Rotate by ma scaled pole omega 
+    new_yhs_loc3 = gh.getPoleRotationOfPoint(self.pnw_rot_pole, new_yhs_loc2, yrs / 1e6)
+    self.parent.geoWhiteboard.draw_target(new_yhs_loc3.long, new_yhs_loc3.lat, "YHS")
+    
+    return new_yhs_loc1 #(renders step 1 (new_yhs_loc1))
