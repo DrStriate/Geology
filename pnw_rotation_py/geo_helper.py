@@ -52,12 +52,23 @@ def getPoleRotationOfPoint(pole, point, ma):
     bearing1 = getBearingFromLocations(point, pole_center)
     bearing2 = bearing1 - total_angle
     outPoint = getPointFromBearingDistance(pole_center, bearing2, radius1)
+    radius2 = getDistanceBetweenPoints(outPoint, pole_center)
     return outPoint
 
+#BIG PROBLEMS WITH THIS CODE - SEE TESTS
+# def getPointFromBearingDistance(point, bearing, distance):
+#     dVector = PDist(distance * np.sin(np.radians(bearing)), distance * np.cos(np.radians(bearing))) 
+#     outPoint = getPlocForPdistFromPoint(point, dVector)
+#     return outPoint
+
+#THIS CODE REPLACES ABOVE
 def getPointFromBearingDistance(start_point, bearing_degrees, distance_meters):
     """
     Calculates the destination latitude/longitude using a spherical Earth model.
     """
+    # Earth's radius in meters
+    # R = 6371000.0 
+    
     # Convert degrees to radians
     lat1 = np.radians(start_point.lat)
     lon1 = np.radians(start_point.long)
@@ -100,7 +111,6 @@ def getNortherlyEasterlyFromPoints(point1, point2):
     northerly, easterly = getNortherlyEasterlyFromLatLongPoints(point1.long, point1.lat, point2.long, point2.lat)
     return PDist(easterly, northerly)
 
-# Replace this with accurate forward and back azimuths
 def getBearingFromLocations (point1, point2):
     ray1 = getNortherlyEasterlyFromPoints(point1, point2)
     bearing = np.degrees(np.arctan2(ray1.east, ray1.north))
@@ -184,3 +194,8 @@ def find_moments(long_list, lat_list, ve_list, vn_list, pole):
     if count > 0:
         avg_alpha = sum_alpha / count
     return avg_alpha
+
+
+
+
+

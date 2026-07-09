@@ -36,7 +36,7 @@ def get_GPS_rotation_data (center_lat, center_long, max_distance):
   s_north = []
 
   for i in range(len(list_lats)):
-    dist = gh.DistanceFromLatLong((list_lats[i], list_lons[i]), (center_lat, center_long))
+    dist = gh.getDistanceBetweenPoints(gh.PLoc(list_lons[i], list_lats[i]), gh.PLoc(center_long, center_lat))
     if dist < max_distance:
       lats.append(list_lats[i])
       lons.append(list_lons[i])

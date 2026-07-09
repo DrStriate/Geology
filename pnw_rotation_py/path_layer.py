@@ -14,7 +14,7 @@ class PathLayer():
     self.layer_name = ""
     self.path_layer = None
     
-  def create_path_layer(self, path_layer_name):
+  def create_path_layer(self, path_layer_name, color = "red"):
       self.layer_name = path_layer_name
 
       # 1. Define the memory layer URI
@@ -32,7 +32,7 @@ class PathLayer():
 
       renderer = path_layer.renderer()
       symbol = renderer.symbol()
-      symbol.setColor(QColor(0, 69, 255)) 
+      symbol.setColor(QColor(color)) 
       
       # Set the width (in millimeters by default in QGIS)
       symbol.setWidth(0.5)
@@ -44,7 +44,6 @@ class PathLayer():
         self.create_path_layer(self.layer_name)
 
     features = []
-    provider = self.path_layer.dataProvider()
     for start, end, name in raw_paths:
         # Create a new feature
         feature = QgsFeature()
@@ -62,6 +61,7 @@ class PathLayer():
         features.append(feature)
         
     # 5. Write the features to the layer
+    provider = self.path_layer.dataProvider()
     provider.addFeatures(features)
     
     # Update the layer's extents so QGIS knows how big it is
@@ -73,18 +73,19 @@ class PathLayer():
     self.path_layer.triggerRepaint()
   
   def clear_layer(self):
-    if self.path_layer and self.path_layer.isValid():
-      provider = self.path_layer.dataProvider()
-      
-      # 1. Gather all existing feature IDs in the layer
-      all_ids = [f.id() for f in self.path_layer.getFeatures()]
-      
-      # 2. Tell the provider to delete them
-      provider.deleteFeatures(all_ids)
-      
-      # 3. Force QGIS to redraw the layer (now completely empty)
-      self.path_layer.triggerRepaint()
-    
+    if self.path_layer :
+      if self.path_layer.isValid():
+        provider = self.path_layer.dataProvider()
+        
+        # 1. Gather all existing feature IDs in the layer
+        all_ids = [f.id() for f in self.path_layer.getFeatures()]
+        
+        # 2. Tell the provider to delete them
+        provider.deleteFeatures(all_ids)
+        
+        # 3. Force QGIS to redraw the layer (now completely empty)
+        self.path_layer.triggerRepaint()
+
   def unload(self):
     layers_to_remove = QgsProject.instance().mapLayersByName(self.layer_name)
     for layer in layers_to_remove:
