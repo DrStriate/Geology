@@ -46,7 +46,7 @@ def get_GPS_rotation_data (center_lat, center_long, max_distance):
       s_north.append(list_s_north[i] * MM_PER_YEAR_TO_M_PER_MA)
   return lats, lons, v_east, v_north, s_east, s_north
 
-def create_simple_sample_quad(euler_pole, bearings, dist):
+def create_simple_sample_quad(euler_pole, azimuths, dist):
   longs = []
   lats = []
   v_easts = []  # mm/ yr
@@ -54,8 +54,8 @@ def create_simple_sample_quad(euler_pole, bearings, dist):
 
   Omega = {"omega": euler_pole['omega'], "phi": np.radians(euler_pole['lat']), "lamb": np.radians(euler_pole['long'])}
   # print("")
-  for i in range(len(bearings)):
-    sample = ek.create_sample(euler_pole['long'], euler_pole['lat'], bearings[i], dist)
+  for i in range(len(azimuths)):
+    sample = ek.create_sample(euler_pole['long'], euler_pole['lat'], azimuths[i], dist)
     p = {"phi": np.radians(sample['lat']), "lamb": np.radians(sample['lon'])}
     v = ek.calculate_v_from_Eigen_pole(Omega, p, Omega['omega']);
     longs.append(sample['lon'])

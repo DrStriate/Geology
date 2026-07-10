@@ -4,12 +4,12 @@ from pyproj import Geod
 geod = Geod(ellps="WGS84")
 R = 6371.0E3 # Earth radius in m
   
-def create_sample (start_lon, start_lat, bearing, distance):
+def create_sample (start_lon, start_lat, azimuth, distance):
     # Calculate the terminus point
     end_lon, end_lat, back_azimuth = geod.fwd(
         start_lon, 
         start_lat, 
-        bearing, 
+        azimuth, 
         distance)
     return {"lon": end_lon, "lat": end_lat}
 

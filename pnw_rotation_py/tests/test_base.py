@@ -3,7 +3,7 @@ import pytest
 import test_utils as tu
 
 NA_Speed = 35e-3    # m / yr (Current)
-NA_Bearing = 240.0  # degrees azimuth
+NA_azimuth = 240.0  # degrees azimuth
 YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67
 JdF_Lat = 48.25     # Center of Strait of Juan de Fuca

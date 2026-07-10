@@ -45,10 +45,10 @@ def test_rotation_simple():
 def test_euler_test_quad():
   #test setup
   euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
-  bearings  = [45.0, 135.0, 225.0, 315.0]
+  azimuths  = [45.0, 135.0, 225.0, 315.0]
   sample_dist = 50000 # m
 
-  sample_e, sample_n, v_east, v_north = tu.create_simple_sample_quad(euler_pole, bearings, sample_dist)
+  sample_e, sample_n, v_east, v_north = tu.create_simple_sample_quad(euler_pole, azimuths, sample_dist)
   #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
   #print(f"\ntest_euler_test_quad x: {x}\n")

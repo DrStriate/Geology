@@ -28,9 +28,9 @@ def run_GPS_test_pass(self):
 def run_quad_test_pass(self):
   # get rot data
   euler_pole = tu.OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
-  bearings  = [45.0, 135.0, 225.0, 315.0]
+  azimuths  = [45.0, 135.0, 225.0, 315.0]
   diam = 50 # km
-  long_list, lat_list, ve_list, vn_list = tu.create_simple_sample_quad(euler_pole, bearings, diam * 1000)
+  long_list, lat_list, ve_list, vn_list = tu.create_simple_sample_quad(euler_pole, azimuths, diam * 1000)
   finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam)
 
 def run_rand_disk_test_pass(self):

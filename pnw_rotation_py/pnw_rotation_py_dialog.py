@@ -48,7 +48,7 @@ from .test_pass_runs import *
 
 # Important constants
 NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
-NA_Bearing = 241.0  # degrees azimuth
+NA_azimuth = 241.0  # degrees azimuth
 YHS_lat = 44.43     # Yellowstone hotspot caldera
 YHS_long = -110.67
 Brothers_Lat = 47.652      # Mount Olympus
@@ -89,9 +89,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rbME.toggled.connect(self.setStartPoint)
         self.pbDisplayRot.clicked.connect(self.displayRotData)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
+        self.rbGpsModel.toggled.connect(self.setYhsPathModel)
 
         self.setStartPoint()
-        self.spbNaPlateBearing.setValue(NA_Bearing)
+        self.spbNaPlateazimuth.setValue(NA_azimuth)
         self.spbNaPlateSpeed.setValue(NA_Speed)
         self.rotData.load()
         self.setupRotDisplayLayer()
@@ -293,6 +294,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.spbStartLatDD.setValue(Brothers_Lat)
             self.spbStartLongDD.setValue(Brothers_Long)
         return
+    
+    def setYhsPathModel(self):
+        self.yhsPath.useGpuModel(self.rbGpsModel.isChecked())
 
     def removeLayer(self, layer):
         if layer :

@@ -11,15 +11,15 @@ def test_getPoleRotationOfPoint():
   pole_center = PLoc(pole['long'], pole['lat'])
   total_angle =  pole['omega'] * ma
   radius1 = getDistanceBetweenPoints(point, pole_center)
-  bearing1 = getBearingFromLocations(point, pole_center)
-  bearing2 = bearing1 - total_angle
-  outPoint = getPointFromBearingDistance(pole_center, bearing2, radius1)
+  azimuth1 = getFwdAzimuthFromLocations(point, pole_center)
+  azimuth2 = azimuth1 - total_angle
+  outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius1)
   radius2 = getDistanceBetweenPoints(outPoint, pole_center)
   print(f"radius1: {radius1:0.1f}")
   print(f"radius2: {radius2:0.1f}")
-  print(f"bearing2: {bearing2:0.2f}")
+  print(f"azimuth2: {azimuth2:0.2f}")
   assert radius1 == pt.approx(radius2, 1e-4)
 
 
-# Revise this test to validare bearings from pole using for precise azimuths
+# Revise this test to validare azimuths from pole using for precise azimuths
 # forward_azimuth, back_azimuth, distance_meters = geod.inv(lon2, lat2, lon1, lat1)

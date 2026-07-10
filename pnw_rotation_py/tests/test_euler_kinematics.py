@@ -10,10 +10,10 @@ OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 def test_euler_pole_from_quad():
   #test setup
   euler_pole = OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
-  bearings  = [45.0, 135.0, 225.0, 315.0]
+  azimuths  = [45.0, 135.0, 225.0, 315.0]
   sample_dist = 50000 # m
 
-  sample_lons, sample_lats, sample_v_east, sample_v_north = tu.create_simple_sample_quad(euler_pole, bearings, sample_dist)
+  sample_lons, sample_lats, sample_v_east, sample_v_north = tu.create_simple_sample_quad(euler_pole, azimuths, sample_dist)
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("test_euler_pole_from_quad", pole_result)
 

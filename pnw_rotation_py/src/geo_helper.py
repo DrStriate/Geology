@@ -11,11 +11,11 @@ R = 6371.0E3 # Earth radius in m
 def getMagnitude(d_e, d_n):    # only use for very small distances
     return np.sqrt(d_e * d_e + d_n * d_n)
 
-def getBearing (d_e, d_n): # d_e and d_n in dist / velocity 
-    bearing = np.degrees(np.arctan2(d_e, d_n))
-    if bearing < 0.0 :
-        bearing += 360.0 # arctan2 returns -180 ... 180 wheras bearing needs to be 0 ... 360
-    return bearing
+def getAzimuth (d_e, d_n): # d_e and d_n in dist / velocity 
+    azimuth = np.degrees(np.arctan2(d_e, d_n))
+    if azimuth < 0.0 :
+        azimuth += 360.0 # arctan2 returns -180 ... 180 wheras azimuth needs to be 0 ... 360
+    return azimuth
 
 @dataclass
 class PLoc:
@@ -36,42 +36,53 @@ class PLoc:
 class PDist:
     east: float
     north: float
-    def bearing (self):
-        return getBearing(self.east, self.north)
+    def azimuth (self):
+        return getAzimuth(self.east, self.north)
     def magnitude (self): # only valid for very small magnitudes
         return getMagnitude(self.east, self.north)
     def print(self, label): 
         print (f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
+@dataclass
+# PAsp azimuth is in degrees (cw from N) and speed is in mm/yr or km/Ma (equiv)
+# PAsp is an Azimuth & Speed proxy for PDist but better in producing accurate predictions over large distances
+class PAsp:
+    azimuth: float
+    speed: float
+    def print(self, label): 
+        print (f"{label} azimuth: {self.azimuth:0.3f}, apeed:  {self.speed:0.3f}")
+    # @classmethod
+    # def from_PLoc(cls, de, dn) -> Self:
+    #     return PAsp(azimuth = getAzimuth(de, dn), speed = getMagnitude(de, dn))
 ###
 
 def getPoleRotationOfPoint(pole, point, ma):
     pole_center = PLoc(pole['long'], pole['lat'])
     total_angle =  pole['omega'] * ma
     radius1 = getDistanceBetweenPoints(point, pole_center)
-    bearing1 = getBearingFromLocations(point, pole_center)
-    bearing2 = bearing1 - total_angle
-    outPoint = getPointFromBearingDistance(pole_center, bearing2, radius1)
+    azimuth1 = getFwdAzimuthFromLocations(point, pole_center)
+    azimuth2 = azimuth1 - total_angle
+    outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius1)
     return outPoint
 
-def getPointFromBearingDistance(start_point, bearing_degrees, distance_meters):
+def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
     """
     Calculates the destination latitude/longitude using a spherical Earth model.
     """
     # Convert degrees to radians
     lat1 = np.radians(start_point.lat)
     lon1 = np.radians(start_point.long)
-    bearing = np.radians(bearing_degrees)
+    azimuth = np.radians(azimuth_degrees)
     
     # Angular distance covered
     angular_dist = distance_meters / R
     
     # Calculate destination latitude
     lat2 = np.arcsin(np.sin(lat1) * np.cos(angular_dist) +
-                     np.cos(lat1) * np.sin(angular_dist) * np.cos(bearing))
+                     np.cos(lat1) * np.sin(angular_dist) * np.cos(azimuth))
     
     # Calculate destination longitude
-    lon2 = lon1 + np.arctan2(np.sin(bearing) * np.sin(angular_dist) * np.cos(lat1),
+    lon2 = lon1 + np.arctan2(np.sin(azimuth) * np.sin(angular_dist) * np.cos(lat1),
                              np.cos(angular_dist) - np.sin(lat1) * np.sin(lat2))
     
     # Convert back from radians to degrees
@@ -96,17 +107,10 @@ def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
     easterly = distance_meters * np.sin(azimuth_rad)
     return northerly, easterly
 
-def getNortherlyEasterlyFromPoints(point1, point2):
-    northerly, easterly = getNortherlyEasterlyFromLatLongPoints(point1.long, point1.lat, point2.long, point2.lat)
-    return PDist(easterly, northerly)
-
-# Replace this with accurate forward and back azimuths
-def getBearingFromLocations (point1, point2):
-    ray1 = getNortherlyEasterlyFromPoints(point1, point2)
-    bearing = np.degrees(np.arctan2(ray1.east, ray1.north))
-    if bearing < 0.0 :
-        bearing += 360.0 # arctan2 returns -180 ... 180 wheras bearing needs to be 0 ... 360
-    return bearing
+def getFwdAzimuthFromLocations (point1, point2):
+   # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
+    forward_azimuth, back_azimuth, distance_meters = geod.inv(point2.long, point2.lat, point1.long, point1.lat)
+    return forward_azimuth
 
 # gets lat and long converted to coordinate distances from pole
 def getSamplePoints(long_list, lat_list, pole):
@@ -133,9 +137,9 @@ def longitudeFromDistE(latitude, dist): # meters East
     return np.degrees(longitudeDeltaRadians)
 
 def LatLongForDeDn(latitude, longitude, de, dn): #de, dn in meters
-    bearing = getBearing(de, dn)
+    azimuth = getAzimuth(de, dn)
     distance = getMagnitude(de, dn)
-    ploc = getPointFromBearingDistance(PLoc(longitude, latitude), bearing, distance)
+    ploc = getPointFromAzimuthDistance(PLoc(longitude, latitude), azimuth, distance)
     return ploc
 
 def getPlocForPdistFromPoint(ploc, pdist): #PLoc is start lat, long and PDist is dist e and n in m (returns a PLoc)

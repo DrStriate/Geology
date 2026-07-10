@@ -70,9 +70,9 @@ class PlateMotion:
         self.dataFile = None
         self.OC_NAws  = {"lat" : 45.54, "lon" : 119.6, "AngVel": 1.32}
 
-    def initialize(self, startT, initLat, initLong, naSpeed, naBearing, interpFunction, dataFile = None): # speed in m/yr, bearing is azimuth degrees
-        self.naPlateVn = math.cos(math.radians(naBearing)) * naSpeed # math.cos(247.5) * 46  mm / Y
-        self.naPlateVe = math.sin(math.radians(naBearing)) * naSpeed # math.sin(247.5) * 46  mm / Y
+    def initialize(self, startT, initLat, initLong, naSpeed, naazimuth, interpFunction, dataFile = None): # speed in m/yr, azimuth is azimuth degrees
+        self.naPlateVn = math.cos(math.radians(naazimuth)) * naSpeed # math.cos(247.5) * 46  mm / Y
+        self.naPlateVe = math.sin(math.radians(naazimuth)) * naSpeed # math.sin(247.5) * 46  mm / Y
         self.currentYr = startT
         self.locYhs = PLoc(initLong, initLat)
         self.locNa = PLoc(initLong, initLat)
