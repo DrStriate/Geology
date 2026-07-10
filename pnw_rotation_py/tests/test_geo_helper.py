@@ -2,6 +2,7 @@ from geo_helper import *
 import pytest as pt
 
 def test_getPoleRotationOfPoint():
+  testPAdist = PAdist(0.0, 0.0)
   point = PLoc(long=-121.57708451886487, lat=40.84987174388522)
   ma = -50.0
   pole = {'lat': 44.871330515586074,

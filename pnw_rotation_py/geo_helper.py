@@ -44,16 +44,16 @@ class PDist:
         print (f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
 @dataclass
-# PAsp azimuth is in degrees (cw from N) and speed is in mm/yr or km/Ma (equiv)
-# PAsp is an Azimuth & Speed proxy for PDist but better in producing accurate predictions over large distances
-class PAsp:
+# PAdist azimuth is in degrees (cw from N) and dist is in mm/yr or km/Ma (equiv)
+# PAdist is an Azimuth & dist proxy for PDist but better in producing accurate predictions over large distances
+class PAdist:
     azimuth: float
-    speed: float
+    dist: float
     def print(self, label): 
-        print (f"{label} azimuth: {self.azimuth:0.3f}, apeed:  {self.speed:0.3f}")
+        print (f"{label} azimuth: {self.azimuth:0.3f}, apeed:  {self.dist:0.3f}")
     # @classmethod
     # def from_PLoc(cls, de, dn) -> Self:
-    #     return PAsp(azimuth = getAzimuth(de, dn), speed = getMagnitude(de, dn))
+    #     return PAdist(azimuth = getAzimuth(de, dn), speed = getMagnitude(de, dn))
 ###
 
 def getPoleRotationOfPoint(pole, point, ma):

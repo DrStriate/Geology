@@ -1,12 +1,10 @@
 import numpy as np
 from .src import geo_helper as gh
+from .src.geo_helper import PAdist, PLoc, PDist
 from .src import test_utils as tu
 from .src import euler_pole_regression as epr
 from .src import gauss_newton as gn
 from . import path_layer as pl
-
-PLoc = gh.PLoc  # 3. Now it is safe to assign your class
-PDist = gh.PDist
 
 SF = 1000.0 # conversion from units in km/ma and yrs to get meters (km/ma * yrs / SF = m)
 
@@ -19,20 +17,18 @@ class YhsPath:
   def __init__(self, parent):
     self.parent = parent
     self.yhs_loc = PLoc(YHS_long, YHS_lat)
-    self.na_plate_v = {'e': np.sin(np.radians(NA_plate_azimuth)) * NA_plate_speed, 
-                       'n': np.cos(np.radians(NA_plate_azimuth)) * NA_plate_speed}
+    self.path_layer_manager = pl.PathLayerManager()
+
+    self.NAPAdist = PAdist(NA_plate_azimuth, NA_plate_speed)
     self.pnw_pole_v = {'e': 0, 'n': 0}
 
-    self.path_layer = None
+    self.trans_path_layer = None
     self.rot_path_layer = None
 
     self.useGpuData = False
     self.useGpuModel(True)
-    self.setup_graphics(parent)
 
-  def setup_graphics(self, parent):
-    parent.rotDestLayer.dataProvider().truncate()
-    parent.yhsRotFeatureList = []
+    self.path_layer_manager = pl.PathLayerManager()
   
   def useGpuModel (self, setTrue):
     if self.useGpuData == setTrue:
@@ -53,27 +49,20 @@ class YhsPath:
     self.erase_everything()
 
   def checkLayersCreated(self):
-    if self.path_layer is None:
-      self.path_layer = pl.PathLayer()
-      path_layer_name = "Pole trans Path"      
-      self.path_layer.create_path_layer(path_layer_name, "blue")
-    if self.rot_path_layer is None:
-      self.rot_path_layer = pl.PathLayer()
-      rot_path_layer_name = "Pole Rot Path"
-      self.rot_path_layer.create_path_layer(rot_path_layer_name, "black")
+  #   if self.trans_path_layer is None:
+    path_layer_name = "Pole Trans"    
+  #     self.trans_path_layer = pl.PathLayer(path_layer_name, "blue")  
+    self.trans_path_layer = self.path_layer_manager.getInstance(path_layer_name)
+  #   if self.rot_path_layer is None:
+    rot_path_layer_name = "Pole Rot"
+    self.rot_path_layer = self.path_layer_manager.getInstance(rot_path_layer_name, "black")
 
   def erase_everything(self): # any statefulness that changes with runs should be resettable
-    if self.path_layer is not None:
-      self.path_layer.clear_layer()
-    if self.rot_path_layer is not None:
-      self.rot_path_layer.clear_layer()
-    return
+    if self.path_layer_manager is not None:
+      self.path_layer_manager.erase_everything()
   
-  def closeLayer(self):
-    if self.path_layer is not None:
-      self.path_layer.unload()
-    if self.rot_path_layer is not None:
-      self.rot_path_layer.unload()
+  def closeLayers(self):
+    self.path_layer_manager.close_layers()
   
   def getRotPoleAndVelocity(self, raw_data_center, distance):
     # get rot data
@@ -97,11 +86,15 @@ class YhsPath:
     return rot_pole, PDist(gn_out['t_x'] / SF, gn_out['t_y'] / SF)
   
   def get_yhs_loc(self, yrs): # yrs is years
+    # Plot and label the Euler rotation pole
     self.checkLayersCreated()
+    label_text1 = f"{self.pnw_rot_pole['long']:.4f}, {self.pnw_rot_pole['lat']:.4f}, {self.pnw_rot_pole['omega']:.3f} deg, "
+    label_text2 = f"e: {(self.pnw_rot_pole_v.east / 1E3):.2f} km, n: {(self.pnw_rot_pole_v.north / 1E3):.2f} km, {self.sample_radius} km"
+    self.parent.geoWhiteboard.draw_target(self.pnw_rot_pole['long'], self.pnw_rot_pole['lat'], label_text1 + label_text2)
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
-    delta_d = PDist(-self.na_plate_v['e'] * yrs / SF, -self.na_plate_v['n'] * yrs / SF) 
-    new_yhs_loc1 = gh.getPlocForPdistFromPoint(self.yhs_loc, delta_d)
+    plateAsp = gh.PAdist(self.NAPAdist.azimuth, -self.NAPAdist.dist * yrs / SF)
+    new_yhs_loc1 = gh.getPlocForPlocAndPAdist(self.yhs_loc, plateAsp)
     #new_yhs_loc1.print("get_yhs_loc new_yhs_loc1")
 
     # 2: Move by ma scaled pole translation v (blue line)
@@ -109,7 +102,7 @@ class YhsPath:
     new_yhs_loc2 = gh.getPointFromAzimuthDistance(new_yhs_loc1, self.pnw_rot_pole_v.azimuth(), v_dist) 
     yhs_v_paths = [
         [(new_yhs_loc1.long, new_yhs_loc1.lat), (new_yhs_loc2.long, new_yhs_loc2.lat), "translation v"]]
-    self.path_layer.add_run_paths_to_path_layer(yhs_v_paths)
+    self.trans_path_layer.add_run_paths_to_path_layer(yhs_v_paths)
     #new_yhs_loc2.print("get_yhs_loc new_yhs_loc2 ")
 
     #show rot path (black arc)

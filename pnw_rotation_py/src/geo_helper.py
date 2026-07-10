@@ -44,16 +44,17 @@ class PDist:
         print (f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
 @dataclass
-# PAsp azimuth is in degrees (cw from N) and speed is in mm/yr or km/Ma (equiv)
-# PAsp is an Azimuth & Speed proxy for PDist but better in producing accurate predictions over large distances
-class PAsp:
+# PAdist azimuth is in degrees (cw from N) and dist is in meters or  mm/yr or km/Ma (equiv)
+# PAdist is an Azimuth & Speed proxy for PDist but better in producing accurate predictions over large distances
+# as with PDist dist can be used for distance (meters) or Velocity. For V the standard is mm/Yr (= km/ma) 
+class PAdist:
     azimuth: float
-    speed: float
+    dist: float
     def print(self, label): 
-        print (f"{label} azimuth: {self.azimuth:0.3f}, apeed:  {self.speed:0.3f}")
+        print (f"{label} azimuth: {self.azimuth:0.3f}, dist:  {self.dist:0.3f}")
     # @classmethod
     # def from_PLoc(cls, de, dn) -> Self:
-    #     return PAsp(azimuth = getAzimuth(de, dn), speed = getMagnitude(de, dn))
+    #     return PAdist(azimuth = getAzimuth(de, dn), dist = getMagnitude(de, dn))
 ###
 
 def getPoleRotationOfPoint(pole, point, ma):
@@ -136,14 +137,19 @@ def longitudeFromDistE(latitude, dist): # meters East
     longitudeDeltaRadians = dist / radiusOfParallel
     return np.degrees(longitudeDeltaRadians)
 
+## Depricate dist uses for large displacements
 def LatLongForDeDn(latitude, longitude, de, dn): #de, dn in meters
     azimuth = getAzimuth(de, dn)
     distance = getMagnitude(de, dn)
     ploc = getPointFromAzimuthDistance(PLoc(longitude, latitude), azimuth, distance)
     return ploc
 
+## Depricate dist uses for large displacements
 def getPlocForPdistFromPoint(ploc, pdist): #PLoc is start lat, long and PDist is dist e and n in m (returns a PLoc)
     return LatLongForDeDn(ploc.lat, ploc.long, pdist.east, pdist.north)
+
+def getPlocForPlocAndPAdist(ploc, PAdist): #PLoc is start lat, long and PAdist is azimuth and distance (returns a PLoc)
+    return getPointFromAzimuthDistance(ploc, PAdist.azimuth, PAdist.dist)
 
 def getDistanceBetweenPoints(point1, point2): #both PLocs
     if point1.lat < -90 or point1.lat > 90 or point2.lat < -90 or point1.lat > 90:

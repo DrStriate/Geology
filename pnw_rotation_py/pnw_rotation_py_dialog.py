@@ -327,6 +327,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.clearData()
         self.closeRotLayer()
         self.closeYhsLayer()
-        self.yhsPath.closeLayer()
+        self.yhsPath.closeLayers()
         return
 
