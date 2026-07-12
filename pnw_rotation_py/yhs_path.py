@@ -1,5 +1,5 @@
 import numpy as np
-from .src import geo_helper as gh
+from . import geo_helper as gh
 from .src.geo_helper import PAdist, PLoc, PDist
 from .src import test_utils as tu
 from .src import euler_pole_regression as epr
@@ -18,6 +18,7 @@ class YhsPath:
     self.parent = parent
     self.yhs_loc = PLoc(YHS_long, YHS_lat)
     self.path_layer_manager = pl.PathLayerManager()
+    self.yhs_pole = {'long' : -76.38, 'lat': 49.60, 'omega': 0.774}
 
     self.NAPAdist = PAdist(NA_plate_azimuth, NA_plate_speed)
     self.pnw_pole_v = {'e': 0, 'n': 0}
@@ -48,14 +49,10 @@ class YhsPath:
     self.useGpuData = setTrue
     self.erase_everything()
 
-  def checkLayersCreated(self):
-  #   if self.trans_path_layer is None:
-    path_layer_name = "Pole Trans"    
-  #     self.trans_path_layer = pl.PathLayer(path_layer_name, "blue")  
-    self.trans_path_layer = self.path_layer_manager.getInstance(path_layer_name)
-  #   if self.rot_path_layer is None:
-    rot_path_layer_name = "Pole Rot"
-    self.rot_path_layer = self.path_layer_manager.getInstance(rot_path_layer_name, "black")
+  def checkLayersCreated(self): 
+    self.yhs_path_layer = self.path_layer_manager.getInstance("YHS Path", "red")
+    self.trans_path_layer = self.path_layer_manager.getInstance("Pole Trans", "blue")
+    self.rot_path_layer = self.path_layer_manager.getInstance("Pole Rot", "black")
 
   def erase_everything(self): # any statefulness that changes with runs should be resettable
     if self.path_layer_manager is not None:
@@ -93,6 +90,7 @@ class YhsPath:
     self.parent.geoWhiteboard.draw_target(self.pnw_rot_pole['long'], self.pnw_rot_pole['lat'], label_text1 + label_text2)
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
+    #new_yhs_loc1=self.yhs_path_layer.addAnnotationsForPoleRotationOfPoint(self.yhs_loc, self.yhs_pole, yrs/1e6)
     plateAsp = gh.PAdist(self.NAPAdist.azimuth, -self.NAPAdist.dist * yrs / SF)
     new_yhs_loc1 = gh.getPlocForPlocAndPAdist(self.yhs_loc, plateAsp)
     #new_yhs_loc1.print("get_yhs_loc new_yhs_loc1")
@@ -103,22 +101,12 @@ class YhsPath:
     yhs_v_paths = [
         [(new_yhs_loc1.long, new_yhs_loc1.lat), (new_yhs_loc2.long, new_yhs_loc2.lat), "translation v"]]
     self.trans_path_layer.add_run_paths_to_path_layer(yhs_v_paths)
-    #new_yhs_loc2.print("get_yhs_loc new_yhs_loc2 ")
-
-    #show rot path (black arc)
-    steps_yrs = -1e6 # yrs
-    N = np.abs(int(yrs / steps_yrs))
-    yhs_rot_paths = []
-    start_loc = new_yhs_loc2
-    for i in range(N) :
-      next_loc = gh.getPoleRotationOfPoint(self.pnw_rot_pole, new_yhs_loc2, i * steps_yrs / 1e6)
-      yhs_rot_paths.append(
-        [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
-      start_loc = next_loc
-    self.rot_path_layer.add_run_paths_to_path_layer(yhs_rot_paths)
+    new_yhs_loc2.print("get_yhs_loc new_yhs_loc2 ")
 
     # 3: Rotate by ma scaled pole omega 
+    loc = self.rot_path_layer.addAnnotationsForPoleRotationOfPoint(new_yhs_loc2, self.pnw_rot_pole, yrs / 1e6)
     new_yhs_loc3 = gh.getPoleRotationOfPoint(self.pnw_rot_pole, new_yhs_loc2, yrs / 1e6)
+    new_yhs_loc3.print("new_yhs_loc3")
     self.parent.geoWhiteboard.draw_target(new_yhs_loc3.long, new_yhs_loc3.lat, "YHS")
 
     return new_yhs_loc1 #(renders step 1 (new_yhs_loc1))

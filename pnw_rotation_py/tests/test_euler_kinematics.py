@@ -4,6 +4,7 @@ import test_base as tb
 import euler_pole_regression as epr
 import euler_kinematics as ek
 import test_utils as tu
+import geo_helper as gh
 
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 
@@ -93,5 +94,10 @@ def test_GPS_pole_extraction():
 
   pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths)
   epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
+  
+  
+def test_euler_pole_from_pLoc1(ploc): #test pnw scenario with northerly motion on pole
+
+
   
   

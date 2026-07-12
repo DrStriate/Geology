@@ -60,11 +60,20 @@ class PAdist:
 def getPoleRotationOfPoint(pole, point, ma):
     pole_center = PLoc(pole['long'], pole['lat'])
     total_angle =  pole['omega'] * ma
-    radius1 = getDistanceBetweenPoints(point, pole_center)
-    azimuth1 = getFwdAzimuthFromLocations(point, pole_center)
+    radius = getDistanceBetweenPoints(pole_center, point)
+    azimuth1 = getFwdAzimuthFromLocations(pole_center, point)
     azimuth2 = azimuth1 - total_angle
-    outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius1)
+    outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius)
     return outPoint
+
+# def getPoleRotationOfPoint(pole, point, ma):
+#     pole_center = PLoc(pole['long'], pole['lat'])
+#     total_angle =  pole['omega'] * ma
+#     radius1 = getDistanceBetweenPoints(point, pole_center)
+#     azimuth1 = getFwdAzimuthFromLocations(point, pole_center)
+#     azimuth2 = azimuth1 - total_angle
+#     outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius1)
+#     return outPoint
 
 def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
     """
@@ -151,10 +160,58 @@ def getPlocForPdistFromPoint(ploc, pdist): #PLoc is start lat, long and PDist is
 def getPlocForPlocAndPAdist(ploc, PAdist): #PLoc is start lat, long and PAdist is azimuth and distance (returns a PLoc)
     return getPointFromAzimuthDistance(ploc, PAdist.azimuth, PAdist.dist)
 
+# Great circle distance
 def getDistanceBetweenPoints(point1, point2): #both PLocs
     if point1.lat < -90 or point1.lat > 90 or point2.lat < -90 or point1.lat > 90:
-        print("bounding error")
+        print("getDistanceBetweenPoints: bounding error")
     return haversine((point1.lat, point1.long), (point2.lat, point2.long), unit=Unit.METERS)
+
+### Epipolar calculations
+def locToRadians(pLoc):
+    lam = np.radians(pLoc['long'])
+    phi = np.radians(pLoc['lat']) 
+    return lam, phi
+
+def normalize(vect):
+    mag = np.linalg.norm(vect)
+    if mag > 0:
+        return vect / mag
+    return vect
+
+def getCartesianFromLanLong (pLoc):
+    lam, phi = locToRadians(pLoc)
+    P = np.array([0, 0, 0])
+    P[0] = R * np.cos(lam) * np.cos(phi)
+    P[1] = R * np.sin(lam) * np.cos(phi)
+    P[2] * R * np.sin(phi)
+    return P
+
+def getPlocFromLocNormal(p_hat):
+    phi = np.arcsin(p_hat[2])
+    lam = np.arctan2(p_hat[1], p_hat[0])
+    return PLoc(np.degrees(lam), np.degrees(phi))
+
+def getVeVnFromAzDist(pLoc, pAzdist): #cartesian Ve and Vn for point, and motion azimuth and magnitude (mm/Y)
+    lam, phi = locToRadians(pLoc)
+    # unit vectors for 'easterly' and 'northerly' at P
+    e_hat = np.array([-np.sin(lam), np.cos(lam), 0.0])
+    n_hat = np.array([-np.sin(phi) * np.cos(lam), -np.sin(phi) * np.sin(lam), np.cos(phi)])
+    # 2D motion vector at point
+    V = np.array([np.sin(np.radians(pAzdist['azimuth'])) * pAzdist['dist'],
+                    np.cos(np.radians(pAzdist['azimuth'])) * pAzdist['dist']])
+    # return scaled velocity in easterly and northerly directions
+    return e_hat * np.dot(e_hat, V), n_hat * np.dot(n_hat, V)
+
+def getEulerPoleFromPlocAndPazdiat(ploc, pAzdist): # Big circle pole for given loc and velocity vector
+    P = getCartesianFromLanLong(ploc)
+    V_e, V_n = getVeVnFromAzDist(ploc, pAzdist)
+    V = V_e + V_n
+    pe = np.cross(P, V)
+    pe_hat = normalize(pe) # epipolar unit direction vector
+    epiPoleLoc = getPlocFromLocNormal(pe_hat)
+    omega = np.arctan2(np.linalg.norm(V), R)
+    return {'loc' : epiPoleLoc.long, 'lat' : epiPoleLoc.lat, 'omage' : omega}
+
 
 # OC_NA Eigen pole from Wells & Simpson 2001
 def getPoleRotationV(lat, lon): # angles in degrees, motion per Ma

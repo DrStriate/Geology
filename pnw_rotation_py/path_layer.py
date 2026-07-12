@@ -9,6 +9,9 @@ from qgis.core import (
 from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QColor
 
+from .src.geo_helper import PAdist, PLoc, PDist
+from . import geo_helper as gh
+
 class PathLayerManager():
   def __init__(self):
      self.layers = []
@@ -82,6 +85,23 @@ class PathLayer():
     QgsProject.instance().addMapLayer(self.qvector_layer)
 
     self.qvector_layer.triggerRepaint()
+  
+  # plots path from start_point around Euler pole for specified time (ma)
+  def addAnnotationsForPoleRotationOfPoint(self, start_point, pole, ma, N=20):
+    yhs_rot_paths = []
+    start_loc = start_point
+    for i in range(0, N + 1):
+      if i < N+1:
+        sample_ma = i * ma / N 
+      else:
+        sample_ma = ma
+      next_loc = gh.getPoleRotationOfPoint(pole, start_point, sample_ma)
+      next_loc.print("next_loc")
+      yhs_rot_paths.append(
+        [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
+      start_loc = next_loc
+      self.add_run_paths_to_path_layer(yhs_rot_paths)
+    return next_loc
   
   def clear_layer(self):
     # if self.path_layer :
