@@ -55,6 +55,14 @@ class PAdist:
     # @classmethod
     # def from_PLoc(cls, de, dn) -> Self:
     #     return PAdist(azimuth = getAzimuth(de, dn), dist = getMagnitude(de, dn))
+
+@dataclass
+class EulerPole:
+    long: float
+    lat: float
+    omega: float
+    def print(self, label = ""):
+        print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
 ###
 
 def getPoleRotationOfPoint(pole, point, ma):
@@ -66,14 +74,6 @@ def getPoleRotationOfPoint(pole, point, ma):
     outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius)
     return outPoint
 
-# def getPoleRotationOfPoint(pole, point, ma):
-#     pole_center = PLoc(pole['long'], pole['lat'])
-#     total_angle =  pole['omega'] * ma
-#     radius1 = getDistanceBetweenPoints(point, pole_center)
-#     azimuth1 = getFwdAzimuthFromLocations(point, pole_center)
-#     azimuth2 = azimuth1 - total_angle
-#     outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius1)
-#     return outPoint
 
 def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
     """
@@ -168,8 +168,8 @@ def getDistanceBetweenPoints(point1, point2): #both PLocs
 
 ### Epipolar calculations
 def locToRadians(pLoc):
-    lam = np.radians(pLoc['long'])
-    phi = np.radians(pLoc['lat']) 
+    lam = np.radians(pLoc.long)
+    phi = np.radians(pLoc.lat) 
     return lam, phi
 
 def normalize(vect):
@@ -183,7 +183,7 @@ def getCartesianFromLanLong (pLoc):
     P = np.array([0, 0, 0])
     P[0] = R * np.cos(lam) * np.cos(phi)
     P[1] = R * np.sin(lam) * np.cos(phi)
-    P[2] * R * np.sin(phi)
+    P[2] = R * np.sin(phi)
     return P
 
 def getPlocFromLocNormal(p_hat):
@@ -197,21 +197,19 @@ def getVeVnFromAzDist(pLoc, pAzdist): #cartesian Ve and Vn for point, and motion
     e_hat = np.array([-np.sin(lam), np.cos(lam), 0.0])
     n_hat = np.array([-np.sin(phi) * np.cos(lam), -np.sin(phi) * np.sin(lam), np.cos(phi)])
     # 2D motion vector at point
-    V = np.array([np.sin(np.radians(pAzdist['azimuth'])) * pAzdist['dist'],
-                    np.cos(np.radians(pAzdist['azimuth'])) * pAzdist['dist']])
+    V = np.array([np.sin(np.radians(pAzdist.azimuth)) * pAzdist.dist,
+                    np.cos(np.radians(pAzdist.azimuth)) * pAzdist.dist])
     # return scaled velocity in easterly and northerly directions
-    return e_hat * np.dot(e_hat, V), n_hat * np.dot(n_hat, V)
+    return e_hat * V[0], n_hat * V[1]
 
 def getEulerPoleFromPlocAndPazdiat(ploc, pAzdist): # Big circle pole for given loc and velocity vector
     P = getCartesianFromLanLong(ploc)
     V_e, V_n = getVeVnFromAzDist(ploc, pAzdist)
     V = V_e + V_n
-    pe = np.cross(P, V)
-    pe_hat = normalize(pe) # epipolar unit direction vector
+    pe_hat = normalize(np.cross(P, V)) # epipolar unit direction vector
     epiPoleLoc = getPlocFromLocNormal(pe_hat)
     omega = np.arctan2(np.linalg.norm(V), R)
-    return {'loc' : epiPoleLoc.long, 'lat' : epiPoleLoc.lat, 'omage' : omega}
-
+    return EulerPole(epiPoleLoc.long, epiPoleLoc.lat, omega)
 
 # OC_NA Eigen pole from Wells & Simpson 2001
 def getPoleRotationV(lat, lon): # angles in degrees, motion per Ma

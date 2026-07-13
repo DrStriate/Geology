@@ -5,6 +5,7 @@ import euler_pole_regression as epr
 import euler_kinematics as ek
 import test_utils as tu
 import geo_helper as gh
+from geo_helper import PLoc, PDist, PAdist
 
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 
@@ -95,9 +96,14 @@ def test_GPS_pole_extraction():
   pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths)
   epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
   
-  
-def test_euler_pole_from_pLoc1(ploc): #test pnw scenario with northerly motion on pole
 
+# test Euler pole extaaction code (for translation scenarios) 
+def test_euler_pole_from_pLoc1(): #test pnw scenario with northerly motion on pole
+  ploc = PLoc(OC_NA_Pole['long'], OC_NA_Pole['lat']) #sample point loc (arbitrary)
+  pAzsp = PAdist(0.0, 10.0)                          #point motion north (azimuth, speed in mm/yr)
 
-  
-  
+  pole = gh.getEulerPoleFromPlocAndPazdiat(ploc, pAzsp)
+  #pole.print("Euler pole: ")
+  assert ploc.long - 90 + 360 == pytest.approx(pole.long)  # translation pole 90 degrees off reference
+  assert pole.lat == pytest.approx(0.0, abs = 2e-6)                    # translation north on meridian has a pone on the equator
+  assert pole.omega == pytest.approx(0.000001569, abs=2e-7)
