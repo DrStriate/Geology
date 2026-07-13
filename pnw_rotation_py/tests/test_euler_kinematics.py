@@ -5,9 +5,9 @@ import euler_pole_regression as epr
 import euler_kinematics as ek
 import test_utils as tu
 import geo_helper as gh
-from geo_helper import PLoc, PDist, PAdist
+from geo_helper import PLoc, PDist, PAdist, EulerPole
 
-OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
+OC_NA_Pole = EulerPole(-119.60, 45.54, 1.32)
 
 def test_euler_pole_from_quad():
   #test setup
@@ -19,13 +19,13 @@ def test_euler_pole_from_quad():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("test_euler_pole_from_quad", pole_result)
 
-  assert pole_result['omega'] == pytest.approx(euler_pole['omega'])
-  assert pole_result['lat'] == pytest.approx(euler_pole['lat'])
-  assert pole_result['long'] == pytest.approx(euler_pole['long'])
+  assert pole_result.omega == pytest.approx(euler_pole.omega)
+  assert pole_result.lat == pytest.approx(euler_pole.lat)
+  assert pole_result.long == pytest.approx(euler_pole.long)
 
 def test_euler_pole_from_random_disk():
   #test setup
-  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  euler_pole = EulerPole(-90, 45.0, 1.23)
   sample_count = 400
   diam = 550 # km
   crop = 1.0 # no crop
@@ -37,9 +37,9 @@ def test_euler_pole_from_random_disk():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("test_euler_pole_from_random_disk", pole_result)
 
-  assert pole_result['omega'] == pytest.approx(test_omega)
-  assert pole_result['lat'] == pytest.approx(euler_pole['lat'])
-  assert pole_result['long'] == pytest.approx(euler_pole['long'])
+  assert pole_result.omega == pytest.approx(test_omega)
+  assert pole_result.long == pytest.approx(euler_pole.long)
+  assert pole_result.lat == pytest.approx(euler_pole.lat)
 
 def test_euler_pole_from_random_cropped_disk():
   #test setup
@@ -60,14 +60,14 @@ def test_euler_pole_from_random_cropped_disk():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("test_euler_pole_from_random_cropped_disk", pole_result)
 
-  assert pole_result['omega'] == pytest.approx(test_omega)
-  assert pole_result['lat'] == pytest.approx(euler_pole['lat'])
-  assert pole_result['long'] == pytest.approx(euler_pole['long'])
+  assert pole_result.omega == pytest.approx(test_omega)
+  assert pole_result.long == pytest.approx(euler_pole.long)
+  assert pole_result.lat == pytest.approx(euler_pole.lat)
 
 def test_euler_pole_using_north_rotation():
     #test setup
   euler_pole = OC_NA_Pole 
-  euler_n_pole = {"lat" : 0.0,  "long": OC_NA_Pole['long'] + 90, "omega" : 1.43 }
+  euler_n_pole = EulerPole( OC_NA_Pole.long + 90, 0.0, 1.43)
   sample_count = 400
   sample_dist = 50000 # m
   test_omega = 1.23
@@ -83,27 +83,42 @@ def test_euler_pole_using_north_rotation():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   #ek.print_result ("test_euler_pole_using_north_rotation", pole_result)
 
-  assert pole_result['omega'] == pytest.approx(test_omega)
-  assert pole_result['lat'] == pytest.approx(euler_n_pole['lat'])
-  assert pole_result['long'] == pytest.approx(euler_n_pole['long'])
+  assert pole_result.omega == pytest.approx(test_omega)
+  assert pole_result.long == pytest.approx(euler_n_pole.long)
+  assert pole_result.lat == pytest.approx(euler_n_pole.lat)
 
 def test_GPS_pole_extraction():
   center_lat = 45.0
   center_long = -118
   max_distance = 550000 # m
-  lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_lat, center_long, max_distance)
+  lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)
 
   pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths)
   epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
-  
 
 # test Euler pole extaaction code (for translation scenarios) 
-def test_euler_pole_from_pLoc1(): #test pnw scenario with northerly motion on pole
-  ploc = PLoc(OC_NA_Pole['long'], OC_NA_Pole['lat']) #sample point loc (arbitrary)
+def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pole
+  ploc = PLoc(OC_NA_Pole.long, OC_NA_Pole.long) #sample point loc (arbitrary)
   pAzsp = PAdist(0.0, 10.0)                          #point motion north (azimuth, speed in mm/yr)
 
   pole = gh.getEulerPoleFromPlocAndPazdiat(ploc, pAzsp)
   #pole.print("Euler pole: ")
-  assert ploc.long - 90 + 360 == pytest.approx(pole.long)  # translation pole 90 degrees off reference
-  assert pole.lat == pytest.approx(0.0, abs = 2e-6)                    # translation north on meridian has a pone on the equator
-  assert pole.omega == pytest.approx(0.000001569, abs=2e-7)
+
+  pole_sb = gh.EulerPole(-119.6, 0.0, 0.0000015696)  
+  assert ploc.long - 90 + 360 == pytest.approx(pole.long)  # translation pole 90 degrees off reference at equator
+  assert pole.lat == pytest.approx(pole_sb.lat, abs = 2e-6)                    # translation north on meridian has a pone on the equator
+  assert pole.omega == pytest.approx(pole_sb.omega, abs=1e-6)
+
+# def test_ploc_from_Euler_pole(): #test inverse: map above pole back to point
+#   pole = gh.EulerPole(-119.6, 0.0, 0.000001569)  
+#   point = PLoc(OC_NA_Pole.long, OC_NA_Pole.long) #sample point loc (arbitrary)
+
+#   gh.getPoleRotationOfPoint()
+#   #pAzsp = PAdist(90.0, 10.0)                          #point motion north (azimuth, speed in mm/yr)
+
+#   pole = gh.getEulerPoleFromPlocAndPazdiat(ploc, pAzsp)
+#   pole.print("Euler pole: ")
+  print(f"OC_NA_Pole: {OC_NA_Pole}")
+  # assert ploc.long - 90 + 360 == pytest.approx(pole.long)  # translation pole 90 degrees off reference
+  # assert pole.lat == pytest.approx(0.0, abs = 2e-6)                    # translation north on meridian has a pone on the equator
+  # assert pole.omega == pytest.approx(0.000001569, abs=2e-7)

@@ -1,11 +1,10 @@
 import numpy as np
 import pytest
 import src.gauss_newton as gn
-import test_euler_kinematics as tek
-import test_base as tb
 import gauss_newton as gn
 import src.test_utils as tu
 from pathlib import Path
+from geo_helper import PLoc, EulerPole
 
 # center at lat 512, long 512. Distance to center is 128
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
@@ -44,7 +43,7 @@ def test_rotation_simple():
 
 def test_euler_test_quad():
   #test setup
-  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  euler_pole = EulerPole( -90.0, 45.0, 1.23)
   azimuths  = [45.0, 135.0, 225.0, 315.0]
   sample_dist = 50000 # m
 
@@ -52,11 +51,11 @@ def test_euler_test_quad():
   #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
   #print(f"\ntest_euler_test_quad x: {x}\n")
-  assert x['r'] == pytest.approx(np.radians(euler_pole["omega"]), abs=1e-4)
+  assert x['r'] == pytest.approx(np.radians(euler_pole.omega), abs=1e-4)
 
 def test_random_rot_disk(): 
   #test 4 = run euler kinematics random disk
-  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  euler_pole =  EulerPole( -90.0, 45.0, 1.23)
   sample_count = 400
   sample_dist = 50000 # m
   test_omega = 1.23 
@@ -75,7 +74,7 @@ def test_random_rot_disk():
 
 def test_random_cropped_rot_disk(): 
   #test 4 = run euler kinematics random disk
-  euler_pole = {"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
+  euler_pole = EulerPole( -90, 45.0, 1.23 )
   sample_count = 400
   sample_dist = 50000 # m
   test_omega = 1.23 
@@ -95,8 +94,9 @@ def test_random_cropped_rot_disk():
 
 def test_using_north_rotation():
   #test setup
-  euler_pole = OC_NA_Pole 
-  euler_n_pole = {"lat" : 0.0,  "long": OC_NA_Pole['long'] + 90, "omega" : 1.43 }
+  
+  euler_pole = EulerPole(-119.60, 45.54, 1.32) # OC_NA
+  euler_n_pole = EulerPole(euler_pole.long + 90, 0.0, 1.43 )
   sample_count = 400
   sample_dist = 50000 # m
   test_omega = 0.001
@@ -123,11 +123,11 @@ def test_against_pnw_GPS_data():
   script_path = Path(__file__).resolve()
   print(script_path)
 
-  center_pole =  {"lat" : 45.5,  "long" : -118.5}
+  center_pole =  PLoc (-118.5, 45)
   max_distance = 550000 # m
 
   lats, lons, v_easts, v_norths, s_e, s_n = \
-    tu.get_GPS_rotation_data(center_pole['lat'], center_pole["long"], max_distance)
+    tu.get_GPS_rotation_data(center_pole.long, center_pole.lat, max_distance)
 
   x = gn.solve_gauss_newton_2D_transform_geo(lons, lats, v_easts, v_norths, center_pole)
   print(f"samples: {len(lats)}")

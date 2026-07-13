@@ -30,8 +30,8 @@ def test_pole_rotation():
   return
 
 def test_GPS_data():
-  center_pole = {'lat': 45.5, 'long': -118.5}
+  center_pole = gh.PLoc(-118.5, 45.5)
   max_distance = 550000 # meters
-  lats, longs, ve_list, vn_list, s_e, s_n = tu.get_GPS_rotation_data(center_pole['lat'], center_pole['long'], max_distance)
+  lats, longs, ve_list, vn_list, s_e, s_n = tu.get_GPS_rotation_data(center_pole.long, center_pole.lat, max_distance)
   avg_angle = gh.find_moments(longs, lats, ve_list, vn_list, center_pole)
   print(f"avg_angle: {avg_angle:5f}, length: {len(lats)}")

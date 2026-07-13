@@ -1,6 +1,6 @@
 import numpy as np
 from . import geo_helper as gh
-from .src.geo_helper import PAdist, PLoc, PDist
+from .src.geo_helper import PAdist, PLoc, PDist, EulerPole
 from .src import test_utils as tu
 from .src import euler_pole_regression as epr
 from .src import gauss_newton as gn
@@ -18,7 +18,7 @@ class YhsPath:
     self.parent = parent
     self.yhs_loc = PLoc(YHS_long, YHS_lat)
     self.path_layer_manager = pl.PathLayerManager()
-    self.yhs_pole = {'long' : -76.38, 'lat': 49.60, 'omega': 0.774}
+    self.yhs_pole = EulerPole( -76.38, 49.60,  0.774 )
 
     self.NAPAdist = PAdist(NA_plate_azimuth, NA_plate_speed)
     self.pnw_pole_v = {'e': 0, 'n': 0}
@@ -41,11 +41,11 @@ class YhsPath:
     else: # use published pole / velocity info
       self.useGpuData - False
       self.sample_radius = 0
-      self.pnw_rot_pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.2 } #OC_NA_Pole
+      self.pnw_rot_pole = EulerPole(-119.60, 45.54, 1.2 ) #OC_NA_Pole
       self.pnw_rot_pole_v = PDist(0.0, 5.0)
-      label_text1 = f"{self.pnw_rot_pole['long']:.4f}, {self.pnw_rot_pole['lat']:.4f}, {self.pnw_rot_pole['omega']:.3f} deg, "
+      label_text1 = f"{self.pnw_rot_pole.long:.4f}, {self.pnw_rot_pole.lat:.4f}, {self.pnw_rot_pole.omega:.3f} deg, "
       label_text2 = f"e: {(self.pnw_rot_pole_v.east / 1E3):.2f} km, n: {(self.pnw_rot_pole_v.north / 1E3):.2f} km"
-      self.parent.geoWhiteboard.draw_target(self.pnw_rot_pole['long'], self.pnw_rot_pole['lat'], label_text1 + label_text2)
+      self.parent.geoWhiteboard.draw_target(self.pnw_rot_pole.long, self.pnw_rot_pole.lat, label_text1 + label_text2)
     self.useGpuData = setTrue
     self.erase_everything()
 
@@ -64,7 +64,7 @@ class YhsPath:
   def getRotPoleAndVelocity(self, raw_data_center, distance):
     # get rot data
     lat_list, long_list, ve_list, vn_list, se, sn =\
-      tu.get_GPS_rotation_data(raw_data_center.lat, raw_data_center.long, distance * 1000)   
+      tu.get_GPS_rotation_data(raw_data_center.long, raw_data_center.lat, distance * 1000)   
 
     # get data Euler pole from the raw data set
     raw_pole = epr.fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list)
@@ -85,9 +85,9 @@ class YhsPath:
   def get_yhs_loc(self, yrs): # yrs is years
     # Plot and label the Euler rotation pole
     self.checkLayersCreated()
-    label_text1 = f"{self.pnw_rot_pole['long']:.4f}, {self.pnw_rot_pole['lat']:.4f}, {self.pnw_rot_pole['omega']:.3f} deg, "
+    label_text1 = f"{self.pnw_rot_pole.long:.4f}, {self.pnw_rot_pole.lat:.4f}, {self.pnw_rot_pole.omega:.3f} deg, "
     label_text2 = f"e: {(self.pnw_rot_pole_v.east / 1E3):.2f} km, n: {(self.pnw_rot_pole_v.north / 1E3):.2f} km, {self.sample_radius} km"
-    self.parent.geoWhiteboard.draw_target(self.pnw_rot_pole['long'], self.pnw_rot_pole['lat'], label_text1 + label_text2)
+    self.parent.geoWhiteboard.draw_target(self.pnw_rot_pole.long, self.pnw_rot_pole.lat, label_text1 + label_text2)
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
     #new_yhs_loc1=self.yhs_path_layer.addAnnotationsForPoleRotationOfPoint(self.yhs_loc, self.yhs_pole, yrs/1e6)

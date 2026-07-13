@@ -2,8 +2,6 @@ import numpy as np
 from haversine import haversine, Unit
 from pyproj import Geod
 from dataclasses import dataclass
-# from geopy.distance import geodesic
-# from geopy import Point
 
 geod = Geod(ellps="WGS84")
 R = 6371.0E3 # Earth radius in m
@@ -61,13 +59,15 @@ class EulerPole:
     long: float
     lat: float
     omega: float
+    def ploc(self):
+        return self.ploc(self.long, self.lat)
     def print(self, label = ""):
         print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
 ###
 
-def getPoleRotationOfPoint(pole, point, ma):
-    pole_center = PLoc(pole['long'], pole['lat'])
-    total_angle =  pole['omega'] * ma
+def getPoleRotationOfPoint(pole, point, ma): # pole is EulerPole
+    pole_center = PLoc(pole.long, pole.lat)
+    total_angle =  pole.omega * ma
     radius = getDistanceBetweenPoints(pole_center, point)
     azimuth1 = getFwdAzimuthFromLocations(pole_center, point)
     azimuth2 = azimuth1 - total_angle
@@ -128,7 +128,7 @@ def getSamplePoints(long_list, lat_list, pole):
   pn_list = []
   for i in range(len(long_list)):
     # convert sample points to meters
-    p_n, p_e = getNortherlyEasterlyFromLatLongPoints(pole['long'], pole['lat'], long_list[i], lat_list[i])
+    p_n, p_e = getNortherlyEasterlyFromLatLongPoints(pole.long, pole.lat, long_list[i], lat_list[i])
     pe_list.append(p_e)
     pn_list.append(p_n)
   return pe_list, pn_list 

@@ -19,7 +19,7 @@ def run_GPS_test_pass(self):
   center_lat = 45.0
   center_long = -119.0
   lat_list, long_list, ve_list, vn_list, se, sn =\
-    tu.get_GPS_rotation_data(center_lat, center_long, diam * 1000)
+    tu.get_GPS_rotation_data(center_long, center_lat, diam * 1000)
   mod_ve_list = np.array(ve_list) - delta_ve
   mod_vn_list = np.array(vn_list) - delta_vn
   delta_ve, delta_vn = finish_test_setup(
@@ -77,15 +77,15 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = 
   gn_out = gn.solve_gauss_newton_2D_transform_geo(long_list, lat_list, ve_list, vn_list, pole)
 
   #show results in Qgis
-  label_text1 = f"{pole['long']:.4f}, {pole['lat']:.4f}, {pole['omega']:.3f} deg, "
+  label_text1 = f"{pole.long:.4f}, {pole.lat:.4f}, {pole.omega:.3f} deg, "
   label_text2 = f"e: {(gn_out['t_x'] / 1E3):.2f} km, n: {(gn_out['t_y'] / 1E3):.2f} km, {diam} km"
-  self.geoWhiteboard.draw_target(pole['long'], pole['lat'], label_text1 + label_text2)
+  self.geoWhiteboard.draw_target(pole.long, pole.lat, label_text1 + label_text2)
   #print(label_text1 + label_text2)
 
   # if translation correction added, add a delta_V vector to the target to sho that
   if d_ve != 0.0 or d_vn != 0.0:    
     feature = self.rotData.createRotFeature(
-      PLoc(pole['long'], pole['lat']), PDist(delta_ve + d_ve, delta_vn + d_vn), 0.001) 
+      PLoc(pole.long, pole.long), PDist(delta_ve + d_ve, delta_vn + d_vn), 0.001) 
     self.yhsRotFeatureList.append(feature)
 
   return gn_out['t_x'], gn_out['t_y']

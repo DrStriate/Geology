@@ -2,8 +2,6 @@ import numpy as np
 from haversine import haversine, Unit
 from pyproj import Geod
 from dataclasses import dataclass
-# from geopy.distance import geodesic
-# from geopy import Point
 
 geod = Geod(ellps="WGS84")
 R = 6371.0E3 # Earth radius in m
@@ -65,15 +63,25 @@ class EulerPole:
         print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
 ###
 
+OC_NA_Pole = EulerPole(-119.60, 45.54, 1.32)
+
 def getPoleRotationOfPoint(pole, point, ma):
-    pole_center = PLoc(pole['long'], pole['lat'])
-    total_angle =  pole['omega'] * ma
+    pole_center = PLoc(pole.long, pole.long)
+    total_angle =  pole.omega * ma
     radius = getDistanceBetweenPoints(pole_center, point)
     azimuth1 = getFwdAzimuthFromLocations(pole_center, point)
     azimuth2 = azimuth1 - total_angle
     outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius)
     return outPoint
 
+# def getPoleRotationOfPoint(pole, point, ma):
+#     pole_center = PLoc(pole.long, pole.long)
+#     total_angle =  pole.omega * ma
+#     radius1 = getDistanceBetweenPoints(point, pole_center)
+#     azimuth1 = getFwdAzimuthFromLocations(point, pole_center)
+#     azimuth2 = azimuth1 - total_angle
+#     outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius1)
+#     return outPoint
 
 def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
     """
@@ -107,28 +115,28 @@ def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
 def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
     # inv() expects (lon1, lat1, lon2, lat2)
     # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
-    forward_azimuth, back_azimuth, distance_meters = geod.inv(lon2, lat2, lon1, lat1)
+    forward_azimuth, back_azimuth, distance_meters = geod.inv(lon1, lat1, lon2, lat2)
 
     # Convert azimuth to radians
     azimuth_rad = np.radians(forward_azimuth)
     
-    # Calculate components
+    # Calculate components - actually calculating 
     northerly = distance_meters * np.cos(azimuth_rad)
     easterly = distance_meters * np.sin(azimuth_rad)
     return northerly, easterly
 
 def getFwdAzimuthFromLocations (point1, point2):
    # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
-    forward_azimuth, back_azimuth, distance_meters = geod.inv(point2.long, point2.lat, point1.long, point1.lat)
+    forward_azimuth, back_azimuth, distance_meters = geod.inv(point1.long, point1.lat, point2.long, point2.lat)
     return forward_azimuth
 
-# gets lat and long converted to coordinate distances from pole
+# gets lat and long converted to coordinate distances from pole. This is an approximation 
 def getSamplePoints(long_list, lat_list, pole):
   pe_list = []
   pn_list = []
   for i in range(len(long_list)):
     # convert sample points to meters
-    p_n, p_e = getNortherlyEasterlyFromLatLongPoints(long_list[i], lat_list[i], pole['long'], pole['lat'])
+    p_n, p_e = getNortherlyEasterlyFromLatLongPoints(pole.long, pole.lat, long_list[i], lat_list[i])
     pe_list.append(p_e)
     pn_list.append(p_n)
   return pe_list, pn_list 
@@ -185,7 +193,7 @@ def getCartesianFromLanLong (pLoc):
     P[1] = R * np.sin(lam) * np.cos(phi)
     P[2] = R * np.sin(phi)
     return P
-
+#806 w fulton
 def getPlocFromLocNormal(p_hat):
     phi = np.arcsin(p_hat[2])
     lam = np.arctan2(p_hat[1], p_hat[0])

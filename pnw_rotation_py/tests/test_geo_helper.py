@@ -3,14 +3,14 @@ import pytest as pt
 
 def test_getPoleRotationOfPoint():
   testPAdist = PAdist(0.0, 0.0)
-  point = PLoc(long=-121.57708451886487, lat=40.84987174388522)
+  point = PLoc(-121.57708451886487, 40.84987174388522)
   ma = -50.0
-  pole = {'lat': 44.871330515586074,
-          'long':-119.8854828943077,
-          'omega': 0.5614672520657451}
+  pole = EulerPole(-119.8854828943077,
+                    44.871330515586074,
+                    0.5614672520657451)
 
-  pole_center = PLoc(pole['long'], pole['lat'])
-  total_angle =  pole['omega'] * ma
+  pole_center = PLoc(pole.long, pole.lat)
+  total_angle =  pole.omega * ma
   radius1 = getDistanceBetweenPoints(point, pole_center)
   azimuth1 = getFwdAzimuthFromLocations(point, pole_center)
   azimuth2 = azimuth1 - total_angle

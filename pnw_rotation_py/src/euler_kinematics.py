@@ -1,5 +1,6 @@
 import numpy as np
 from pyproj import Geod
+import geo_helper as gh
 
 geod = Geod(ellps="WGS84")
 R = 6371.0E3 # Earth radius in m
@@ -11,7 +12,7 @@ def create_sample (start_lon, start_lat, azimuth, distance):
         start_lat, 
         azimuth, 
         distance)
-    return {"lon": end_lon, "lat": end_lat}
+    return gh.PLoc(end_lon, end_lat)
 
 def project_V_to_v (V, p): #V is 3D cartesion velocity, phi and lamb in radians
   e_hat = np.array([-np.sin(p['lamb']), np.cos(p['lamb']), 0 ])
@@ -31,7 +32,7 @@ def get_hat(lat, long):
    return get_hat_p({'lamb': np.radians(long), 'phi': np.radians(lat)})
 
 
-def calculate_v_from_Eigen_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {phi, lamb, omega} radians
+def calculate_v_from_Euler_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {phi, lamb, omega} radians
   P = R * get_hat_p(p)
   O = np.radians(omega) * get_hat_p(Omega)
   V = np.cross(P, O)

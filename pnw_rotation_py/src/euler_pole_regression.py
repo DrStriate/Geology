@@ -1,4 +1,5 @@
 import numpy as np
+from geo_helper import EulerPole
 
 def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True):
     """
@@ -20,7 +21,7 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True
     # Each station provides 2 equations (East and North)
     A = np.zeros((2 * num_stations, 3))
     B = np.zeros(2 * num_stations)
-    sum_lats = 0;
+    sum_lats = 0
     
     for i in range(num_stations):
         # Convert input coordinates to radians
@@ -65,14 +66,11 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True
     lat_pole = np.degrees(np.arcsin(wz / omega_mag_rad))
     lon_pole = np.degrees(np.arctan2(wy, wx))
     
-    return {
-        "lat": lat_pole,
-        "long": lon_pole,
-        "omega": omega_deg_myr
-    }
+    return EulerPole(lon_pole, lat_pole, omega_deg_myr)
+
 
 def print_result(name, pole_result, point_count = 0):
     print(f"{name} count: {point_count}")
-    print(f"Latitude:  {pole_result['lat']:.5f}° N")
-    print(f"Longitude: {pole_result['long']:.5f}° E")
-    print(f"Rate:      {pole_result['omega']:.5f}° / Myr")
+    print(f"Longitude: {pole_result.long:.5f}° E")   
+    print(f"Latitude:  {pole_result.lat:.5f}° N")
+    print(f"Rate:      {pole_result.omega:.5f}° / Myr")
