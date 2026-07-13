@@ -19,7 +19,7 @@ def getAzimuth (d_e, d_n): # d_e and d_n in dist / velocity
 class PLoc:
     long: float
     lat: float
-    def print(self, label): 
+    def print(self, label = ""): 
         print (f"{label} long: {self.long:0.3f}, lat:  {self.lat:0.3f}")
     
     def __iadd__(self, other):  # Overriding the += operator
@@ -38,7 +38,7 @@ class PDist:
         return getAzimuth(self.east, self.north)
     def magnitude (self): # only valid for very small magnitudes
         return getMagnitude(self.east, self.north)
-    def print(self, label): 
+    def print(self, label = ""): 
         print (f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
 @dataclass
@@ -48,7 +48,7 @@ class PDist:
 class PAdist:
     azimuth: float
     dist: float
-    def print(self, label): 
+    def print(self, label = ""): 
         print (f"{label} azimuth: {self.azimuth:0.3f}, dist:  {self.dist:0.3f}")
     # @classmethod
     # def from_PLoc(cls, de, dn) -> Self:
@@ -59,29 +59,20 @@ class EulerPole:
     long: float
     lat: float
     omega: float
+    def ploc(self):
+        return self.ploc(self.long, self.lat)
     def print(self, label = ""):
         print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
 ###
 
-OC_NA_Pole = EulerPole(-119.60, 45.54, 1.32)
-
-def getPoleRotationOfPoint(pole, point, ma):
-    pole_center = PLoc(pole.long, pole.long)
+def getPoleRotationOfPoint(pole, point, ma): # pole is EulerPole
+    pole_center = PLoc(pole.long, pole.lat)
     total_angle =  pole.omega * ma
     radius = getDistanceBetweenPoints(pole_center, point)
     azimuth1 = getFwdAzimuthFromLocations(pole_center, point)
     azimuth2 = azimuth1 - total_angle
     outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius)
     return outPoint
-
-# def getPoleRotationOfPoint(pole, point, ma):
-#     pole_center = PLoc(pole.long, pole.long)
-#     total_angle =  pole.omega * ma
-#     radius1 = getDistanceBetweenPoints(point, pole_center)
-#     azimuth1 = getFwdAzimuthFromLocations(point, pole_center)
-#     azimuth2 = azimuth1 - total_angle
-#     outPoint = getPointFromAzimuthDistance(pole_center, azimuth2, radius1)
-#     return outPoint
 
 def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
     """
@@ -112,6 +103,7 @@ def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
     
     return PLoc(destination_lon, destination_lat)
 
+# This is an approximation and proxy for angular easterly and northerly rotation angles, not dists
 def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
     # inv() expects (lon1, lat1, lon2, lat2)
     # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
@@ -154,17 +146,6 @@ def longitudeFromDistE(latitude, dist): # meters East
     longitudeDeltaRadians = dist / radiusOfParallel
     return np.degrees(longitudeDeltaRadians)
 
-## Depricate dist uses for large displacements
-def LatLongForDeDn(latitude, longitude, de, dn): #de, dn in meters
-    azimuth = getAzimuth(de, dn)
-    distance = getMagnitude(de, dn)
-    ploc = getPointFromAzimuthDistance(PLoc(longitude, latitude), azimuth, distance)
-    return ploc
-
-## Depricate dist uses for large displacements
-def getPlocForPdistFromPoint(ploc, pdist): #PLoc is start lat, long and PDist is dist e and n in m (returns a PLoc)
-    return LatLongForDeDn(ploc.lat, ploc.long, pdist.east, pdist.north)
-
 def getPlocForPlocAndPAdist(ploc, PAdist): #PLoc is start lat, long and PAdist is azimuth and distance (returns a PLoc)
     return getPointFromAzimuthDistance(ploc, PAdist.azimuth, PAdist.dist)
 
@@ -193,7 +174,7 @@ def getCartesianFromLanLong (pLoc):
     P[1] = R * np.sin(lam) * np.cos(phi)
     P[2] = R * np.sin(phi)
     return P
-#806 w fulton
+
 def getPlocFromLocNormal(p_hat):
     phi = np.arcsin(p_hat[2])
     lam = np.arctan2(p_hat[1], p_hat[0])
