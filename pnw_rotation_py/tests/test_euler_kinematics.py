@@ -5,7 +5,7 @@ import euler_pole_regression as epr
 import euler_kinematics as ek
 import test_utils as tu
 import geo_helper as gh
-from geo_helper import PLoc, PDist, PAdist, EulerPole
+from geo_helper import PLoc, PAdist, EulerPole
 
 OC_NA_Pole = EulerPole(-119.60, 45.54, 1.32)
 
@@ -98,27 +98,27 @@ def test_GPS_pole_extraction():
 
 # test Euler pole extaaction code (for translation scenarios) 
 def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pole
-  ploc = PLoc(OC_NA_Pole.long, OC_NA_Pole.long) #sample point loc (arbitrary)
-  pAzsp = PAdist(0.0, 10.0)                          #point motion north (azimuth, speed in mm/yr)
-
+  ploc = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc (arbitrary)
+  pAzsp = PAdist(0.0, (gh.metersPerDegree()/1000.0))    #point motion north (azimuth, speed in km/m
   pole = gh.getEulerPoleFromPlocAndPazdiat(ploc, pAzsp)
-  #pole.print("Euler pole: ")
+ 
+  ploc.print("\nploc:")
+  pole.print("pole: ")
 
-  pole_sb = gh.EulerPole(-119.6, 0.0, 0.0000015696)  
   assert ploc.long - 90 + 360 == pytest.approx(pole.long)  # translation pole 90 degrees off reference at equator
-  assert pole.lat == pytest.approx(pole_sb.lat, abs = 2e-6)                    # translation north on meridian has a pone on the equator
-  assert pole.omega == pytest.approx(pole_sb.omega, abs=1e-6)
+  assert pole.lat == pytest.approx(0.0, abs = 2e-6)                    # translation north on meridian has a pone on the equator
+  assert pole.omega == pytest.approx(1.0, abs=1e-6)
 
-# def test_ploc_from_Euler_pole(): #test inverse: map above pole back to point
-#   pole = gh.EulerPole(-119.6, 0.0, 0.000001569)  
-#   point = PLoc(OC_NA_Pole.long, OC_NA_Pole.long) #sample point loc (arbitrary)
+def test_movement_from_Euler_pole(): #test inverse: map above pole back to point
+  pole = gh.EulerPole(150.4, 0.0, 1.0)  
+  point = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc
+  new_point, dist = ek.getPoleRotationOfPoint(pole, point, 1.0)
+  
+  point.print("\npoint: ")
+  new_point.print("new_point: ")
+  print(f"dist: {dist:0.1f}")
 
-#   gh.getPoleRotationOfPoint()
-#   #pAzsp = PAdist(90.0, 10.0)                          #point motion north (azimuth, speed in mm/yr)
-
-#   pole = gh.getEulerPoleFromPlocAndPazdiat(ploc, pAzsp)
-#   pole.print("Euler pole: ")
-  print(f"OC_NA_Pole: {OC_NA_Pole}")
-  # assert ploc.long - 90 + 360 == pytest.approx(pole.long)  # translation pole 90 degrees off reference
-  # assert pole.lat == pytest.approx(0.0, abs = 2e-6)                    # translation north on meridian has a pone on the equator
-  # assert pole.omega == pytest.approx(0.000001569, abs=2e-7)
+  assert new_point.long == pytest.approx(point.long)  # translation pole 90 degrees off reference
+  assert new_point.lat == pytest.approx(point.lat + 1, abs = 2e-6) # 1 degree shift north
+  assert dist == pytest.approx(gh.metersPerDegree()) # distance (meters) for 1 degree lat movement
+  

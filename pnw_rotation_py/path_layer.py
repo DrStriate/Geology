@@ -11,6 +11,7 @@ from PyQt5.QtGui import QColor
 
 from .src.geo_helper import PAdist, PLoc, PDist
 from . import geo_helper as gh
+from .src import euler_kinematics as ek
 
 class PathLayerManager():
   def __init__(self):
@@ -95,7 +96,7 @@ class PathLayer():
         sample_ma = i * ma / N 
       else:
         sample_ma = ma
-      next_loc = gh.getPoleRotationOfPoint(pole, start_point, sample_ma)
+      next_loc, d = ek.getPoleRotationOfPoint(pole, start_point, sample_ma)
       next_loc.print("next_loc")
       yhs_rot_paths.append(
         [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])

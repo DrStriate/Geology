@@ -5,6 +5,7 @@ from .src import test_utils as tu
 from .src import euler_pole_regression as epr
 from .src import gauss_newton as gn
 from . import path_layer as pl
+from .src import euler_kinematics as ek
 
 SF = 1000.0 # conversion from units in km/ma and yrs to get meters (km/ma * yrs / SF = m)
 
@@ -105,7 +106,7 @@ class YhsPath:
 
     # 3: Rotate by ma scaled pole omega 
     loc = self.rot_path_layer.addAnnotationsForPoleRotationOfPoint(new_yhs_loc2, self.pnw_rot_pole, yrs / 1e6)
-    new_yhs_loc3 = gh.getPoleRotationOfPoint(self.pnw_rot_pole, new_yhs_loc2, yrs / 1e6)
+    new_yhs_loc3, d = ek.getPoleRotationOfPoint(self.pnw_rot_pole, new_yhs_loc2, yrs / 1e6)
     new_yhs_loc3.print("new_yhs_loc3")
     self.parent.geoWhiteboard.draw_target(new_yhs_loc3.long, new_yhs_loc3.lat, "YHS")
 

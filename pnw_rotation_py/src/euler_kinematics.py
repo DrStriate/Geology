@@ -1,9 +1,54 @@
 import numpy as np
 from pyproj import Geod
 import geo_helper as gh
+from geo_helper import PLoc, PAdist, EulerPole
 
 geod = Geod(ellps="WGS84")
 R = 6371.0E3 # Earth radius in m
+
+# get cartesian value of PLoc lat/long
+def getRVector(ploc):
+  phi = np.radians(ploc.lat)
+  lam = np.radians(ploc.long)
+  return np.array([
+      np.cos(phi) * np.cos(lam),  
+      np.cos(phi) * np.sin(lam),
+      np.sin(phi)
+   ])
+
+#get omega vector from pole (normalized - unscaled by pole omega)
+def getWVector(pole):
+  phi = np.radians(pole.lat)
+  lam = np.radians(pole.long)
+  return np.array([
+      np.cos(phi) * np.cos(lam),  
+      np.cos(phi) * np.sin(lam),
+      np.sin(phi)
+   ]) 
+
+def getPoleRotationOfPoint(pole, ploc, ma):
+    # Apply Rodrigues' rotation formula
+    theta = np.radians(pole.omega) * ma
+    pole.omega = 1.0  # this method strips off omegw from W vector
+    v = getRVector(ploc) # v
+    k = getWVector(pole) # k
+    # 3. Apply Rodrigues' rotation formula
+    k_cross_v = np.cross(k, v)
+    k_dot_v = np.dot(k, v)
+    v_new = v * np.cos(theta) + k_cross_v * np.sin(theta) + k * k_dot_v * (1 - np.cos(theta))
+    
+    # Convert the rotated Cartesian vector back to lat/long
+    new_lon_rad = np.arctan2(v_new[1], v_new[0])
+    new_lat_rad = np.arcsin(v_new[2])
+    
+    new_lon = np.degrees(new_lon_rad)
+    new_lat = np.degrees(new_lat_rad)
+    
+    # Calculate the great-circle displacement on Earth's surface (R = 6371 km)
+    angle_rad = np.arccos(np.clip(np.dot(v, v_new), -1.0, 1.0))
+    displacement_km = gh.R * angle_rad
+    
+    return PLoc(new_lon, new_lat), displacement_km
   
 def create_sample (start_lon, start_lat, azimuth, distance):
     # Calculate the terminus point
