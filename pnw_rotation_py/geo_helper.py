@@ -184,13 +184,12 @@ def getVeVnFromAzDist(pLoc, pAzdist): #cartesian Ve and Vn for point, and motion
     # return scaled velocity in easterly and northerly directions
     return e_hat * V[0], n_hat * V[1]
 
-#
 def getEulerPoleFromPlocAndPazdiat(ploc, pAzdist): # Big circle pole for given loc and velocity km/Ma vector
     MetersPerDegree = 2 * np.pi * R / 360.0
     KmPerMaToDegreesPerMa = 1000.0 / MetersPerDegree
     degreesPerMa = pAzdist.dist * KmPerMaToDegreesPerMa
     omega = degreesPerMa
-
+    
     P = getCartesianFromLanLong(ploc)
     V_e, V_n = getVeVnFromAzDist(ploc, pAzdist)
     V = V_e + V_n
@@ -198,7 +197,6 @@ def getEulerPoleFromPlocAndPazdiat(ploc, pAzdist): # Big circle pole for given l
     epiPoleLoc = getPlocFromLocNormal(pe_hat)
 
     return EulerPole(epiPoleLoc.long, epiPoleLoc.lat, omega)
-
 
 # OC_NA Eigen pole from Wells & Simpson 2001
 def getPoleRotationV(lat, lon): # angles in degrees, motion per Ma
