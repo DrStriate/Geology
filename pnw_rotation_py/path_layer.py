@@ -97,7 +97,6 @@ class PathLayer():
       else:
         sample_ma = ma
       next_loc, d = ek.getPoleRotationOfPoint(pole, start_point, sample_ma)
-      next_loc.print("next_loc")
       yhs_rot_paths.append(
         [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
       start_loc = next_loc

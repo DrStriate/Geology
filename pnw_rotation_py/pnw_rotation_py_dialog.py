@@ -88,6 +88,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rbYHS.toggled.connect(self.setStartPoint)
         self.rbBrothers.toggled.connect(self.setStartPoint)
         self.rbME.toggled.connect(self.setStartPoint)
+        self.rbPoleOrderSwap.toggled.connect(self.choosePoleModel)
         self.pbDisplayRot.clicked.connect(self.displayRotData)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
         self.rbGpsModel.toggled.connect(self.setYhsPathModel)
@@ -177,7 +178,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.rotDestLayer.triggerRepaint()
             clear_test_run_pass()
 
-
     ####
     # run Yhs Button
     ####
@@ -210,7 +210,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             if (locYhs.long < JFP.leadingEdgeLongitude(currentYr)
                     and self.rbShowJdFOcclusion.isChecked()):
                 self.yhsOccludedPoints.append(QgsPoint(locYhs.long, locYhs.lat))
-
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
@@ -291,8 +290,13 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.spbStartLongDD.setValue(Brothers_Long)
         return
     
+    def choosePoleModel(self):
+        self.clearData()
+        self.yhsPath.choosePoleModel(self.rbPoleOrderSwap.isChecked())
+    
     def setYhsPathModel(self):
-        self.yhsPath.useGpuModel(self.rbGpsModel.isChecked())
+        self.yhsPath.setupEulerPoles(self.rbGpsModel.isChecked())
+        self.geoWhiteboard.clear_annotations()
 
     def removeLayer(self, layer):
         if layer :

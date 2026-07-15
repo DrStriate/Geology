@@ -62,7 +62,7 @@ def getEulerPoleFromPlocAndPazdist(ploc, pAzdist): # Big circle pole for given l
     epiPoleLoc = gh.getPlocFromLocNormal(pe_hat)
 
     return EulerPole(epiPoleLoc.long, epiPoleLoc.lat, omega)
-  
+
 
 # Code below probably needs to be refactored to use code/methods above which are more accurate
 def create_sample (start_lon, start_lat, azimuth, distance):

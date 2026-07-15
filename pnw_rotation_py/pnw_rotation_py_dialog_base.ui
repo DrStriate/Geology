@@ -150,12 +150,12 @@
    <property name="title">
     <string/>
    </property>
-   <widget class="QRadioButton" name="rbShowNA">
+   <widget class="QRadioButton" name="rbPoleOrderSwap">
     <property name="geometry">
      <rect>
       <x>20</x>
       <y>10</y>
-      <width>91</width>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>
@@ -163,7 +163,7 @@
      <number>9</number>
     </property>
     <property name="text">
-     <string>Show NA </string>
+     <string>Pole Order Swap</string>
     </property>
     <property name="checked">
      <bool>false</bool>
@@ -516,9 +516,9 @@
     <property name="geometry">
      <rect>
       <x>16</x>
-      <y>3</y>
-      <width>91</width>
-      <height>31</height>
+      <y>0</y>
+      <width>101</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="text">
