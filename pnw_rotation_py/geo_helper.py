@@ -17,6 +17,9 @@ def getAzimuth (d_e, d_n): # d_e and d_n in dist / velocity
         azimuth += 360.0 # arctan2 returns -180 ... 180 wheras azimuth needs to be 0 ... 360
     return azimuth
 
+def getPAdist (d_e, d_n):
+    return PAdist(getAzimuth(d_e, d_n), getMagnitude(d_e, d_n))
+
 @dataclass
 class PLoc:
     long: float
@@ -52,10 +55,7 @@ class PAdist:
     dist: float
     def print(self, label = ""): 
         print (f"{label} azimuth: {self.azimuth:0.3f}, dist:  {self.dist:0.3f}")
-    # @classmethod
-    # def from_PLoc(cls, de, dn) -> Self:
-    #     return PAdist(azimuth = getAzimuth(de, dn), dist = getMagnitude(de, dn))
-
+       
 @dataclass
 class EulerPole:
     long: float
@@ -183,40 +183,6 @@ def getVeVnFromAzDist(pLoc, pAzdist): #cartesian Ve and Vn for point, and motion
                     np.cos(np.radians(pAzdist.azimuth)) * pAzdist.dist])
     # return scaled velocity in easterly and northerly directions
     return e_hat * V[0], n_hat * V[1]
-
-def getEulerPoleFromPlocAndPazdiat(ploc, pAzdist): # Big circle pole for given loc and velocity km/Ma vector
-    MetersPerDegree = 2 * np.pi * R / 360.0
-    KmPerMaToDegreesPerMa = 1000.0 / MetersPerDegree
-    degreesPerMa = pAzdist.dist * KmPerMaToDegreesPerMa
-    omega = degreesPerMa
-    
-    P = getCartesianFromLanLong(ploc)
-    V_e, V_n = getVeVnFromAzDist(ploc, pAzdist)
-    V = V_e + V_n
-    pe_hat = normalize(np.cross(P, V)) # epipolar unit direction vector
-    epiPoleLoc = getPlocFromLocNormal(pe_hat)
-
-    return EulerPole(epiPoleLoc.long, epiPoleLoc.lat, omega)
-
-# OC_NA Eigen pole from Wells & Simpson 2001
-def getPoleRotationV(lat, lon): # angles in degrees, motion per Ma
-    OC_NAws = {"lat" : 45.54, "lon" : -119.6, "AngVel": 1.32 * 1E-6} 
-    g = Geod(ellps='WGS84') 
-    fwd_azimuth, back_azimuth, R = g.inv( OC_NAws["lon"],OC_NAws["lat"], lon, lat)
-    p_hat = (np.sin(np.radians(fwd_azimuth)), np.cos(np.radians(fwd_azimuth))) # unit vector from lat lon
-    d_hat = (p_hat[1], -p_hat[0]) # transpose is the rotation direction
-    d = R * np.tan(np.radians(OC_NAws["AngVel"]))
-    V = (d_hat[0] * d, d_hat[1] * d)
-    return V
-
-def get_pole_rotation_velocity(pole_lat, pole_lon, rotation_rate_deg_per_myr, lat, lon):
-    g = Geod(ellps='WGS84') 
-    fwd_azimuth, back_azimuth, R = g.inv( pole_lon, pole_lat, lon, lat)
-    p_hat = (np.sin(np.radians(fwd_azimuth)), np.cos(np.radians(fwd_azimuth))) # unit vector from lat lon
-    d_hat = (p_hat[1], -p_hat[0]) # transpose is the rotation direction
-    d = R * np.tan(np.radians(rotation_rate_deg_per_myr)) * 10E-3 # m / Ma
-    V = (d_hat[0] * d, d_hat[1] * d)  # mm / Yr
-    return V
 
 def find_moments(long_list, lat_list, ve_list, vn_list, pole):
     sum_alpha = 0.0

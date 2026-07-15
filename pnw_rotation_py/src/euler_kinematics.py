@@ -29,7 +29,6 @@ def getWVector(pole):
 def getPoleRotationOfPoint(pole, ploc, ma):
     # Apply Rodrigues' rotation formula
     theta = np.radians(pole.omega) * ma
-    pole.omega = 1.0  # this method strips off omegw from W vector
     v = getRVector(ploc) # v
     k = getWVector(pole) # k
     # 3. Apply Rodrigues' rotation formula
@@ -49,7 +48,23 @@ def getPoleRotationOfPoint(pole, ploc, ma):
     displacement_km = gh.R * angle_rad
     
     return PLoc(new_lon, new_lat), displacement_km
+
+def getEulerPoleFromPlocAndPazdist(ploc, pAzdist): # Big circle pole for given loc and velocity vector
+    MetersPerDegree = 2 * np.pi * R / 360.0
+    KmPerMaToDegreesPerMa = 1000.0 / MetersPerDegree
+    degreesPerMa = pAzdist.dist * KmPerMaToDegreesPerMa
+    omega = degreesPerMa
+    
+    P = gh.getCartesianFromLanLong(ploc)
+    V_e, V_n = gh.getVeVnFromAzDist(ploc, pAzdist)
+    V = V_e + V_n
+    pe_hat = gh.normalize(np.cross(P, V)) # epipolar unit direction vector
+    epiPoleLoc = gh.getPlocFromLocNormal(pe_hat)
+
+    return EulerPole(epiPoleLoc.long, epiPoleLoc.lat, omega)
   
+
+# Code below probably needs to be refactored to use code/methods above which are more accurate
 def create_sample (start_lon, start_lat, azimuth, distance):
     # Calculate the terminus point
     end_lon, end_lat, back_azimuth = geod.fwd(

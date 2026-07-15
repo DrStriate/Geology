@@ -81,6 +81,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.naPoints = []  # NA only YHS plot
         self.yhsRotFeatureList = []
         self.geoWhiteboard = None
+        self.rotPoleDisplayed = False
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.runYhsDataButton.clicked.connect(self.runYhsButtonClicked)
@@ -109,6 +110,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.clearYhsDataLayer()
         self.yhsPath.erase_everything()
         self.geoWhiteboard.clear_annotations()
+        self.rotPoleDisplayed = False
         return
 
     ####
@@ -164,9 +166,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.setupRotDisplayLayer()
 
         run_GPS_test_pass(self)
-        #run_quad_test_pass(self)
-        # run_rand_disk_test_pass(self)
-        #run_cropped_disk_test_test_pass(self)
 
         self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
         QgsProject.instance().addMapLayer(self.rotDestLayer)
@@ -200,21 +199,18 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.naPoints.append(startPoint)
         currentYr = startT
         deltaT = self.spbStepMa.value() * 1e6
+
+        if not self.rotPoleDisplayed:
+            self.yhsPath.display_rot_pole_info()
+            self.rotPoleDisplayed = True
+
         for i in range (self.sbSteps.value()):
             currentYr += deltaT
             locYhs = self.yhsPath.get_yhs_loc(currentYr)
-            if not locYhs:
-                print("Something went wrong. No update to track")
-                break
-
-            self.yhsPoints.append(QgsPoint(locYhs.long, locYhs.lat))
-
             if (locYhs.long < JFP.leadingEdgeLongitude(currentYr)
                     and self.rbShowJdFOcclusion.isChecked()):
                 self.yhsOccludedPoints.append(QgsPoint(locYhs.long, locYhs.lat))
 
-
-        self.displayYhsData()
         return
 
     def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)

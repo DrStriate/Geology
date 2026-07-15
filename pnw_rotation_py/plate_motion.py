@@ -109,7 +109,7 @@ class PlateMotion:
                                         self.interpFunction != "ClosestEntry")
             
         else: #using Wells Simpson 2001 Eigen pole for rotation
-            rotV = gh.getPoleRotationV(self.locYhs.lat, self.locYhs.long)
+          #  rotV = gh.getPoleRotationV(self.locYhs.lat, self.locYhs.long)
 
         # appliedMaScaling = 1.0
         # if applyNaScaling and self.currentYr < 0.0:
@@ -165,15 +165,6 @@ class PlateMotion:
         #         f"{deltaState.latitude:.4f}" + "\n")
         return self.locYhs
     
-    # def getPoleRotationV(self, lon, lat): 
-    #     OC_NAws = {"lat" : 45.54, "lon" : -119.6, "AngVel": 1.32} # OC_NA Eigen pole from Wells & Simpson 2001
-    #     g = Geod(ellps='WGS84') 
-    #     fwd_azimuth, back_azimuth, R = g.inv( OC_NAws["lon"],OC_NAws["lat"], lon, lat)
-    #     p_hat = (np.cos(np.radians(fwd_azimuth)), np.sin(np.radians(fwd_azimuth))) # unit vector from lat lon
-    #     d_hat = (p_hat[1], -p_hat[0]) # transpose is the rotation direction
-    #     d = R * np.tan(np.radians(OC_NAws["AngVel"])) * 1E-6 # convert Ma angle to annual
-    #     V = (d_hat[0] * d, d_hat[1] * d)
-    #     return V
 
         
 

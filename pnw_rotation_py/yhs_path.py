@@ -82,32 +82,34 @@ class YhsPath:
 
     # offset is in meters per ma and we want a rate (km/ma or mm/yr) so we need to scale
     return rot_pole, PDist(gn_out['t_x'] / SF, gn_out['t_y'] / SF)
-  
-  def get_yhs_loc(self, yrs): # yrs is years
-    # Plot and label the Euler rotation pole
-    self.checkLayersCreated()
+
+  # Plot and label the Euler rotation pole
+  def display_rot_pole_info(self):
     label_text1 = f"{self.pnw_rot_pole.long:.4f}, {self.pnw_rot_pole.lat:.4f}, {self.pnw_rot_pole.omega:.3f} deg, "
     label_text2 = f"e: {(self.pnw_rot_pole_v.east / 1E3):.2f} km, n: {(self.pnw_rot_pole_v.north / 1E3):.2f} km, {self.sample_radius} km"
     self.parent.geoWhiteboard.draw_target(self.pnw_rot_pole.long, self.pnw_rot_pole.lat, label_text1 + label_text2)
+  
+  def get_yhs_loc(self, yrs): # yrs is years
+    self.checkLayersCreated()
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
-    #new_yhs_loc1=self.yhs_path_layer.addAnnotationsForPoleRotationOfPoint(self.yhs_loc, self.yhs_pole, yrs/1e6)
-    plateAsp = gh.PAdist(self.NAPAdist.azimuth, -self.NAPAdist.dist * yrs / SF)
-    new_yhs_loc1 = gh.getPlocForPlocAndPAdist(self.yhs_loc, plateAsp)
-    #new_yhs_loc1.print("get_yhs_loc new_yhs_loc1")
+    paDistNA = gh.PAdist(self.NAPAdist.azimuth, self.NAPAdist.dist)
+    pole_NA = ek.getEulerPoleFromPlocAndPazdist(self.yhs_loc, paDistNA)
+    loc_1 = self.yhs_path_layer.addAnnotationsForPoleRotationOfPoint(self.yhs_loc, pole_NA, -yrs/1e6)
+    # plateAsp = gh.PAdist(self.NAPAdist.azimuth, -self.NAPAdist.dist * yrs / SF)
+    # loc_1 = gh.getPlocForPlocAndPAdist(self.yhs_loc, plateAsp)
+    loc_1.print("loc_1")
 
     # 2: Move by ma scaled pole translation v (blue line)
-    v_dist = -self.pnw_rot_pole_v.magnitude() * yrs / SF
-    new_yhs_loc2 = gh.getPointFromAzimuthDistance(new_yhs_loc1, self.pnw_rot_pole_v.azimuth(), v_dist) 
-    yhs_v_paths = [
-        [(new_yhs_loc1.long, new_yhs_loc1.lat), (new_yhs_loc2.long, new_yhs_loc2.lat), "translation v"]]
-    self.trans_path_layer.add_run_paths_to_path_layer(yhs_v_paths)
-    new_yhs_loc2.print("get_yhs_loc new_yhs_loc2 ")
+    paDistV = gh.getPAdist(self.pnw_rot_pole_v.east, self.pnw_rot_pole_v.north)
+    pole_v = ek.getEulerPoleFromPlocAndPazdist(loc_1, paDistV)
+    loc_2 = self.trans_path_layer.addAnnotationsForPoleRotationOfPoint(loc_1, pole_v, -yrs / 1e6)
+    #loc_2.print("loc_2: ")
 
     # 3: Rotate by ma scaled pole omega 
-    loc = self.rot_path_layer.addAnnotationsForPoleRotationOfPoint(new_yhs_loc2, self.pnw_rot_pole, yrs / 1e6)
-    new_yhs_loc3, d = ek.getPoleRotationOfPoint(self.pnw_rot_pole, new_yhs_loc2, yrs / 1e6)
-    new_yhs_loc3.print("new_yhs_loc3")
-    self.parent.geoWhiteboard.draw_target(new_yhs_loc3.long, new_yhs_loc3.lat, "YHS")
+    loc_3 = self.rot_path_layer.addAnnotationsForPoleRotationOfPoint(loc_2, self.pnw_rot_pole, yrs / 1e6)
+    loc_3, d = ek.getPoleRotationOfPoint(self.pnw_rot_pole, loc_2, yrs / 1e6)
+    loc_3.print("loc_3: ")
+    self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, "YHS")
 
-    return new_yhs_loc1 #(renders step 1 (new_yhs_loc1))
+    return loc_3

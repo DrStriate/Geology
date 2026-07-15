@@ -22,6 +22,7 @@ def test_lonitudeFromDistance():
     lon = gh.longitudeFromDistE(lat, distN)
     assert lon == pytest.approx(lonSb, abs=0.001)
 
+# Some question about getPoleRotation. Check and replace if needed
 def test_pole_rotation():
   yhs = {"lat" : 44.43, "lon" :-110.67}
   V = gh.getPoleRotationV(yhs["lat"], yhs["lon"])

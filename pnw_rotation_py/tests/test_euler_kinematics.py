@@ -99,8 +99,8 @@ def test_GPS_pole_extraction():
 # test Euler pole extaaction code (for translation scenarios) 
 def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pole
   ploc = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc (arbitrary)
-  pAzsp = PAdist(0.0, (gh.metersPerDegree()/1000.0))    #point motion north (azimuth, speed in km/m
-  pole = gh.getEulerPoleFromPlocAndPazdiat(ploc, pAzsp)
+  pAzsp = PAdist(0.0, (gh.metersPerDegree()/1000.0))    #point motion north (azimuth, speed in km/ma)
+  pole = ek.getEulerPoleFromPlocAndPazdist(ploc, pAzsp)
  
   ploc.print("\nploc:")
   pole.print("pole: ")

@@ -46,6 +46,7 @@ def get_GPS_rotation_data (center_long, center_lat, max_distance):
       s_north.append(list_s_north[i] * MM_PER_YEAR_TO_M_PER_MA)
   return lats, lons, v_east, v_north, s_east, s_north
 
+# Some doubt about calculate_v_from_Euler_pole in the tests below. 
 def create_simple_sample_quad(euler_pole, azimuths, dist):
   longs = []
   lats = []
