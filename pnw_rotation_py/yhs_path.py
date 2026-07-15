@@ -1,11 +1,11 @@
 import numpy as np
-from . import geo_helper as gh
+from .src import geo_helper as gh
 from .src.geo_helper import PAdist, PLoc, PDist, EulerPole
 from .src import test_utils as tu
 from .src import euler_pole_regression as epr
 from .src import gauss_newton as gn
-from . import path_layer as pl
 from .src import euler_kinematics as ek
+from . import path_layer as pl
 
 SF = 1000.0 # conversion from units in km/ma and yrs to get meters (km/ma * yrs / SF = m)
 

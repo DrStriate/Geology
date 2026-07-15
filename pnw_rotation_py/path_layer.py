@@ -9,8 +9,6 @@ from qgis.core import (
 from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QColor
 
-from .src.geo_helper import PAdist, PLoc, PDist
-from . import geo_helper as gh
 from .src import euler_kinematics as ek
 
 class PathLayerManager():

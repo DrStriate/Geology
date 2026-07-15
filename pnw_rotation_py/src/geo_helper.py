@@ -35,7 +35,8 @@ class PLoc:
         return NotImplemented
 
 @dataclass 
-# PDist can be used for distance (meters) or Velocity. For V the standard is mm/Yr (= km/ma) 
+# PDist should only be used for (linear) Velocity. For V the standard is mm/Yr (= km/ma) 
+# Distance measurements in plate kinematics should be in degrees, not kilometers.
 class PDist:
     east: float
     north: float
@@ -47,9 +48,9 @@ class PDist:
         print (f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
 @dataclass
-# PAdist azimuth is in degrees (cw from N) and dist is in meters or  mm/yr or km/Ma (equiv)
+# PAdist azimuth is in degrees (cw from N) and dist is in  mm/yr or km/Ma (equiv)
 # PAdist is an Azimuth & Speed proxy for PDist but better in producing accurate predictions over large distances
-# as with PDist dist can be used for distance (meters) or Velocity. For V the standard is mm/Yr (= km/ma) 
+# as with PDist, distance measurements in plate kinematics should be in degrees, not kilometers.
 class PAdist:
     azimuth: float
     dist: float

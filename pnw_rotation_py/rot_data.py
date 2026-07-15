@@ -3,12 +3,10 @@ from qgis.core import QgsFeature, QgsPointXY,QgsGeometry
 from qgis.PyQt.QtCore import QVariant, QDateTime, Qt
 
 from dataclasses import dataclass
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 import geopandas as gpd
 from .src import geo_helper as gh
-from .src.geo_helper import PLoc, PDist
 
 @dataclass
 class PState:
@@ -77,7 +75,7 @@ class RotData:
         self.rotDataLoaded = True
         return True
     
-    def createRotFeature(self, pLoc, pDist, d_scaling = 1.0):
+    def createRotFeature(self, pLoc, pdist, d_scaling = 1.0):
         # --- Create a new QgsFeature instance ---
         new_feature = QgsFeature(self.rotSourceFields)
         geometry = QgsGeometry.fromPointXY(QgsPointXY(pLoc.long, pLoc.lat))
@@ -87,14 +85,12 @@ class RotData:
 
         # --- Set the Attributes ---
         # Provide a list of values that match the field order defined above
-        attributes = [pLoc.long, pLoc.lat, pDist.east * d_scaling, pDist.north * d_scaling]
+        attributes = [pLoc.long, pLoc.lat, pdist.east * d_scaling, pdist.north * d_scaling]
 
         # Assign the attributes to the feature
         new_feature.setAttributes(attributes)
 
         return new_feature
-
-
 
     # Setup routines to prep for sampling depending on interpFunction
     def setupSampling(self, interpFunction):

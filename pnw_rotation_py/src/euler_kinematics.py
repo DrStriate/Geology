@@ -1,7 +1,7 @@
 import numpy as np
 from pyproj import Geod
 import geo_helper as gh
-from geo_helper import PLoc, PAdist, EulerPole
+from geo_helper import PLoc, EulerPole
 
 geod = Geod(ellps="WGS84")
 R = 6371.0E3 # Earth radius in m
@@ -49,7 +49,8 @@ def getPoleRotationOfPoint(pole, ploc, ma):
     
     return PLoc(new_lon, new_lat), displacement_km
 
-def getEulerPoleFromPlocAndPazdist(ploc, pAzdist): # Big circle pole for given loc and velocity vector
+ # Big circle pole for given loc and velocity vector. pZzDist is bearing and speed (e.f. km/ma or mm/yr)
+def getEulerPoleFromPlocAndPazdist(ploc, pAzdist):
     MetersPerDegree = 2 * np.pi * R / 360.0
     KmPerMaToDegreesPerMa = 1000.0 / MetersPerDegree
     degreesPerMa = pAzdist.dist * KmPerMaToDegreesPerMa
