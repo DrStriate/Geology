@@ -50,14 +50,14 @@ def getPoleRotationOfPoint(pole, ploc, ma):
     return PLoc(new_lon, new_lat), displacement_km
 
  # Big circle pole for given loc and velocity vector. pZzDist is bearing and speed (e.f. km/ma or mm/yr)
-def getEulerPoleFromPlocAndPazdist(ploc, pAzdist):
+def getEulerPoleFromPlocAndPazvel(ploc, pAzvel):
     MetersPerDegree = 2 * np.pi * R / 360.0
     KmPerMaToDegreesPerMa = 1000.0 / MetersPerDegree
-    degreesPerMa = pAzdist.dist * KmPerMaToDegreesPerMa
+    degreesPerMa = pAzvel.vel * KmPerMaToDegreesPerMa
     omega = degreesPerMa
     
     P = gh.getCartesianFromLanLong(ploc)
-    V_e, V_n = gh.getVeVnFromAzDist(ploc, pAzdist)
+    V_e, V_n = gh.getVeVnFromAzvel(ploc, pAzvel)
     V = V_e + V_n
     pe_hat = gh.normalize(np.cross(P, V)) # epipolar unit direction vector
     epiPoleLoc = gh.getPlocFromLocNormal(pe_hat)

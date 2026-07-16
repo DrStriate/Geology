@@ -5,7 +5,7 @@ import euler_pole_regression as epr
 import euler_kinematics as ek
 import test_utils as tu
 import geo_helper as gh
-from geo_helper import PLoc, PAdist, EulerPole
+from geo_helper import PLoc, PAvel, EulerPole
 
 OC_NA_Pole = EulerPole(-119.60, 45.54, 1.32)
 
@@ -99,8 +99,8 @@ def test_GPS_pole_extraction():
 # test Euler pole extaaction code (for translation scenarios) 
 def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pole
   ploc = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc (arbitrary)
-  pAzsp = PAdist(0.0, (gh.metersPerDegree()/1000.0))    #point motion north (azimuth, speed in km/ma)
-  pole = ek.getEulerPoleFromPlocAndPazdist(ploc, pAzsp)
+  pAzvel = PAvel(0.0, (gh.metersPerDegree()/1000.0))    #point motion north (azimuth, speed in km/ma)
+  pole = ek.getEulerPoleFromPlocAndPazvel(ploc, pAzvel)
  
   ploc.print("\nploc:")
   pole.print("pole: ")
@@ -112,13 +112,13 @@ def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pol
 def test_movement_from_Euler_pole(): #test inverse: map above pole back to point
   pole = gh.EulerPole(150.4, 0.0, 1.0)  
   point = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc
-  new_point, dist = ek.getPoleRotationOfPoint(pole, point, 1.0)
+  new_point, vel = ek.getPoleRotationOfPoint(pole, point, 1.0)
   
   point.print("\npoint: ")
   new_point.print("new_point: ")
-  print(f"dist: {dist:0.1f}")
+  print(f"vel: {vel:0.1f}")
 
   assert new_point.long == pytest.approx(point.long)  # translation pole 90 degrees off reference
   assert new_point.lat == pytest.approx(point.lat + 1, abs = 2e-6) # 1 degree shift north
-  assert dist == pytest.approx(gh.metersPerDegree()) # distance (meters) for 1 degree lat movement
+  assert vel == pytest.approx(gh.metersPerDegree()) # distance (meters) for 1 degree lat movement
   

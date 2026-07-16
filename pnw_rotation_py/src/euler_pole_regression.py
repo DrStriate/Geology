@@ -68,6 +68,74 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True
     
     return EulerPole(lon_pole, lat_pole, omega_deg_myr)
 
+def fit_euler_pole_linear_wtd(lats, lons, v_east_obs, v_north_obs, s_e, s_n, align_pole = True):
+    """
+    Finds the exact best-fitting Euler pole using linear least squares.
+    
+    Args:
+      lats (list/array): Latitudes of stations in decimal degrees
+      lons (list/array): Longitudes of stations in decimal degrees
+      v_east (list/array): East velocity components in mm/yr
+      v_north (list/array): North velocity components in mm/yr
+
+      align_pole tests for euler pole pointing to incoming n/s hemisphere (i.e Omega pole flip)
+    """
+    R = 6371.0E3 # Earth's radius in m
+    
+    num_stations = len(lats)
+    
+    # Initialize design matrix A and observation vector B
+    A = np.zeros((2 * num_stations, 3))
+    B = np.zeros(2 * num_stations)
+    
+    sum_lats = 0
+    for i in range(num_stations):
+        # Convert input coordinates to radians
+        phi = np.radians(lats[i])
+        lam = np.radians(lons[i])
+        sum_lats += lats[i]
+        
+        # Current root weights for this station
+        sw_e = 1.0 / s_e[i]
+        sw_n = 1.0 / s_n[i]
+        
+        # Weighted East velocity row equations (even rows: 2*i)
+        A[2*i, 0] = -R * np.sin(phi) * np.cos(lam)  * sw_e
+        A[2*i, 1] = -R * np.sin(phi) * np.sin(lam)  * sw_e
+        A[2*i, 2] = R * np.cos(phi)                 * sw_e
+        B[2*i]    = v_east_obs[i]                   * sw_e
+        
+        # Weighted North velocity row equations (odd rows: 2*i+1)
+        A[2*i+1, 0] = R * np.sin(lam)               * sw_n
+        A[2*i+1, 1] = -R * np.cos(lam)              * sw_n
+        A[2*i+1, 2] = 0.0                           * sw_n
+        B[2*i+1]    = v_north_obs[i]                * sw_n
+        
+    north_hemisphere = (sum_lats > 0.0)
+    
+    # Solves the weighted normal equations: A^T * W * A * omega = A^T * W * B
+    omega_cartesian, residuals, rank, s = np.linalg.lstsq(A, B, rcond=None)
+    
+    wx, wy, wz = omega_cartesian
+
+    if (wz > 0) != north_hemisphere: # if w and incoming data not in the same N/S hemisphere
+        wx = -wx
+        wy = -wy
+        wz = -wz
+    
+    # Convert the Cartesian angular velocity vector back into Euler Pole parameters
+    # 1. Total angular rotation magnitude (rad/yr converted back to deg/Myr)
+    # Factor: (1e6 years * 180 degrees) / (pi radians * 1e9 mm to km conversion scale)
+    # Since velocities are in mm/yr and R is in km, scaling matches naturally:
+    omega_mag_rad = np.sqrt(wx**2 + wy**2 + wz**2) # rad per million years / 1000
+
+    omega_deg_myr = np.degrees(omega_mag_rad) 
+
+    # 2. Latitude and Longitude of the Pole
+    lat_pole = np.degrees(np.arcsin(wz / omega_mag_rad))
+    lon_pole = np.degrees(np.arctan2(wy, wx))
+    
+    return EulerPole(lon_pole, lat_pole, omega_deg_myr)
 
 def print_result(name, pole_result, point_count = 0):
     print(f"{name} count: {point_count}")

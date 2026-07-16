@@ -11,14 +11,14 @@ def metersPerDegree():
 def getMagnitude(d_e, d_n):    # only use for very small distances
     return np.sqrt(d_e * d_e + d_n * d_n)
 
-def getAzimuth (d_e, d_n): # d_e and d_n in dist / velocity 
-    azimuth = np.degrees(np.arctan2(d_e, d_n))
+def getAzimuth (v_e, v_n): 
+    azimuth = np.degrees(np.arctan2(v_e, v_n))
     if azimuth < 0.0 :
         azimuth += 360.0 # arctan2 returns -180 ... 180 wheras azimuth needs to be 0 ... 360
     return azimuth
 
-def getPAdist (v_e, v_n):
-    return PAdist(getAzimuth(v_e, v_n), getMagnitude(v_e, v_n))
+def getPAvel (v_e, v_n):
+    return PAvel(getAzimuth(v_e, v_n), getMagnitude(v_e, v_n))
 
 @dataclass
 class PLoc:
@@ -35,9 +35,9 @@ class PLoc:
         return NotImplemented
 
 @dataclass 
-# PDist should only be used for (linear) Velocity. For V the standard is mm/Yr (= km/ma) 
-# Distance measurements in plate kinematics should be in degrees, not kilometers.
-class PDist:
+# PVel should only be used for (linear) Velocity. For V the standard is mm/Yr (= km/ma) 
+# distance measurements in plate kinematics should be in degrees, not kilometers.
+class PVel:
     east: float
     north: float
     def azimuth (self):
@@ -48,14 +48,14 @@ class PDist:
         print (f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
 @dataclass
-# PAdist azimuth is in degrees (cw from N) and dist is in  mm/yr or km/Ma (equiv)
-# PAdist is an Azimuth & Speed proxy for PDist but better in producing accurate predictions over large distances
-# as with PDist, distance measurements in plate kinematics should be in degrees, not kilometers.
-class PAdist:
+# PAvel azimuth is in degrees (cw from N) and vel is in  mm/yr or km/Ma (equiv)
+# PAvel is an Azimuth & Speed proxy for PVel
+# as with PVel, distance measurements in plate kinematics should be in degrees, not kilometers.
+class PAvel:
     azimuth: float
-    dist: float
+    vel: float
     def print(self, label = ""): 
-        print (f"{label} azimuth: {self.azimuth:0.3f}, dist:  {self.dist:0.3f}")
+        print (f"{label} azimuth: {self.azimuth:0.3f}, vel:  {self.vel:0.3f}")
        
 @dataclass
 class EulerPole:
@@ -68,7 +68,8 @@ class EulerPole:
         print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
 ###
 
-def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
+# Velocity in M/S
+def getPointFromAzimuthDistance(start_point, azimuth_degrees, velocity):
     """
     Calculates the destination latitude/longitude using a spherical Earth model.
     """
@@ -78,15 +79,15 @@ def getPointFromAzimuthDistance(start_point, azimuth_degrees, distance_meters):
     azimuth = np.radians(azimuth_degrees)
     
     # Angular distance covered
-    angular_dist = distance_meters / R
+    angular_vel = velocity / R
     
     # Calculate destination latitude
-    lat2 = np.arcsin(np.sin(lat1) * np.cos(angular_dist) +
-                     np.cos(lat1) * np.sin(angular_dist) * np.cos(azimuth))
+    lat2 = np.arcsin(np.sin(lat1) * np.cos(angular_vel) +
+                     np.cos(lat1) * np.sin(angular_vel) * np.cos(azimuth))
     
     # Calculate destination longitude
-    lon2 = lon1 + np.arctan2(np.sin(azimuth) * np.sin(angular_dist) * np.cos(lat1),
-                             np.cos(angular_dist) - np.sin(lat1) * np.sin(lat2))
+    lon2 = lon1 + np.arctan2(np.sin(azimuth) * np.sin(angular_vel) * np.cos(lat1),
+                             np.cos(angular_vel) - np.sin(lat1) * np.sin(lat2))
     
     # Convert back from radians to degrees
     destination_lat = np.degrees(lat2)
@@ -130,6 +131,7 @@ def getSamplePoints(long_list, lat_list, pole):
 def clamp(value, minimum, maximum):
     return max(minimum, min(value, maximum))
 
+# Be wary of use of these distance metrics. 
 def latitudeFromDistN(dist): # dist in meters North
     lat = np.arctan2(dist, R) * 180.0 / np.pi
     return lat
@@ -174,14 +176,14 @@ def getPlocFromLocNormal(p_hat):
     lam = np.arctan2(p_hat[1], p_hat[0])
     return PLoc(np.degrees(lam), np.degrees(phi))
 
-def getVeVnFromAzDist(pLoc, pAzdist): #cartesian Ve and Vn for point, and motion azimuth and magnitude (mm/Y)
+def getVeVnFromAzvel(pLoc, pAzvel): #cartesian Ve and Vn for point, and motion azimuth and magnitude (mm/Y)
     lam, phi = locToRadians(pLoc)
     # unit vectors for 'easterly' and 'northerly' at P
     e_hat = np.array([-np.sin(lam), np.cos(lam), 0.0])
     n_hat = np.array([-np.sin(phi) * np.cos(lam), -np.sin(phi) * np.sin(lam), np.cos(phi)])
     # 2D motion vector at point
-    V = np.array([np.sin(np.radians(pAzdist.azimuth)) * pAzdist.dist,
-                    np.cos(np.radians(pAzdist.azimuth)) * pAzdist.dist])
+    V = np.array([np.sin(np.radians(pAzvel.azimuth)) * pAzvel.vel,
+                    np.cos(np.radians(pAzvel.azimuth)) * pAzvel.vel])
     # return scaled velocity in easterly and northerly directions
     return e_hat * V[0], n_hat * V[1]
 

@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
-import src.gauss_newton as gn
 import gauss_newton as gn
-import src.test_utils as tu
+import test_utils as tu
 from pathlib import Path
 from geo_helper import PLoc, EulerPole
 

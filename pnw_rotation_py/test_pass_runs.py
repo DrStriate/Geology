@@ -1,6 +1,6 @@
 import test_utils as tu
 import numpy as np
-from .src.geo_helper import PLoc, PDist
+from .src.geo_helper import PLoc, PVel
 import euler_pole_regression as epr
 import gauss_newton as gn
 
@@ -23,7 +23,7 @@ def run_GPS_test_pass(self):
   mod_ve_list = np.array(ve_list) - delta_ve
   mod_vn_list = np.array(vn_list) - delta_vn
   delta_ve, delta_vn = finish_test_setup(
-    self, lat_list, long_list, mod_ve_list, mod_vn_list, diam, delta_ve, delta_vn)
+    self, lat_list, long_list, mod_ve_list, mod_vn_list, diam, delta_ve, delta_vn, se, sn)
 
 def run_quad_test_pass(self):
   # get rot data
@@ -63,18 +63,18 @@ def run_cropped_disk_test_test_pass(self):
       None)
   finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam)
   
-def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = None, d_vn = None):
+def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = None, d_vn = None, s_e = None, s_n = None ):
   # clear and set rot data in Qgis
   self.rotDestLayer.dataProvider().truncate()
   self.yhsRotFeatureList = []
   for i in range(len(lat_list)):
     feature = self.rotData.createRotFeature(
-        PLoc(long_list[i], lat_list[i]), PDist(ve_list[i], vn_list[i]), 0.001)
+        PLoc(long_list[i], lat_list[i]), PVel(ve_list[i], vn_list[i]), 0.001)
     self.yhsRotFeatureList.append(feature)        
 
   # get euler pole and gauss newton results and display
-  pole = epr.fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list)
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(long_list, lat_list, ve_list, vn_list, pole)
+  pole = epr.fit_euler_pole_linear_wtd(lat_list, long_list, ve_list, vn_list, s_e, s_n)
+  gn_out = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, s_e, s_n, pole)
 
   #show results in Qgis
   label_text1 = f"{pole.long:.4f}, {pole.lat:.4f}, {pole.omega:.3f} deg, "
@@ -85,7 +85,7 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = 
   # if translation correction added, add a delta_V vector to the target to sho that
   if d_ve != 0.0 or d_vn != 0.0:    
     feature = self.rotData.createRotFeature(
-      PLoc(pole.long, pole.long), PDist(delta_ve + d_ve, delta_vn + d_vn), 0.001) 
+      PLoc(pole.long, pole.long), PVel(delta_ve + d_ve, delta_vn + d_vn), 0.001) 
     self.yhsRotFeatureList.append(feature)
 
   return gn_out['t_x'], gn_out['t_y']
