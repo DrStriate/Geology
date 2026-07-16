@@ -73,18 +73,12 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotData = RotData()
         self.rotDisplayLayerSetup = False
         self.rotDestLayer = None
-        self.yhsDestLayerSetup = False
-        self.yhsDestLayer = None
         self.interpFunction = "LinearNDInterpolator"
-        self.yhsPoints = [] # NA + Block YHS plot
-        self.yhsOccludedPoints = [] # occluded by JdF
-        self.naPoints = []  # NA only YHS plot
-        self.yhsRotFeatureList = []
         self.geoWhiteboard = None
         self.rotPoleDisplayed = False
         
         self.clearDataButton.clicked.connect(self.clearData)
-        self.runYhsDataButton.clicked.connect(self.runYhsButtonClicked)
+        self.runYhsDataButton.clicked.connect(self.runButtonClicked)
         self.rbYHS.toggled.connect(self.setStartPoint)
         self.rbBrothers.toggled.connect(self.setStartPoint)
         self.rbME.toggled.connect(self.setStartPoint)
@@ -96,19 +90,16 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setStartPoint()
         self.spbNaPlateazimuth.setValue(NA_azimuth)
         self.spbNaPlateSpeed.setValue(NA_Speed)
+        
         self.rotData.load()
         self.setupRotDisplayLayer()
+        
+
         self.yhsPath = YhsPath(self)
 
-        return
-
     def clearData(self):
-        self.yhsPoints = []
-        self.naPoints = []
-        self.yhsOccludedPoints = []
-        self.yhsRotFeatureList = []
+
         self.clearRotDataLayer()
-        self.clearYhsDataLayer()
         self.yhsPath.erase_everything()
         self.geoWhiteboard.clear_annotations()
         self.rotPoleDisplayed = False
@@ -129,8 +120,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     def setupRotDisplayLayer(self):
         if self.rotDisplayLayerSetup:
             return True
-
-        if not self.rotData.rotDataLoaded:
+        
+        if not self.rotData.load():
             QgsMessageLog.logMessage('failed to load rotation data from layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
@@ -157,6 +148,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage('failed to copy rot data', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
+        # needs a base vector layer. Could add to path_layer at some point instead of rotDestLayer?
         self.geoWhiteboard = GeoWhiteboard(self.rotDestLayer)
 
         self.rotDisplayLayerSetup = True
@@ -179,24 +171,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             clear_test_run_pass()
 
     ####
-    # run Yhs Button
+    # run Button
     ####
 
-    def runYhsButtonClicked(self):
-        if not self.setupYhsLayer() :
-            QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
-            return
-
-        dataFile = None
-        # plugin_dir_os = os.path.dirname(os.path.realpath(__file__)) # point to plugin dir
-        # file_path = os.path.join(plugin_dir_os, "rotation_run.csv")
-        # with open(file_path, "w") as dataFile:
+    def runButtonClicked(self):
+        if not self.rotDisplayLayerSetup:
+            self.setupRotDisplayLayer() # also sets up whiteboard
+            
         startT = float(self.sbStartMa.value()) * 1e6
-        if len(self.yhsPoints) == 0:
-            self.rotData.setupSampling(self.interpFunction)
-            startPoint = QgsPoint(self.spbStartLongDD.value(), self.spbStartLatDD.value())
-            self.yhsPoints.append(startPoint)  # Set initial points
-            self.naPoints.append(startPoint)
         currentYr = startT
         deltaT = self.spbStepMa.value() * 1e6
 
@@ -206,80 +188,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
         for i in range (self.sbSteps.value()):
             currentYr += deltaT
-            locYhs = self.yhsPath.get_yhs_loc(currentYr)
-            if (locYhs.long < JFP.leadingEdgeLongitude(currentYr)
-                    and self.rbShowJdFOcclusion.isChecked()):
-                self.yhsOccludedPoints.append(QgsPoint(locYhs.long, locYhs.lat))
+            self.yhsPath.get_yhs_loc(currentYr)
         return
-
-    def setupYhsLayer(self) :    # Rot layer must be loaded in qgism first(so not at qgis launch)
-        if self.yhsDestLayerSetup:
-            return True
-        if self.yhsDestLayer is None:
-            layer_name = 'YHS Track'
-            uri = f"LineString?crs=epsg:4326&field=category_id:int&field=name:string"
-            self.yhsDestLayer  = QgsVectorLayer(uri, layer_name, 'memory')
-
-        if not self.yhsDestLayer.isValid():
-            QgsMessageLog.logMessage("Could not instantiate plugin target layer", tag=PnwRotPyDialog.name, level=Qgis.Info)
-            return False
-
-        categories = []
-        # Category for ID 1 (Red)
-        symbol1 = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
-        symbol1.setColor(QColor("red"))
-        symbol1.setWidth(0.5)
-        category1 = QgsRendererCategory(1, symbol1, 'NA+Block YHS')
-        categories.append(category1)
-
-        # Category for ID 2 (Black)
-        symbol2 = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
-        symbol2.setColor(QColor("black"))
-        symbol2.setWidth(0.5)
-        category2 = QgsRendererCategory(2, symbol2, 'NA+Block YHS Occluded')
-        categories.append(category2)
-
-        # Category for ID 3 (Blue)
-        symbol3 = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
-        symbol3.setColor(QColor("blue"))
-        symbol3.setWidth(0.5)
-        category3 = QgsRendererCategory(3, symbol3, 'NA only YHS')
-        categories.append(category3)
-
-        renderer = QgsCategorizedSymbolRenderer('category_id', categories)
-        self.yhsDestLayer.setRenderer(renderer)
-        self.yhsDestLayerSetup = True
-        return True
-
-    def displayYhsData(self):
-        #copy yhs data over
-        feature1 = QgsFeature(self.yhsDestLayer.fields())
-        feature1.setGeometry(QgsGeometry.fromPolyline(self.yhsPoints))
-        feature1.setAttributes([1, 'NA+Block YHS'])
-
-        feature2 = QgsFeature(self.yhsDestLayer.fields())
-        feature2.setGeometry(QgsGeometry.fromPolyline(self.yhsOccludedPoints))
-        feature2.setAttributes([2, 'NA+Block YHS Occluded'])
-
-        feature3 = QgsFeature(self.yhsDestLayer.fields())
-        feature3.setGeometry(QgsGeometry.fromPolyline(self.naPoints))
-        feature3.setAttributes([3, 'NA Only YHS'])
-
-        # Add feature to layer
-        self.yhsDestLayer.startEditing()
-        self.yhsDestLayer.addFeatures([feature1, feature2, feature3])
-        #self.yhsDestLayer.addFeatures([feature3])
-
-        self.yhsDestLayer.commitChanges()
-        QgsProject.instance().addMapLayer(self.yhsDestLayer)
-
-        self.yhsDestLayer.triggerRepaint()
-        return True
-    
-    def clearYhsDataLayer(self):
-        if self.yhsDestLayer != None:
-            self.yhsDestLayer.dataProvider().truncate()
-            self.yhsDestLayer.triggerRepaint()
 
     def setStartPoint(self):
         if  self.rbYHS.isChecked():
@@ -310,23 +220,18 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def closeRotLayer(self):
         if self.rotDestLayer:
+            self.rotData.closeRotSourceLayer()
             self.geoWhiteboard.unload()
+            self.geoWhiteboard = None
             self.removeLayer(self.rotDestLayer)
             self.rotDestLayer = None
             self.rotDisplayLayerSetup = False
         return
 
-    def closeYhsLayer(self):
-        if self.yhsDestLayer:
-            self.removeLayer(self.yhsDestLayer)
-            self.yhsDestLayer = None
-            self.yhsDestLayerSetup = False
-        return
 
     def closeEvent(self, event: QCloseEvent):
         self.clearData()
         self.closeRotLayer()
-        self.closeYhsLayer()
         self.yhsPath.closeLayers()
         return
 

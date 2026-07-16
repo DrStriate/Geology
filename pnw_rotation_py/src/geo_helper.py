@@ -17,8 +17,8 @@ def getAzimuth (d_e, d_n): # d_e and d_n in dist / velocity
         azimuth += 360.0 # arctan2 returns -180 ... 180 wheras azimuth needs to be 0 ... 360
     return azimuth
 
-def getPAdist (d_e, d_n):
-    return PAdist(getAzimuth(d_e, d_n), getMagnitude(d_e, d_n))
+def getPAdist (v_e, v_n):
+    return PAdist(getAzimuth(v_e, v_n), getMagnitude(v_e, v_n))
 
 @dataclass
 class PLoc:

@@ -1,7 +1,8 @@
-from qgis._core import QgsMessageLog, Qgis, QgsProject
+from qgis._core import QgsMessageLog, Qgis, QgsProject, QgsVectorLayer
 from qgis.core import QgsFeature, QgsPointXY,QgsGeometry
 from qgis.PyQt.QtCore import QVariant, QDateTime, Qt
 
+import os
 from dataclasses import dataclass
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
@@ -16,7 +17,6 @@ class PState:
     vNorth: float
 
 class RotData:
-    rotDataLayerName = 'nshm2023_GPS_velocity'
     XRange = {"min": -125.0, "max": -110.0}
     YRange = {"min": 37.0, "max": 50.0}
     XYSteps = 50
@@ -38,6 +38,7 @@ class RotData:
         self.interp_func = None
         self.interpFunction = "ClosestEntry"
         self.gdf = None
+        self.rotDataLayerName = 'NSHM2023_GPS_velocity'
 
     def loadFromFile(self):
         gpsFIlePath = 'data/NSHM2023_GPS_velocity.zip'
@@ -48,33 +49,69 @@ class RotData:
         self.rotFieldList = []
         self.rotFeatureList = []
         return
-
+    
     def load(self):
         if self.rotDataLoaded:
             return True
 
-        # get rotation data layer
-        dataLayers = QgsProject.instance().mapLayersByName(self.rotDataLayerName)
-        if len(dataLayers) == 0 :
-            QgsMessageLog.logMessage('Could not access source data layer' +
-                                     self.rotDataLayerName, tag="", level=Qgis.Info)
-            return False
+        # 1. Get the absolute path of your plugin directory
+        plugin_dir = os.path.dirname(__file__)
 
-        self.rotSourceLayer = dataLayers[0]
+        # 2. Point to the zip file (and optionally the specific .shp inside it if there are multiple files)
+        zip_file_path = os.path.join(plugin_dir, "NSHM2023_GPS_velocity.zip")
 
-        #get rot data fields
-        self.rotSourceFields = self.rotSourceLayer.fields()
-        for field in self.rotSourceFields:
-            self.rotFieldList.append(field)
+        # Format the GDAL virtual zip URI
+        # If the zip has a single shapefile at its root, just pointing to the zip works:
+        uri = f"/vsizip/{zip_file_path}"
 
-        #get rot features
-        featureList = self.rotSourceLayer.getFeatures()
-        for feature in featureList:
-            self.rotFeatureList.append(feature)
+        # gpsFIlePath = 'data/NSHM2023_GPS_velocity.zip'
+        self.rotSourceLayer = QgsVectorLayer(
+                uri,
+                self.rotDataLayerName,
+                "ogr"
+            )
 
-        self.rotDataLoaded = True
-        return True
+        QgsProject.instance().addMapLayer(self.rotSourceLayer )
+
+        node = QgsProject.instance().layerTreeRoot().findLayer(self.rotSourceLayer.id())
+        node.setItemVisibilityChecked(False)
+
+        # Path to your style file inside the plugin folder
+        style_path = os.path.join(plugin_dir, "velocity_style.qml")
+
+        # Apply the style to the layer
+        success, message, = self.rotSourceLayer.loadNamedStyle(style_path)
+
+        if success:
+            print(self.rotSourceLayer.source())
+
+            #get rot data fields
+            self.rotSourceFields = self.rotSourceLayer.fields()
+            for field in self.rotSourceFields:
+                self.rotFieldList.append(field)
+
+            #get rot features
+            featureList = self.rotSourceLayer.getFeatures()
+            for feature in featureList:
+                self.rotFeatureList.append(feature)
+
+            self.rotDataLoaded = True
+
+        else:
+            self.rotDataLoaded = False
+            print(f"Failed to load style: {message}")
+
+        return self.rotDataLoaded
     
+    def closeRotSourceLayer(self):
+        # Check if the layer exists and is registered in the project
+        if self.rotSourceLayer:
+            # Remove it from the map registry (this closes/deletes it from the layers panel)
+            QgsProject.instance().removeMapLayer(self.rotSourceLayer.id())
+            self.rotSourceLayer = None
+        self.rotDataLoaded = False
+    
+  
     def createRotFeature(self, pLoc, pdist, d_scaling = 1.0):
         # --- Create a new QgsFeature instance ---
         new_feature = QgsFeature(self.rotSourceFields)
