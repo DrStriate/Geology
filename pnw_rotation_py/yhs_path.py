@@ -1,5 +1,8 @@
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+import json
+import dacite 
+
 from .src import geo_helper as gh
 from .src.geo_helper import PAvel, PLoc, PVel, EulerPole
 from .src import test_utils as tu
@@ -26,7 +29,8 @@ class YhsPath:
     self.parent = parent
     self.path_layer_manager = pl.PathLayerManager()
     
-    self.yhsLoc = PLoc(YHS_long, YHS_lat)
+    ### Data structures needed 
+    self.yhs_loc = PLoc(YHS_long, YHS_lat)
 
     # NA Plate 
     self.NAPAvel = PAvel(NA_plate_azimuth, NA_plate_speed)
@@ -49,11 +53,33 @@ class YhsPath:
     self.useGpsData = False
     self.pole_model = 2 # 1 is NA then Pole-V then Pole-R, 2 is NA - Translated-R - Pole-V
     self.setupEulerPoles(True)
+
+  # Serialization (Object -> JSON) 
+  def get_serialize_bag(self) -> str:
+    # asdict recursively handles nesting automatically
+    return json.dumps(asdict(self.getYhsPropertyBag()), indent=4)
+
+  # Deserialization (JSON -> Object) 
+  def deserialize_and_set_bag(self, json_str: str) -> YhsPropertyBag:
+    data_dict = json.loads(json_str)
+    
+    # dacite automatically looks at the type hints (e.g., NAPAvel: PAvel)
+    # and recursively instantiates the inner classes for you.
+    propertyBag = dacite.from_dict(data_class=YhsPropertyBag, data=data_dict)
+    self.NAPAvel = propertyBag.NAPAvel
+    self.PnwVPAvel = propertyBag.PnwVPAvel
+    self.PnwRotPole = propertyBag.PnwRotPole  
   
   def getYhsPropertyBag(self):
     propertyBag = YhsPropertyBag(self.NAPAvel, self.PnwVPAvel, self.PnwRotPole)
     return propertyBag
   
+  def setYhsPropertyBag(self, propertyBag):
+    self.NAPAvel = propertyBag.NAPAvel
+    self.PnwVPAvel = propertyBag.PnwVPAvel
+    self.PnwRotPole = propertyBag.PnwRotPole
+    self.setupEulerPoles(self.useGpsData)
+
   def setupEulerPoles (self, useGpsData):
     if self.useGpsData == useGpsData:
       return
@@ -123,8 +149,8 @@ class YhsPath:
     self.checkLayersCreated()
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
-    self.NAPole = ek.getEulerPoleFromPlocAndPazvel(self.yhsLoc, self.NAPAvel)
-    loc_1 = self.NaPoleLayer.addAnnotationsForPoleRotationOfPoint(self.yhsLoc, self.NAPole, -yrs/1e6)
+    self.NAPole = ek.getEulerPoleFromPlocAndPazvel(self.yhs_loc, self.NAPAvel)
+    loc_1 = self.NaPoleLayer.addAnnotationsForPoleRotationOfPoint(self.yhs_loc, self.NAPole, -yrs/1e6)
     #loc_1.print("loc_1")
 
     # get the PnwVPole given it varies with loc_1 (based on NA movement)

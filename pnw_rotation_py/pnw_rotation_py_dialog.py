@@ -25,6 +25,8 @@
 import os
 
 from qgis.PyQt import uic, QtWidgets
+from qgis.PyQt.QtWidgets import QSpinBox, QGroupBox, QVBoxLayout, QDoubleSpinBox, QFileDialog, QMessageBox
+from qgis.gui import QgsDoubleSpinBox
 from qgis._core import (QgsMessageLog,
                         Qgis,
                         QgsPoint,
@@ -39,11 +41,16 @@ from qgis._core import (QgsMessageLog,
 from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
 from qgis.utils import iface
 
-from .yhs_path import YhsPath
+from .yhs_path import YhsPath, YhsPropertyBag
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .geo_whiteboard import GeoWhiteboard
+from .src.geo_helper import PAvel, EulerPole
+
 from .test_pass_runs import *
+
+# Brothers_Lat = 47.652      # Mount Olympus
+# Brothers_Long = -123.141
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'pnw_rotation_py_dialog_base.ui'))
@@ -69,6 +76,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbDisplayRot.clicked.connect(self.displayRotData)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
         self.rbGpsModel.toggled.connect(self.setYhsPathModel)
+        self.saveButton.clicked.connect(self.save_data_to_file)
+        self.loadButton.clicked.connect(self.load_data_from_file)
+
+        self.uiPropertieesSet = False
+        spin_boxes = self.groupParamBox.findChildren(QDoubleSpinBox)
+        for spin_box in spin_boxes:
+            spin_box.setKeyboardTracking(False)
+            spin_box.valueChanged.connect(self.getDialogueProperties)
         
         self.rotData.load()
         self.setupRotDisplayLayer()
@@ -76,6 +91,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setDialogueProperties()
 
     def setDialogueProperties(self):
+        self.uiPropertieesSet = False # ignore changed events until done
         propertyBag = self.yhsPath.getYhsPropertyBag()
         self.spbNaPlateazimuth.setValue(propertyBag.NAPAvel.azimuth)
         self.spbNaPlateSpeed.setValue(propertyBag.NAPAvel.vel)
@@ -85,14 +101,63 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.spbPnwRPoleLong.setValue(propertyBag.PnwRotPole.long)
             self.spbPnwRPoleLat.setValue(propertyBag.PnwRotPole.lat)
             self.spbPnwRPoleOmega.setValue(propertyBag.PnwRotPole.omega)
-        return
+        self.uiPropertieesSet = True
+    
+    def getDialogueProperties(self):
+        if not self.uiPropertieesSet:
+               return
+        #changed_box = self.sender() # Might prove handy for special handling (none needed yet)
+        propertyBag = YhsPropertyBag(
+            PAvel(self.spbNaPlateazimuth.value(), self.spbNaPlateSpeed.value()),
+            PAvel(self.spbPnwVPoleAzimuth.value(), self.spbPnwVPoleSpeed.value()),
+            EulerPole(self.spbPnwRPoleLong.value(), self.spbPnwRPoleLat.value(), self.spbPnwRPoleOmega.value()))
+        self.yhsPath.setYhsPropertyBag(propertyBag)
+
+    def save_data_to_file(self):
+        default_dir = os.path.join(os.path.dirname(__file__), "data")        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save YHS Properties",
+            default_dir,
+            "Property Bag (*.pb)")
+
+        if file_path:
+            try:
+                json_data = self.yhsPath.get_serialize_bag()
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(json_data)
+                print(f"Successfully saved to {file_path}")
+                self.setDialogueProperties()
+                
+            except Exception as e:
+                QMessageBox.critical(self, "Save Error", f"Could not save file:\n{str(e)}")
+        
+
+
+    def load_data_from_file(self):
+        default_dir = os.path.join(os.path.dirname(__file__), "data")
+    
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Load Property Bag",
+            default_dir,
+            "Property Bag (*.pb)")
+
+        if file_path:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    json_data = f.read()
+                self.yhsPath.deserialize_and_set_bag(json_data)
+                print(f"Successfully loaded from {file_path}")
+                self.setDialogueProperties()
+                
+            except Exception as e:
+                QMessageBox.critical(self, "Load Error", f"Could not load file:\n{str(e)}")
 
     def clearData(self):
         self.clearRotDataLayer()
         self.yhsPath.erase_everything()
         self.geoWhiteboard.clear_annotations()
         self.rotPoleDisplayed = False
-        return
 
     ####
     # Display Rotation Data
@@ -142,7 +207,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.rotDisplayLayerSetup = True
         return True
-    
+
     def displayRotData(self):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
@@ -152,7 +217,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
         QgsProject.instance().addMapLayer(self.rotDestLayer)
         self.rotDestLayer.triggerRepaint()
-    
+
     def clearRotDataLayer(self):
         if self.rotDestLayer: 
             self.rotDestLayer.dataProvider().truncate()
@@ -179,11 +244,11 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             currentYr += deltaT
             self.yhsPath.get_yhs_loc(currentYr)
         return
-    
+
     def choosePoleModel(self):
         self.clearData()
         self.yhsPath.choosePoleModel(self.rbPoleOrderSwap.isChecked())
-    
+
     def setYhsPathModel(self):
         self.yhsPath.setupEulerPoles(self.rbGpsModel.isChecked())
         self.geoWhiteboard.clear_annotations()
