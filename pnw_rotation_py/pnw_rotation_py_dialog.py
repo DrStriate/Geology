@@ -43,28 +43,14 @@ from .yhs_path import YhsPath
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .geo_whiteboard import GeoWhiteboard
-
 from .test_pass_runs import *
 
-# Important constants
-NA_Speed = 23e-3    # m / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma 
-NA_azimuth = 241.0  # degrees azimuth
-YHS_lat = 44.43     # Yellowstone hotspot caldera
-YHS_long = -110.67
-Brothers_Lat = 47.652      # Mount Olympus
-Brothers_Long = -123.141
-
-
-# This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'pnw_rotation_py_dialog_base.ui'))
 
 class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     name = 'PnwRotPyDialog'
-    destRotDataLayerName = 'pnw rotation data'
-    YHS_lat = 44.43
-    YHS_lon = -110.67
-    destYhsLayerName = 'YHS movement'
+    destRotDataLayerName = 'Pnw Rotation Data'
 
     def __init__(self, parent=None):
         super(PnwRotPyDialog, self).__init__(parent)
@@ -78,27 +64,30 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotPoleDisplayed = False
         
         self.clearDataButton.clicked.connect(self.clearData)
-        self.runYhsDataButton.clicked.connect(self.runButtonClicked)
-        self.rbYHS.toggled.connect(self.setStartPoint)
-        self.rbBrothers.toggled.connect(self.setStartPoint)
-        self.rbME.toggled.connect(self.setStartPoint)
+        self.pbRunYhsLocButton.clicked.connect(self.pbRunYhsLocButtonClicked)
         self.rbPoleOrderSwap.toggled.connect(self.choosePoleModel)
         self.pbDisplayRot.clicked.connect(self.displayRotData)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
         self.rbGpsModel.toggled.connect(self.setYhsPathModel)
-
-        self.setStartPoint()
-        self.spbNaPlateazimuth.setValue(NA_azimuth)
-        self.spbNaPlateSpeed.setValue(NA_Speed)
         
         self.rotData.load()
         self.setupRotDisplayLayer()
-        
-
         self.yhsPath = YhsPath(self)
+        self.setDialogueProperties()
+
+    def setDialogueProperties(self):
+        propertyBag = self.yhsPath.getYhsPropertyBag()
+        self.spbNaPlateazimuth.setValue(propertyBag.NAPAvel.azimuth)
+        self.spbNaPlateSpeed.setValue(propertyBag.NAPAvel.vel)
+        self.spbPnwVPoleAzimuth.setValue(propertyBag.PnwVPAvel.azimuth)
+        self.spbPnwVPoleSpeed.setValue(propertyBag.PnwVPAvel.vel)
+        if propertyBag.PnwRotPole:
+            self.spbPnwRPoleLong.setValue(propertyBag.PnwRotPole.long)
+            self.spbPnwRPoleLat.setValue(propertyBag.PnwRotPole.lat)
+            self.spbPnwRPoleOmega.setValue(propertyBag.PnwRotPole.omega)
+        return
 
     def clearData(self):
-
         self.clearRotDataLayer()
         self.yhsPath.erase_everything()
         self.geoWhiteboard.clear_annotations()
@@ -174,7 +163,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     # run Button
     ####
 
-    def runButtonClicked(self):
+    def pbRunYhsLocButtonClicked(self):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer() # also sets up whiteboard
             
@@ -189,15 +178,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         for i in range (self.sbSteps.value()):
             currentYr += deltaT
             self.yhsPath.get_yhs_loc(currentYr)
-        return
-
-    def setStartPoint(self):
-        if  self.rbYHS.isChecked():
-            self.spbStartLatDD.setValue(YHS_lat)
-            self.spbStartLongDD.setValue(YHS_long)
-        elif self.rbBrothers.isChecked():
-            self.spbStartLatDD.setValue(Brothers_Lat)
-            self.spbStartLongDD.setValue(Brothers_Long)
         return
     
     def choosePoleModel(self):

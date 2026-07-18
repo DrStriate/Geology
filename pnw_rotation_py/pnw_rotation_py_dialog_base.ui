@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>383</width>
-    <height>300</height>
+    <width>403</width>
+    <height>406</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
   <widget class="QPushButton" name="clearDataButton">
    <property name="geometry">
     <rect>
-     <x>260</x>
-     <y>180</y>
+     <x>20</x>
+     <y>350</y>
      <width>111</width>
      <height>23</height>
     </rect>
@@ -29,245 +29,24 @@
     <string>Clear Data</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="runYhsDataButton">
+  <widget class="QPushButton" name="pbRunYhsLocButton">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>130</y>
+     <x>20</x>
+     <y>300</y>
      <width>151</width>
      <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>Run</string>
+    <string>Calculate YHS Loc</string>
    </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="spbStartLatDD">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>30</y>
-     <width>101</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="suffix">
-    <string> DD</string>
-   </property>
-   <property name="decimals">
-    <number>5</number>
-   </property>
-   <property name="minimum">
-    <double>-90.000000000000000</double>
-   </property>
-   <property name="maximum">
-    <double>90.000000000000000</double>
-   </property>
-   <property name="singleStep">
-    <double>0.010000000000000</double>
-   </property>
-   <property name="value">
-    <double>0.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="spbStartLongDD">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>30</y>
-     <width>101</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="suffix">
-    <string> DD</string>
-   </property>
-   <property name="decimals">
-    <number>5</number>
-   </property>
-   <property name="minimum">
-    <double>-180.000000000000000</double>
-   </property>
-   <property name="maximum">
-    <double>180.000000000000000</double>
-   </property>
-   <property name="singleStep">
-    <double>0.010000000000000</double>
-   </property>
-   <property name="value">
-    <double>0.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="QLabel" name="StartLatLabel">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>10</y>
-     <width>71</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>9</pointsize>
-     <weight>50</weight>
-     <bold>false</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>Start Latitude</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="StartLongLabel">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>10</y>
-     <width>91</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>9</pointsize>
-     <weight>50</weight>
-     <bold>false</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>Start Longitude</string>
-   </property>
-  </widget>
-  <widget class="QGroupBox" name="groupBox">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>60</y>
-     <width>121</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string/>
-   </property>
-   <widget class="QRadioButton" name="rbPoleOrderSwap">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>10</y>
-      <width>101</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="toolTipDuration">
-     <number>9</number>
-    </property>
-    <property name="text">
-     <string>Pole Order Swap</string>
-    </property>
-    <property name="checked">
-     <bool>false</bool>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="groupBox_2">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>220</y>
-     <width>121</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string/>
-   </property>
-   <widget class="QRadioButton" name="rbApplyMaScaling">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>0</y>
-      <width>101</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="toolTipDuration">
-     <number>-3</number>
-    </property>
-    <property name="text">
-     <string>Apply Ma Scaling</string>
-    </property>
-    <property name="checked">
-     <bool>false</bool>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="groupBox_3">
-   <property name="geometry">
-    <rect>
-     <x>269</x>
-     <y>0</y>
-     <width>111</width>
-     <height>91</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string>Start position</string>
-   </property>
-   <property name="checkable">
-    <bool>false</bool>
-   </property>
-   <widget class="QRadioButton" name="rbYHS">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>81</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>YHS</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="rbBrothers">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>40</y>
-      <width>101</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>The Brothers</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="rbME">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>60</y>
-      <width>101</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Manual Entry</string>
-    </property>
-   </widget>
   </widget>
   <widget class="QLabel" name="StartLatLabel_2">
    <property name="geometry">
     <rect>
-     <x>140</x>
-     <y>170</y>
+     <x>20</x>
+     <y>0</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -280,40 +59,20 @@
     </font>
    </property>
    <property name="text">
-    <string>NA Plate azimuth</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="StartLatLabel_3">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>220</y>
-     <width>101</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>9</pointsize>
-     <weight>50</weight>
-     <bold>false</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>NA Plate Speed</string>
+    <string>NA pole az / sp</string>
    </property>
   </widget>
   <widget class="QDoubleSpinBox" name="spbNaPlateazimuth">
    <property name="geometry">
     <rect>
-     <x>140</x>
-     <y>200</y>
-     <width>101</width>
+     <x>20</x>
+     <y>30</y>
+     <width>91</width>
      <height>22</height>
     </rect>
    </property>
    <property name="suffix">
-    <string> Deg</string>
+    <string> °</string>
    </property>
    <property name="decimals">
     <number>2</number>
@@ -334,23 +93,23 @@
   <widget class="QDoubleSpinBox" name="spbNaPlateSpeed">
    <property name="geometry">
     <rect>
-     <x>140</x>
-     <y>250</y>
-     <width>101</width>
+     <x>20</x>
+     <y>60</y>
+     <width>91</width>
      <height>22</height>
     </rect>
    </property>
    <property name="suffix">
-    <string> m/y</string>
+    <string> mm/yr</string>
    </property>
    <property name="decimals">
-    <number>3</number>
+    <number>1</number>
    </property>
    <property name="minimum">
     <double>0.000000000000000</double>
    </property>
    <property name="maximum">
-    <double>1.000000000000000</double>
+    <double>1000.000000000000000</double>
    </property>
    <property name="singleStep">
     <double>0.001000000000000</double>
@@ -362,8 +121,8 @@
   <widget class="QSpinBox" name="sbSteps">
    <property name="geometry">
     <rect>
-     <x>310</x>
-     <y>130</y>
+     <x>320</x>
+     <y>300</y>
      <width>61</width>
      <height>31</height>
     </rect>
@@ -390,8 +149,8 @@
   <widget class="QLabel" name="StartLatLabel_4">
    <property name="geometry">
     <rect>
-     <x>250</x>
-     <y>110</y>
+     <x>260</x>
+     <y>280</y>
      <width>41</width>
      <height>21</height>
     </rect>
@@ -410,8 +169,8 @@
   <widget class="QLabel" name="StartLatLabel_5">
    <property name="geometry">
     <rect>
-     <x>320</x>
-     <y>110</y>
+     <x>330</x>
+     <y>280</y>
      <width>41</width>
      <height>21</height>
     </rect>
@@ -430,8 +189,8 @@
   <widget class="QSpinBox" name="sbStartMa">
    <property name="geometry">
     <rect>
-     <x>170</x>
-     <y>130</y>
+     <x>180</x>
+     <y>300</y>
      <width>61</width>
      <height>31</height>
     </rect>
@@ -458,8 +217,8 @@
   <widget class="QLabel" name="StartLatLabel_6">
    <property name="geometry">
     <rect>
-     <x>180</x>
-     <y>110</y>
+     <x>190</x>
+     <y>280</y>
      <width>41</width>
      <height>21</height>
     </rect>
@@ -478,8 +237,8 @@
   <widget class="QDoubleSpinBox" name="spbStepMa">
    <property name="geometry">
     <rect>
-     <x>240</x>
-     <y>130</y>
+     <x>250</x>
+     <y>300</y>
      <width>62</width>
      <height>31</height>
     </rect>
@@ -500,69 +259,11 @@
     <double>-50.000000000000000</double>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox_5">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>60</y>
-     <width>121</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string/>
-   </property>
-   <widget class="QPushButton" name="pbDisplayRot">
-    <property name="geometry">
-     <rect>
-      <x>16</x>
-      <y>0</y>
-      <width>101</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Display Rot</string>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="groupBox_4">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>250</y>
-     <width>131</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string/>
-   </property>
-   <widget class="QRadioButton" name="rbShowJdFOcclusion">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>0</y>
-      <width>121</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="toolTipDuration">
-     <number>-3</number>
-    </property>
-    <property name="text">
-     <string>Show JdF Occlusion</string>
-    </property>
-    <property name="checked">
-     <bool>false</bool>
-    </property>
-   </widget>
-  </widget>
   <widget class="QGroupBox" name="groupBox_6">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>200</y>
+     <x>150</x>
+     <y>160</y>
      <width>111</width>
      <height>71</height>
     </rect>
@@ -596,7 +297,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>50</y>
+      <y>40</y>
       <width>81</width>
       <height>20</height>
      </rect>
@@ -608,6 +309,259 @@
      <bool>true</bool>
     </property>
    </widget>
+  </widget>
+  <widget class="QRadioButton" name="rbApplyMaScaling">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>200</y>
+     <width>101</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="toolTipDuration">
+    <number>-3</number>
+   </property>
+   <property name="text">
+    <string>Apply Ma Scaling</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="rbShowJdFOcclusion">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>180</y>
+     <width>121</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="toolTipDuration">
+    <number>-3</number>
+   </property>
+   <property name="text">
+    <string>Show JdF Occlusion</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="rbPoleOrderSwap">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>160</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTipDuration">
+    <number>9</number>
+   </property>
+   <property name="text">
+    <string>Pole Order Swap</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pbDisplayRot">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>250</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Set Pnw GPS Poles</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="StartLatLabel_8">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>0</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Pnw V pole az / sp</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="spbPnwVPoleSpeed">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>60</y>
+     <width>101</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="suffix">
+    <string> mm/yr</string>
+   </property>
+   <property name="decimals">
+    <number>1</number>
+   </property>
+   <property name="minimum">
+    <double>0.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>1000.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.001000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="spbPnwVPoleAzimuth">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>30</y>
+     <width>101</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="suffix">
+    <string>  °</string>
+   </property>
+   <property name="decimals">
+    <number>2</number>
+   </property>
+   <property name="minimum">
+    <double>0.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>359.990000000000009</double>
+   </property>
+   <property name="singleStep">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="spbPnwRPoleOmega">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>90</y>
+     <width>91</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="suffix">
+    <string>  °/ma</string>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="minimum">
+    <double>0.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>359.990000000000009</double>
+   </property>
+   <property name="singleStep">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="spbPnwRPoleLat">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>60</y>
+     <width>91</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="suffix">
+    <string> ° N</string>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="minimum">
+    <double>-90.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>90.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="spbPnwRPoleLong">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>30</y>
+     <width>91</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="suffix">
+    <string> ° E</string>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="minimum">
+    <double>-359.990000000000009</double>
+   </property>
+   <property name="maximum">
+    <double>359.990000000000009</double>
+   </property>
+   <property name="singleStep">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="StartLatLabel_9">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>0</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Pnw Rot pole  </string>
+   </property>
   </widget>
  </widget>
  <resources/>

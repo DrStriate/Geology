@@ -30,15 +30,15 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True
         sum_lats += lats[i]
         
         # East velocity row equations
-        A[2*i, 0] = -R * np.sin(phi) * np.cos(lam)
-        A[2*i, 1] = -R * np.sin(phi) * np.sin(lam)
-        A[2*i, 2] = R * np.cos(phi)
+        A[2*i, 0] = -R * np.sin(phi) * np.cos(lam)  # R * n-hat[0] 
+        A[2*i, 1] = -R * np.sin(phi) * np.sin(lam)  # R * n_hat[1]
+        A[2*i, 2] = R * np.cos(phi)                 # R * n_hat[2]
         B[2*i] = v_east_obs[i]
         
         # North velocity row equations
-        A[2*i+1, 0] = R * np.sin(lam)
-        A[2*i+1, 1] = -R * np.cos(lam)
-        A[2*i+1, 2] = 0.0
+        A[2*i+1, 0] = R * np.sin(lam)               # -R * e-hat[0]
+        A[2*i+1, 1] = -R * np.cos(lam)              # -R * e-hat[1]
+        A[2*i+1, 2] = 0.0                           # -R * e-hat[2]
         B[2*i+1] = v_north_obs[i]
     
     north_hemisphere = (sum_lats > 0.0)
