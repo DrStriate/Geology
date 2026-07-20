@@ -122,13 +122,16 @@ def test_against_pnw_GPS_data():
   script_path = Path(__file__).resolve()
   print(script_path)
 
-  center_pole =  PLoc (-118.5, 45)
+  center_ploc =  PLoc (-118.5, 45)
   max_distance = 550000 # m
 
   lats, lons, v_easts, v_norths, s_e, s_n = \
-    tu.get_GPS_rotation_data(center_pole.long, center_pole.lat, max_distance)
+    tu.get_GPS_rotation_data(center_ploc.long, center_ploc.lat, max_distance)
 
-  x = gn.solve_gauss_newton_2D_transform_geo(lons, lats, v_easts, v_norths, center_pole)
+  x = gn.solve_gauss_newton_2D_transform_geo_wtd(lons, lats, v_easts, v_norths, s_e, s_n, center_ploc)
   print(f"samples: {len(lats)}")
-  gn.print_x(x)
+  #gn.print_x(x)
 
+  assert x['t_x'] == pytest.approx(1231.18315, abs=1e-4)
+  assert x['t_y'] == pytest.approx(3387.26618, abs=1e-4)
+  assert x['r'] == pytest.approx(0.57931, abs=1e-4)

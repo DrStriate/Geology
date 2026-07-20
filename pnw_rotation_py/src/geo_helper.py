@@ -118,12 +118,12 @@ def getFwdAzimuthFromLocations (point1, point2):
     return forward_azimuth
 
 # gets lat and long converted to coordinate distances from pole. This is an approximation 
-def getSamplePoints(long_list, lat_list, pole):
+def getSamplePoints(long_list, lat_list, center_ploc):
   pe_list = []
   pn_list = []
   for i in range(len(long_list)):
     # convert sample points to meters
-    p_n, p_e = getNortherlyEasterlyFromLatLongPoints(pole.long, pole.lat, long_list[i], lat_list[i])
+    p_n, p_e = getNortherlyEasterlyFromLatLongPoints(center_ploc.long, center_ploc.lat, long_list[i], lat_list[i])
     pe_list.append(p_e)
     pn_list.append(p_n)
   return pe_list, pn_list 

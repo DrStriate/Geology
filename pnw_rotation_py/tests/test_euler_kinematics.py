@@ -8,6 +8,7 @@ import geo_helper as gh
 from geo_helper import PLoc, PAvel, EulerPole
 
 OC_NA_Pole = EulerPole(-119.60, 45.54, 1.32)
+SeattlePloc = PLoc(-122.3321, 47.6062)
 
 def test_euler_pole_from_quad():
   #test setup
@@ -83,20 +84,52 @@ def test_euler_pole_using_north_rotation():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   #ek.print_result ("test_euler_pole_using_north_rotation", pole_result)
 
-  assert pole_result.omega == pytest.approx(test_omega)
   assert pole_result.long == pytest.approx(euler_n_pole.long)
   assert pole_result.lat == pytest.approx(euler_n_pole.lat)
+  assert pole_result.omega == pytest.approx(test_omega)
 
-def test_GPS_pole_extraction():
+# errors showing up in breaking up rotations
+def test_getPoleRotationOfPoint():
+  test_pole = OC_NA_Pole
+  test_loc = SeattlePloc
+
+  target = ek.getPoleRotationOfPoint(test_pole, test_loc, 20.0)[0]
+  target_midpoint = ek.getPoleRotationOfPoint(test_pole, test_loc, 10.0)[0]
+  target2 = ek.getPoleRotationOfPoint(test_pole, target_midpoint, 10.0)[0]
+  assert target == pytest.approx(target2)
+
+def test_euler_GPS_pole_extraction():
   center_lat = 45.0
   center_long = -118
-  max_distance = 550000 # m
+  max_distance = 600000 # m
   lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)
 
-  pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths)
-  epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
+  pole_result = epr.fit_euler_pole_linear_wtd(lats, lons, v_easts, v_norths, s_e, s_n)
+  #epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
 
-# test Euler pole extaaction code (for translation scenarios) 
+  pole_result_sb = EulerPole(-115.41237, 43.63921,  0.5512292)
+  assert pole_result.long == pytest.approx(pole_result_sb.long)
+  assert pole_result.lat == pytest.approx(pole_result_sb.lat)
+  assert pole_result.omega == pytest.approx(pole_result_sb.omega)
+
+def test_combined_GPS_pole_extraction():
+  center_lat = 45.0
+  center_long = -119
+  max_distance = 600000 # m
+  lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)
+
+  pole_result, pAvel_result = epr.extractEulerPoleUsingCombinedRegressions(lats, lons, v_easts, v_norths, s_e, s_n)
+  #epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
+  #pAvel_result.print("PAvel_result: ")
+
+  pole_result_sb = EulerPole(-120.151301, 44.523748, 0.595350533)
+  assert pole_result.long == pytest.approx(pole_result_sb.long)
+  assert pole_result.lat == pytest.approx(pole_result_sb.lat)
+  assert pole_result.omega == pytest.approx(pole_result_sb.omega)
+  paVel_result_sb = PAvel(13.769589, 3.694107487)
+  assert pAvel_result.azimuth == pytest.approx(paVel_result_sb.azimuth)
+  assert pAvel_result.vel == pytest.approx(paVel_result_sb.vel)
+
 def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pole
   ploc = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc (arbitrary)
   pAzvel = PAvel(0.0, (gh.metersPerDegree()/1000.0))    #point motion north (azimuth, speed in km/ma)

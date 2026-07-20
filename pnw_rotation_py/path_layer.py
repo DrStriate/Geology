@@ -86,14 +86,14 @@ class PathLayer():
     self.qvector_layer.triggerRepaint()
   
   # plots path from start_point around Euler pole for specified time (ma)
-  def addAnnotationsForPoleRotationOfPoint(self, start_point, pole, ma, N=20):
+  def RenderPoleMotionForMa(self, start_point, pole, ma, N=20):
     yhs_rot_paths = []
     start_loc = start_point
-    for i in range(0, N + 1):
-      if i < N+1:
-        sample_ma = i * ma / N 
-      else:
-        sample_ma = ma
+    for i in range(0, N+1):
+      # if i < N+1:
+      sample_ma = i * ma / N 
+      # else:
+      #   sample_ma = ma
       next_loc, d = ek.getPoleRotationOfPoint(pole, start_point, sample_ma)
       yhs_rot_paths.append(
         [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])

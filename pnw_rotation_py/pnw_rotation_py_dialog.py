@@ -90,7 +90,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsPath = YhsPath(self)
         self.setDialogueProperties()
 
-    def setDialogueProperties(self):
+    def setDialogueProperties(self): # Set UI from yhs_Path
         self.uiPropertieesSet = False # ignore changed events until done
         propertyBag = self.yhsPath.getYhsPropertyBag()
         self.spbNaPlateazimuth.setValue(propertyBag.NAPAvel.azimuth)
@@ -103,7 +103,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.spbPnwRPoleOmega.setValue(propertyBag.PnwRotPole.omega)
         self.uiPropertieesSet = True
     
-    def getDialogueProperties(self):
+    def getDialogueProperties(self): #set yhs_Path from UI
         if not self.uiPropertieesSet:
                return
         #changed_box = self.sender() # Might prove handy for special handling (none needed yet)
@@ -114,7 +114,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.yhsPath.setYhsPropertyBag(propertyBag)
 
     def save_data_to_file(self):
-        default_dir = os.path.join(os.path.dirname(__file__), "data")        file_path, _ = QFileDialog.getSaveFileName(
+        default_dir = os.path.join(os.path.dirname(__file__), "data")      
+        file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save YHS Properties",
             default_dir,
@@ -218,6 +219,10 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         QgsProject.instance().addMapLayer(self.rotDestLayer)
         self.rotDestLayer.triggerRepaint()
 
+        #BUG THe above test run pass does not agree with the (better) yhs_path calculations so we update and use those
+        self.yhsPath.setupEulerPoles(True)
+        self.setDialogueProperties()
+
     def clearRotDataLayer(self):
         if self.rotDestLayer: 
             self.rotDestLayer.dataProvider().truncate()
@@ -232,17 +237,18 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer() # also sets up whiteboard
             
-        startT = float(self.sbStartMa.value()) * 1e6
-        currentYr = startT
-        deltaT = self.spbStepMa.value() * 1e6
+        startMa = float(self.sbStartMa.value()) 
+        currentMa = startMa
+        deltaMa = self.spbStepMa.value() 
+        steps = self.sbSteps.value()
 
         if not self.rotPoleDisplayed:
-            self.yhsPath.display_rot_pole_info()
+            self.yhsPath.display_NA_pole_info()
             self.rotPoleDisplayed = True
 
-        for i in range (self.sbSteps.value()):
-            currentYr += deltaT
-            self.yhsPath.get_yhs_loc(currentYr)
+        for i in range (steps):
+            currentMa += deltaMa
+            self.yhsPath.get_yhs_loc(currentMa, deltaMa, steps)
         return
 
     def choosePoleModel(self):

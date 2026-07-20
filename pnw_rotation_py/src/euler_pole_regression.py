@@ -1,5 +1,6 @@
 import numpy as np
-from geo_helper import EulerPole
+from geo_helper import EulerPole, getPAvel
+from gauss_newton import solve_gauss_newton_2D_transform_geo_wtd
 
 def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True):
     """
@@ -136,6 +137,26 @@ def fit_euler_pole_linear_wtd(lats, lons, v_east_obs, v_north_obs, s_e, s_n, ali
     lon_pole = np.degrees(np.arctan2(wy, wx))
     
     return EulerPole(lon_pole, lat_pole, omega_deg_myr)
+
+def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_list, we_list, wn_list):
+    # get data Euler pole from the raw data set
+    raw_pole = fit_euler_pole_linear_wtd(lat_list, long_list, ve_list, vn_list, we_list, wn_list)
+
+    # apply Gauss-Newton analysis to get any translation (non-rotation) components
+    gn_out = solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole.ploc())
+
+    # strip any translation element to get rot-only 
+    rot_ve_list = np.array(ve_list) - gn_out['t_x']
+    rot_vn_list = np.array(vn_list) - gn_out['t_y']
+
+    # get data Euler pole from the raw data set
+    rot_pole = fit_euler_pole_linear_wtd(lat_list, long_list, rot_ve_list, rot_vn_list, we_list, wn_list)
+
+    # get Velocity pole PAVel info 
+    pnwVPAVel = getPAvel(gn_out['t_x'] * 1e-3, gn_out['t_y'] * 1e-3)
+
+    # offset is in meters per ma and we want a rate (km/ma or mm/yr) so we need to scale
+    return rot_pole, pnwVPAVel
 
 def print_result(name, pole_result, point_count = 0):
     print(f"{name} count: {point_count}")

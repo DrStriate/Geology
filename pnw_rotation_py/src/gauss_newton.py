@@ -52,8 +52,8 @@ def solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n, normalize = Tr
 
 # Gauss-Newton 2d *weighted* solver for translation, rotation and scale in 2D 
 import numpy as np
-def solve_gauss_newton_2D_transform_geo_wtd(sample_long, sample_lat, v_e, v_n, w_e, w_n, euler_pole, normalize = True): # meters and mm/Y units 
-  sample_e, sample_n = gh.getSamplePoints(sample_long, sample_lat, euler_pole)
+def solve_gauss_newton_2D_transform_geo_wtd(sample_long, sample_lat, v_e, v_n, w_e, w_n, center_ploc, normalize = True): # meters and mm/Y units 
+  sample_e, sample_n = gh.getSamplePoints(sample_long, sample_lat, center_ploc)
   return solve_gauss_newton_2D_transform_wtd(sample_e, sample_n, v_e, v_n, w_e, w_n, normalize)
 
 # lats and longs should be normalized relative to "center" of rotation for best results
@@ -102,11 +102,10 @@ def solve_gauss_newton_2D_transform_wtd(sample_e, sample_n, v_e, v_n, w_e, w_n, 
   # Which simplifies exactly to: J^T * W * J * x = J^T * W * r
   x, residuals, rank, s = np.linalg.lstsq(J, R, rcond=None)
   
-  return {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : x[3]}
+  return {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : np.degrees(x[3])}
 
 def print_x(x):
-  r_deg = np.degrees(x['r'])
   print(f"\nt_x:\t {x['t_x']:.5f}")
   print(f"t_y:\t {x['t_y']:.5f}")
-  print(f"s:  \t {x['s']:.5f}")
-  print(f"r:  \t {r_deg:.5f}°")
+  #print(f"s:  \t {x['s']:.5f}")
+  print(f"r:  \t {x['r']:.5f}°")
