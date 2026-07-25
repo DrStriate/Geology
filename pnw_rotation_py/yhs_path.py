@@ -53,6 +53,7 @@ class YhsPath:
     self.PnwVPoleLayer = None
     self.PnwRotPoleLayer = None
     self.NaPoleLayer = None
+    self.PnwComboLayer = None
 
     self.useGpsData = False
     self.pole_model = 2 # 1 is NA then Pole-V then Pole-R, 2 is NA - Translated-R - Pole-V
@@ -88,11 +89,8 @@ class YhsPath:
   def setupEulerPoles (self, useGpsData):
     if self.useGpsData == useGpsData:
       return
-    
     if useGpsData:
-      sample_radius = 600.0 # km
-      self.Rot_Data_Sample_center = PLoc(-119.0, 45.0)
-      self.PnwRotPole, self.PnwVPAvel = self.getRotPoleAndVelocity(self.Rot_Data_Sample_center, sample_radius)
+      self.setGpsPoleModel()
 
     self.useGpsData = useGpsData
     self.erase_everything()
@@ -101,6 +99,7 @@ class YhsPath:
     self.NaPoleLayer = self.path_layer_manager.getInstance("NA pole", "red")
     self.PnwVPoleLayer = self.path_layer_manager.getInstance("Pnw V pole ", "blue")
     self.PnwRotPoleLayer = self.path_layer_manager.getInstance("Pnw Rot pole", "black")
+    self.PnwComboLayer = self.path_layer_manager.getInstance("Pnw R-V pole", "green")
 
   def erase_everything(self): # any statefulness that changes with runs should be resettable
     if self.path_layer_manager is not None:
@@ -109,12 +108,14 @@ class YhsPath:
   def closeLayers(self):
     self.path_layer_manager.close_layers()
 
-  def choosePoleModel(self, selected):
-    if selected:
-      self.pole_model = 1
-    else:
-      self.pole_model = 2
-  
+  def modeSet(self, poleModel):
+    self.pole_model = poleModel
+
+  def setGpsPoleModel(self):
+      sample_radius = 600.0 # km
+      self.Rot_Data_Sample_center = PLoc(-119.0, 45.0)
+      self.PnwRotPole, self.PnwVPAvel = self.getRotPoleAndVelocity(self.Rot_Data_Sample_center, sample_radius)
+
   def getRotPoleAndVelocity(self, raw_data_center, distance):
     # get rot data
     lats, longs, ves, vns, wes, wns=\
@@ -131,19 +132,16 @@ class YhsPath:
     self.parent.geoWhiteboard.draw_target(self.PnwRotPole.long, self.PnwRotPole.lat, 
                                  f"0 Ma pole ({self.PnwRotPole.long:0.3f}, {self.PnwRotPole.lat:0.3f})")
     
-
   def get_yhs_loc(self, currentMa, deltaMa, steps): # yrs is years
     self.checkLayersCreated()
 
-    #self.pole_model = 3 # TESTING
-
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
-    self.NAPole = ek.getEulerPoleFromPlocAndPazvel(self.yhs_loc, self.NAPAvel)
+    self.NAPole = ek.getEulerPoleFromPlocAndPavel(self.yhs_loc, self.NAPAvel)
     loc_1 = self.NaPoleLayer.RenderPoleMotionForMa(self.yhs_loc, self.NAPole, -currentMa)
     #loc_1.print("loc_1")
 
     # get the PnwVPole given its loc covaries with Rot Pole 
-    self.PnwVPole = ek.getEulerPoleFromPlocAndPazvel(self.PnwRotPole.ploc(), self.PnwVPAvel)
+    self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(self.PnwRotPole.ploc(), self.PnwVPAvel)
 
     if self.pole_model == 1: # move YHS loc by PnwVPole then rotate (most direct model)
       
@@ -156,12 +154,12 @@ class YhsPath:
       self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
       #loc_3.print("loc_3: ")
 
-    elif self.pole_model == 2: # model 2: move rot pole down by pole_v, rotate loc1_i to loc_2
+    elif self.pole_model == 2: # model 2: move rot pole down by pole_v, rotate loc_1 to loc_2
       # 2: Translate rot pole and rotate loc by pre-translated rot pole 
-      new_rot_pole_ploc, disp = ek.getPoleRotationOfPoint(self.PnwVPole, self.PnwRotPole.ploc(), currentMa)
+      new_rot_pole_ploc = ek.getPoleRotationOfPoint(self.PnwVPole, self.PnwRotPole.ploc(), currentMa)[0]
 
       # get the PnwVPole given its loc covaries with Rot Pole 
-      self.PnwVPole = ek.getEulerPoleFromPlocAndPazvel(self.PnwRotPole.ploc(), self.PnwVPAvel)
+      self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(self.PnwRotPole.ploc(), self.PnwVPAvel)
 
       if (self.PrintAlignmentErrors is True):
         if self.cross is not None:  # r1 dot (r2 cross r3) == 0? Test big circle alignment
@@ -180,20 +178,9 @@ class YhsPath:
       #loc_3.print("loc_3: ")
     
     else: # pole model 3: run pole from start Ma but progress that point up to final ma
-      for N in range((int)(currentMa / deltaMa)): # Step from current setting (negative) MA to 0 Ma 
-        
-        self.parent.geoWhiteboard.draw_target(loc_1.long, loc_1.lat, f"{currentMa} Ma YHS ({loc_1.long:0.3f}, {loc_1.lat:0.3f})")
-        #loc_1.print("loc_1: ")
+      # self.parent.geoWhiteboard.draw_target(loc_1.long, loc_1.lat, f"{currentMa} Ma YHS ({loc_1.long:0.3f}, {loc_1.lat:0.3f})")
+      loc_3 = self.PnwComboLayer.RenderMultiPoleMotionForMa(loc_1, self.PnwVPAvel, self.PnwRotPole, currentMa)
+      self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
 
-        # 2: Move by ma scaled pole translation v (blue line) - note pole is position dpendent
-        loc_2 = ek.getPoleRotationOfPoint(self.PnwVPole, loc_1, -deltaMa)[0]
-        #loc_2.print("loc_2: ")
-
-        # 3: Rotate by ma scaled pole omega 
-        loc_3 = ek.getPoleRotationOfPoint(self.PnwRotPole, loc_2, deltaMa)[0]
-        
-        # next YHS step
-        loc_1 = loc_3
-        currentMa -= deltaMa
         
     return loc_3

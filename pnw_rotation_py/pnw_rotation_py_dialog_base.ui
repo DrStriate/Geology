@@ -19,8 +19,8 @@
   <widget class="QPushButton" name="clearDataButton">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>350</y>
+     <x>260</x>
+     <y>360</y>
      <width>111</width>
      <height>23</height>
     </rect>
@@ -203,57 +203,6 @@
     <double>-50.000000000000000</double>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox_6">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>160</y>
-     <width>111</width>
-     <height>71</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string>Rotation Model</string>
-   </property>
-   <property name="checkable">
-    <bool>false</bool>
-   </property>
-   <widget class="QRadioButton" name="rbPaleoModel">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>81</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="toolTipDuration">
-     <number>-6</number>
-    </property>
-    <property name="text">
-     <string>Paleomag</string>
-    </property>
-    <property name="checked">
-     <bool>false</bool>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="rbGpsModel">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>40</y>
-      <width>81</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>GPS</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
-  </widget>
   <widget class="QRadioButton" name="rbApplyMaScaling">
    <property name="enabled">
     <bool>true</bool>
@@ -261,7 +210,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>200</y>
+     <y>220</y>
      <width>101</width>
      <height>18</height>
     </rect>
@@ -280,7 +229,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>180</y>
+     <y>200</y>
      <width>121</width>
      <height>18</height>
     </rect>
@@ -299,7 +248,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>160</y>
+     <y>180</y>
      <width>101</width>
      <height>21</height>
     </rect>
@@ -308,7 +257,7 @@
     <number>9</number>
    </property>
    <property name="text">
-    <string>Pole Order Swap</string>
+    <string/>
    </property>
    <property name="checked">
     <bool>false</bool>
@@ -373,7 +322,7 @@
      <x>0</x>
      <y>0</y>
      <width>371</width>
-     <height>141</height>
+     <height>151</height>
     </rect>
    </property>
    <property name="title">
@@ -579,9 +528,9 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>110</y>
+      <y>125</y>
       <width>111</width>
-      <height>23</height>
+      <height>20</height>
      </rect>
     </property>
     <property name="text">
@@ -592,13 +541,81 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>110</y>
+      <y>125</y>
       <width>111</width>
-      <height>23</height>
+      <height>20</height>
      </rect>
     </property>
     <property name="text">
      <string>Load</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pbGpsPole">
+    <property name="geometry">
+     <rect>
+      <x>263</x>
+      <y>124</y>
+      <width>91</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>GPS Pole</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>261</x>
+     <y>160</y>
+     <width>120</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Pole Configuration</string>
+   </property>
+   <widget class="QRadioButton" name="rbConfigRV">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>81</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>R - V</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rbConfigVR">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>81</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>V - R</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rbConfigCombo">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>60</y>
+      <width>81</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Combo</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
@@ -612,13 +629,13 @@
   <zorder>sbStartMa</zorder>
   <zorder>StartLatLabel_6</zorder>
   <zorder>spbStepMa</zorder>
-  <zorder>groupBox_6</zorder>
   <zorder>rbApplyMaScaling</zorder>
   <zorder>rbShowJdFOcclusion</zorder>
   <zorder>rbPoleOrderSwap</zorder>
   <zorder>pbDisplayRot</zorder>
   <zorder>StartLatLabel_8</zorder>
   <zorder>StartLatLabel_9</zorder>
+  <zorder>groupBox</zorder>
  </widget>
  <resources/>
  <connections/>

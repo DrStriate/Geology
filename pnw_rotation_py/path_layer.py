@@ -90,11 +90,27 @@ class PathLayer():
     yhs_rot_paths = []
     start_loc = start_point
     for i in range(0, N+1):
-      # if i < N+1:
-      sample_ma = i * ma / N 
-      # else:
-      #   sample_ma = ma
-      next_loc, d = ek.getPoleRotationOfPoint(pole, start_point, sample_ma)
+      if i < N+1:
+        sample_ma = i * ma / N 
+      else:
+        sample_ma = ma
+      next_loc = ek.getPoleRotationOfPoint(pole, start_point, sample_ma)[0]
+      yhs_rot_paths.append(
+        [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
+      start_loc = next_loc
+      self.add_run_paths_to_path_layer(yhs_rot_paths)
+    return next_loc
+  
+  # plots path from start_point around compound translation and rotation Euler poles for specified time (ma)
+  def RenderMultiPoleMotionForMa(self, start_point, pAvel, rPole, ma, N=20):
+    yhs_rot_paths = []
+    start_loc = start_point
+    for i in range(0, N+1):
+      if i < N+1:
+        sample_ma = i * ma / N 
+      else:
+        sample_ma = ma
+      next_loc = ek.getCompoundRotationOfPoint(pAvel, rPole, start_point, sample_ma)
       yhs_rot_paths.append(
         [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
       start_loc = next_loc

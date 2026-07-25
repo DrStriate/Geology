@@ -72,10 +72,12 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.clearDataButton.clicked.connect(self.clearData)
         self.pbRunYhsLocButton.clicked.connect(self.pbRunYhsLocButtonClicked)
-        self.rbPoleOrderSwap.toggled.connect(self.choosePoleModel)
+        self.rbConfigRV.toggled.connect(self.configRV)
+        self.rbConfigVR.toggled.connect(self.configVR)
+        self.rbConfigCombo.toggled.connect(self.configCombo)
+        self.pbGpsPole.clicked.connect(self.getGpsPoleData)
         self.pbDisplayRot.clicked.connect(self.displayRotData)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
-        self.rbGpsModel.toggled.connect(self.setYhsPathModel)
         self.saveButton.clicked.connect(self.save_data_to_file)
         self.loadButton.clicked.connect(self.load_data_from_file)
 
@@ -132,8 +134,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             except Exception as e:
                 QMessageBox.critical(self, "Save Error", f"Could not save file:\n{str(e)}")
         
-
-
     def load_data_from_file(self):
         default_dir = os.path.join(os.path.dirname(__file__), "data")
     
@@ -251,13 +251,27 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.yhsPath.get_yhs_loc(currentMa, deltaMa, steps)
         return
 
-    def choosePoleModel(self):
+    # GPS Pole button pressed
+    def getGpsPoleData(self):
         self.clearData()
-        self.yhsPath.choosePoleModel(self.rbPoleOrderSwap.isChecked())
+        self.yhsPath.setGpsPoleModel()
+        self.setDialogueProperties() # upload properties to UI
+    
+    def configRV(self):
+        if self.rbConfigRV.isChecked():
+            self.yhsPath.modeSet(1)
+            self.clearData()
+    
+    def configVR(self):
+        if self.rbConfigVR.isChecked():
+            self.clearData()
+            self.yhsPath.modeSet(2)
 
-    def setYhsPathModel(self):
-        self.yhsPath.setupEulerPoles(self.rbGpsModel.isChecked())
-        self.geoWhiteboard.clear_annotations()
+    def configCombo(self):
+        if self.rbConfigCombo.isChecked():
+            self.clearData()
+            self.yhsPath.modeSet(3)
+        
 
     def removeLayer(self, layer):
         if layer :

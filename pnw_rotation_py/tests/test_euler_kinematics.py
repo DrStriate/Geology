@@ -133,7 +133,7 @@ def test_combined_GPS_pole_extraction():
 def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pole
   ploc = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc (arbitrary)
   pAzvel = PAvel(0.0, (gh.metersPerDegree()/1000.0))    #point motion north (azimuth, speed in km/ma)
-  pole = ek.getEulerPoleFromPlocAndPazvel(ploc, pAzvel)
+  pole = ek.getEulerPoleFromPlocAndPavel(ploc, pAzvel)
  
   ploc.print("\nploc:")
   pole.print("pole: ")

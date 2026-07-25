@@ -56,6 +56,7 @@ class PAvel:
     vel: float
     def print(self, label = ""): 
         print (f"{label} azimuth: {self.azimuth:0.3f}, vel:  {self.vel:0.3f}")
+    #def getAzimuth (ploc1, ploc2): #useful to track forward azimuth on 
        
 @dataclass
 class EulerPole:
@@ -66,6 +67,8 @@ class EulerPole:
         return PLoc(self.long, self.lat)
     def print(self, label = ""):
         print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
+    # def pointRotateForMa(self, ploc, ma):
+    #     return ek.getPoleRotationOfPoint(self, ploc, ma)[0]
 ###
 
 # Velocity in M/S
