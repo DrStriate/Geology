@@ -65,6 +65,9 @@ class EulerPole:
     omega: float
     def ploc(self):
         return PLoc(self.long, self.lat)
+    # def setPloc(self, ploc):
+    #     self.lat = ploc.lat
+    #     self.long = ploc.long
     def print(self, label = ""):
         print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
     # def pointRotateForMa(self, ploc, ma):

@@ -76,10 +76,9 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = 
   pole = epr.fit_euler_pole_linear_wtd(lat_list, long_list, ve_list, vn_list, s_e, s_n)
   gn_out = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, s_e, s_n, pole)
 
-  #show results in Qgis
-  # label_text1 = f"{pole.long:.4f}, {pole.lat:.4f}, {pole.omega:.3f} deg, "
-  # label_text2 = f"e: {(gn_out['t_x'] / 1E3):.2f} km, n: {(gn_out['t_y'] / 1E3):.2f} km, {diam} km"
-  # self.geoWhiteboard.draw_target(pole.long, pole.lat, label_text1 + label_text2)
+  label_text1 = f"{pole.long:.4f}, {pole.lat:.4f}, {pole.omega:.3f} deg, "
+  label_text2 = f"e: {(gn_out['t_x'] / 1E3):.2f} km, n: {(gn_out['t_y'] / 1E3):.2f} km, {diam} km"
+  self.geoWhiteboard.draw_target(pole.long, pole.lat, label_text1 + label_text2)
   #print(label_text1 + label_text2)
 
   # if translation correction added, add a delta_V vector to the target to sho that

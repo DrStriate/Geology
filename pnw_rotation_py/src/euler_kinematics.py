@@ -49,17 +49,17 @@ def getPoleRotationOfPoint(pole, ploc, ma):
     
     return PLoc(new_lon, new_lat), displacement_km
 
-def getCompoundRotationOfPoint(pAvel, rPole, ploc, ma):
-    # get the PnwVPole given its loc covaries with Rot Pole 
-    vPole = getEulerPoleFromPlocAndPavel(rPole.ploc(), pAvel)
-
-    # Move by ma scaled pole translation v
-    loc_2 = getPoleRotationOfPoint(vPole, ploc, -ma)[0]
-    #loc_2.print("loc_2: 
+  # Combo pole emulation 
+def getCompoundRotationTranslationOfPoint(vPole, rPole, ploc, ma):
+    # move the rot pole to the proper loc for ma
+    rot_pole_ma_ploc = getPoleRotationOfPoint(vPole, rPole.ploc(), ma)[0]
+    ma_rot_pole = gh.EulerPole(rot_pole_ma_ploc.long, rot_pole_ma_ploc.lat, rPole.omega)
 
     # Rotate by ma scaled rot pole omega 
-    loc_3 = getPoleRotationOfPoint(rPole, loc_2, ma)[0]
-    #loc_3.print("loc_3: ")
+    loc_2 = getPoleRotationOfPoint(ma_rot_pole, ploc, ma)[0]
+
+    # Move rotated point up according to vPole ma
+    loc_3 = getPoleRotationOfPoint(vPole, loc_2, -ma)[0]
     return loc_3
 
  # Big circle pole for given loc and velocity vector. pAvel is azimuth and speed (e.f. km/ma or mm/yr)

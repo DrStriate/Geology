@@ -49,7 +49,7 @@ from .src.geo_helper import PAvel, EulerPole
 
 from .test_pass_runs import *
 
-# Brothers_Lat = 47.652      # Mount Olympus
+# Brothers_Lat = 47.652     
 # Brothers_Long = -123.141
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -76,7 +76,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rbConfigVR.toggled.connect(self.configVR)
         self.rbConfigCombo.toggled.connect(self.configCombo)
         self.pbGpsPole.clicked.connect(self.getGpsPoleData)
-        self.pbDisplayRot.clicked.connect(self.displayRotData)
+        self.pbGpsDataAndPoles.clicked.connect(self.displayGpsDataAndPoles)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
         self.saveButton.clicked.connect(self.save_data_to_file)
         self.loadButton.clicked.connect(self.load_data_from_file)
@@ -90,6 +90,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotData.load()
         self.setupRotDisplayLayer()
         self.yhsPath = YhsPath(self)
+        self.configCombo()
         self.setDialogueProperties()
 
     def setDialogueProperties(self): # Set UI from yhs_Path
@@ -157,7 +158,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     def clearData(self):
         self.clearRotDataLayer()
         self.yhsPath.erase_everything()
-        self.geoWhiteboard.clear_annotations()
+        if self.geoWhiteboard:
+            self.geoWhiteboard.clear_annotations()
         self.rotPoleDisplayed = False
 
     ####
@@ -169,7 +171,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
             return False
 
-        self.displayRotData()
+        self.displayGpsDataAndPoles()
         return True
 
     def setupRotDisplayLayer(self):
@@ -209,11 +211,11 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rotDisplayLayerSetup = True
         return True
 
-    def displayRotData(self):
+    def displayGpsDataAndPoles(self):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
 
-        run_GPS_test_pass(self)
+        self.yhsPath.displayGPSDataAndPoles()
 
         self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
         QgsProject.instance().addMapLayer(self.rotDestLayer)
@@ -227,7 +229,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.rotDestLayer: 
             self.rotDestLayer.dataProvider().truncate()
             self.rotDestLayer.triggerRepaint()
-            clear_test_run_pass()
+            self.yhsPath.clearGPSparams()
 
     ####
     # run Button
@@ -255,6 +257,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     def getGpsPoleData(self):
         self.clearData()
         self.yhsPath.setGpsPoleModel()
+        self.yhsPath.setDefaultNAPole()
         self.setDialogueProperties() # upload properties to UI
     
     def configRV(self):
@@ -272,7 +275,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.clearData()
             self.yhsPath.modeSet(3)
         
-
     def removeLayer(self, layer):
         if layer :
             root = QgsProject.instance().layerTreeRoot()

@@ -1,5 +1,5 @@
 import numpy as np
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, replace
 import json
 import dacite 
 
@@ -15,7 +15,8 @@ SF = 1000.0 # conversion from units in km/ma and yrs to get meters (km/ma * yrs 
 
 YHS_lat = 44.43           # Yellowstone caldera yhs @ 0 Ma
 YHS_long = -110.67
-NA_plate_speed = 23.0    # mm / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma
+
+NA_plate_speed = 23.0     # mm / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma
 NA_plate_azimuth = 241.0  # degrees 
 
 @dataclass
@@ -31,7 +32,7 @@ class YhsPath:
     self.path_layer_manager = pl.PathLayerManager()
     
     self.PrintAlignmentErrors = False
-    self.cross = None # Test PrintAlignmentErrors vector
+    # self.cross = None # Test PrintAlignmentErrors vector
 
     ### Data structures needed 
     self.yhs_loc = PLoc(YHS_long, YHS_lat)
@@ -58,6 +59,9 @@ class YhsPath:
     self.useGpsData = False
     self.pole_model = 2 # 1 is NA then Pole-V then Pole-R, 2 is NA - Translated-R - Pole-V
     self.setupEulerPoles(True)
+
+    self.delta_ve = 0
+    self.delta_vn = 0
 
   # Serialization (Object -> JSON) 
   def get_serialize_bag(self) -> str:
@@ -111,10 +115,13 @@ class YhsPath:
   def modeSet(self, poleModel):
     self.pole_model = poleModel
 
+  def setDefaultNAPole(self):
+    self.NAPAvel = PAvel(NA_plate_azimuth, NA_plate_speed)
+
   def setGpsPoleModel(self):
-      sample_radius = 600.0 # km
-      self.Rot_Data_Sample_center = PLoc(-119.0, 45.0)
-      self.PnwRotPole, self.PnwVPAvel = self.getRotPoleAndVelocity(self.Rot_Data_Sample_center, sample_radius)
+    sample_radius = 600.0 # km
+    self.Rot_Data_Sample_center = PLoc(-119.0, 45.0)
+    self.PnwRotPole, self.PnwVPAvel = self.getRotPoleAndVelocity(self.Rot_Data_Sample_center, sample_radius)
 
   def getRotPoleAndVelocity(self, raw_data_center, distance):
     # get rot data
@@ -135,40 +142,40 @@ class YhsPath:
   def get_yhs_loc(self, currentMa, deltaMa, steps): # yrs is years
     self.checkLayersCreated()
 
+    # get a local rot pole we can move as needed 
+    runPnwRotPole = replace(self.PnwRotPole)
+    # get the PnwVPole which is invariant over time
+    self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(runPnwRotPole.ploc(), self.PnwVPAvel)
+
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
     self.NAPole = ek.getEulerPoleFromPlocAndPavel(self.yhs_loc, self.NAPAvel)
     loc_1 = self.NaPoleLayer.RenderPoleMotionForMa(self.yhs_loc, self.NAPole, -currentMa)
     #loc_1.print("loc_1")
 
-    # get the PnwVPole given its loc covaries with Rot Pole 
-    self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(self.PnwRotPole.ploc(), self.PnwVPAvel)
-
     if self.pole_model == 1: # move YHS loc by PnwVPole then rotate (most direct model)
-      
+
       # 2: Move by ma scaled pole translation v (blue line) - note pole is position dpendent
       loc_2 = self.PnwVPoleLayer.RenderPoleMotionForMa(loc_1, self.PnwVPole, -currentMa)
       #loc_2.print("loc_2: ")
 
       # 3: Rotate by ma scaled pole omega 
-      loc_3 = self.PnwRotPoleLayer.RenderPoleMotionForMa(loc_2, self.PnwRotPole, currentMa)
+      loc_3 = self.PnwRotPoleLayer.RenderPoleMotionForMa(loc_2, runPnwRotPole, currentMa)
       self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
       #loc_3.print("loc_3: ")
 
     elif self.pole_model == 2: # model 2: move rot pole down by pole_v, rotate loc_1 to loc_2
-      # 2: Translate rot pole and rotate loc by pre-translated rot pole 
-      new_rot_pole_ploc = ek.getPoleRotationOfPoint(self.PnwVPole, self.PnwRotPole.ploc(), currentMa)[0]
 
-      # get the PnwVPole given its loc covaries with Rot Pole 
-      self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(self.PnwRotPole.ploc(), self.PnwVPAvel)
-
-      if (self.PrintAlignmentErrors is True):
-        if self.cross is not None:  # r1 dot (r2 cross r3) == 0? Test big circle alignment
-          print(f"error m = {(gh.R * np.dot(ek.getRVector(new_rot_pole_ploc), self.cross))}")
-        self.cross = np.cross(ek.getRVector(new_rot_pole_ploc), ek.getRVector(self.PnwRotPole.ploc()))
-
-      t_RotPole = EulerPole(new_rot_pole_ploc.long, new_rot_pole_ploc.lat, self.PnwRotPole.omega)
+      # 2: Translate rot pole  
+      new_rot_pole_ploc = ek.getPoleRotationOfPoint(self.PnwVPole, runPnwRotPole.ploc(), currentMa)[0]
+      t_RotPole = EulerPole(new_rot_pole_ploc.long, new_rot_pole_ploc.lat, runPnwRotPole.omega)
       self.parent.geoWhiteboard.draw_target(t_RotPole.long, t_RotPole.lat, 
                                             f"{currentMa} Ma pole ({t_RotPole.long:0.3f}, {t_RotPole.lat:0.3f})")
+      # if (self.PrintAlignmentErrors is True):
+      #   if self.cross is not None:  # r1 dot (r2 cross r3) == 0? Test big circle alignment
+      #     print(f"error m = {(gh.R * np.dot(ek.getRVector(new_rot_pole_ploc), self.cross))}")
+      #   self.cross = np.cross(ek.getRVector(new_rot_pole_ploc), ek.getRVector(runPnwRotPole.ploc()))
+
+      # Rotate loc by pre-translated rot pole
       loc_2 = self.PnwRotPoleLayer.RenderPoleMotionForMa(loc_1, t_RotPole, currentMa) # WHY NOW POSITIVE Ma?
       #loc_2.print("loc_2: ")
 
@@ -179,8 +186,50 @@ class YhsPath:
     
     else: # pole model 3: run pole from start Ma but progress that point up to final ma
       # self.parent.geoWhiteboard.draw_target(loc_1.long, loc_1.lat, f"{currentMa} Ma YHS ({loc_1.long:0.3f}, {loc_1.lat:0.3f})")
-      loc_3 = self.PnwComboLayer.RenderMultiPoleMotionForMa(loc_1, self.PnwVPAvel, self.PnwRotPole, currentMa)
+      loc_3 = self.PnwComboLayer.RenderComboPoleMotionForMa(loc_1, self.PnwVPole, runPnwRotPole, currentMa)
       self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
-
         
     return loc_3
+
+  def displayGPSDataAndPoles(self):
+    # delta_ve = 0
+    # delta_vn = 0
+    # get rot data
+    diam = 600 # km
+    center_lat = 45.0
+    center_long = -119.0
+    lat_list, long_list, ve_list, vn_list, se, sn =\
+      tu.get_GPS_rotation_data(center_long, center_lat, diam * 1000)
+    mod_ve_list = np.array(ve_list) - self.delta_ve
+    mod_vn_list = np.array(vn_list) - self.delta_vn
+    self.delta_ve, self.delta_vn = self.finish_test_setup(
+    lat_list, long_list, mod_ve_list, mod_vn_list, diam, self.delta_ve, self.delta_vn, se, sn)
+
+  def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = None, d_vn = None, s_e = None, s_n = None ):
+    # clear and set rot data in Qgis
+    self.parent.rotDestLayer.dataProvider().truncate()
+    self.parent.yhsRotFeatureList = []
+    for i in range(len(lat_list)):
+      feature = self.parent.rotData.createRotFeature(
+          PLoc(long_list[i], lat_list[i]), PVel(ve_list[i], vn_list[i]), 0.001)
+      self.parent.yhsRotFeatureList.append(feature)        
+
+    # get euler pole and gauss newton results and display
+    pole = epr.fit_euler_pole_linear_wtd(lat_list, long_list, ve_list, vn_list, s_e, s_n)
+    gn_out = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, s_e, s_n, pole)
+
+    label_text1 = f"{pole.long:.4f}, {pole.lat:.4f}, {pole.omega:.3f} deg, "
+    label_text2 = f"e: {(gn_out['t_x'] / 1E3):.2f} km, n: {(gn_out['t_y'] / 1E3):.2f} km, {diam} km"
+    self.parent.geoWhiteboard.draw_target(pole.long, pole.lat, label_text1 + label_text2)
+    #print(label_text1 + label_text2)
+
+    # if translation correction added, add a delta_V vector to the target to sho that
+    if d_ve != 0.0 or d_vn != 0.0:    
+      feature = self.parent.rotData.createRotFeature(
+        PLoc(pole.long, pole.long), PVel(self.delta_ve + d_ve, self.delta_vn + d_vn), 0.001) 
+      self.parent.yhsRotFeatureList.append(feature)
+    return gn_out['t_x'], gn_out['t_y']
+
+  def clearGPSparams(self):
+    self.delta_ve = 0.0
+    self.delta_vn = 0.0  
