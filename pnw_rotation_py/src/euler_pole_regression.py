@@ -1,5 +1,6 @@
 import numpy as np
-from geo_helper import EulerPole, getPAvel
+from geo_helper import EulerPole, getPAvel, PLoc
+import test_utils as tu
 from gauss_newton import solve_gauss_newton_2D_transform_geo_wtd
 
 def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, align_pole = True):
@@ -163,3 +164,12 @@ def print_result(name, pole_result, point_count = 0):
     print(f"Longitude: {pole_result.long:.5f}° E")   
     print(f"Latitude:  {pole_result.lat:.5f}° N")
     print(f"Rate:      {pole_result.omega:.5f}° / Myr")
+
+def getPnwGpsRotPoleAndVelocity(self, raw_data_center, distance):
+    # get rot data
+    sample_radius = 600.0 # km
+    sample_center = PLoc(-119.0, 45.0)
+    lats, longs, ves, vns, wes, wns=\
+      tu.get_GPS_rotation_data(sample_center.long, sample_center.lat, sample_radius * 1000)   
+    rot_pole, pnwVPAVel = extractEulerPoleUsingCombinedRegressions(lats, longs, ves, vns, wes, wns)
+    return rot_pole, pnwVPAVel

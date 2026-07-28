@@ -47,7 +47,6 @@ from .rot_data import RotData
 from .geo_whiteboard import GeoWhiteboard
 from .src.geo_helper import PAvel, EulerPole
 
-from .test_pass_runs import *
 
 # Brothers_Lat = 47.652     
 # Brothers_Long = -123.141
@@ -256,7 +255,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     # GPS Pole button pressed
     def getGpsPoleData(self):
         self.clearData()
-        self.yhsPath.setGpsPoleModel()
+        self.yhsPath.getPnwGpsRotPoleAndVelocity()
         self.yhsPath.setDefaultNAPole()
         self.setDialogueProperties() # upload properties to UI
     

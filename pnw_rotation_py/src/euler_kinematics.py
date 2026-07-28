@@ -62,6 +62,16 @@ def getCompoundRotationTranslationOfPoint(vPole, rPole, ploc, ma):
     loc_3 = getPoleRotationOfPoint(vPole, loc_2, -ma)[0]
     return loc_3
 
+# Track yhs from ploc using NA plate motion and PNW rotation and plate motion info
+def getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, ploc, ma):
+  pnwVPole = getEulerPoleFromPlocAndPavel(pnwRotPole.ploc(), pnwVPavel)
+  naPole = getEulerPoleFromPlocAndPavel(ploc, naPAvel)
+
+  # move NA over yhs then move by both pnw poles to its ma location
+  loc_2 = getPoleRotationOfPoint(naPole, ploc, -ma)[0]
+  loc_3 = getCompoundRotationTranslationOfPoint(pnwVPole, pnwRotPole, loc_2, ma)
+  return loc_3
+
  # Big circle pole for given loc and velocity vector. pAvel is azimuth and speed (e.f. km/ma or mm/yr)
 def getEulerPoleFromPlocAndPavel(ploc, pAvel):
     MetersPerDegree = 2 * np.pi * R / 360.0
@@ -122,7 +132,6 @@ def get_hat_p(p): # returns a normal to the phi,lamb point
 
 def get_hat(lat, long):
    return get_hat_p({'lamb': np.radians(long), 'phi': np.radians(lat)})
-
 
 def calculate_v_from_Euler_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {phi, lamb, omega} radians
   P = R * get_hat_p(p)

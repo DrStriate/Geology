@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import euler_kinematics as ek
+import euler_pole_regression as epr
 import geopandas as gpd
 import geo_helper as gh
 
@@ -105,3 +106,10 @@ def create_random_sample_ring(euler_pole, count,
   #print(f"samples = {cropped_samples} out of {count}")
   
   return sample_n, sample_e, sample_v_east, sample_v_north
+
+def getPnwGpsRotPoleAndVelocity(sample_radius = 600): 
+  sample_center = gh.PLoc(-119.0, 45.0) # just used to filter candidate points for regression
+  lats, longs, ves, vns, wes, wns=\
+    get_GPS_rotation_data(sample_center.long, sample_center.lat, sample_radius * 1000)   
+  rot_pole, pnwVPAVel = epr.extractEulerPoleUsingCombinedRegressions(lats, longs, ves, vns, wes, wns)
+  return rot_pole, pnwVPAVel

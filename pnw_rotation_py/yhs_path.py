@@ -1,5 +1,6 @@
 import numpy as np
 from dataclasses import dataclass, asdict, replace
+from .src import euler_pole_regression as epr
 import json
 import dacite 
 
@@ -94,10 +95,13 @@ class YhsPath:
     if self.useGpsData == useGpsData:
       return
     if useGpsData:
-      self.setGpsPoleModel()
+      self.PnwRotPole, self.PnwVPAvel = tu.getPnwGpsRotPoleAndVelocity()
 
     self.useGpsData = useGpsData
     self.erase_everything()
+
+  def getPnwGpsRotPoleAndVelocity(self):
+      self.PnwRotPole, self.PnwVPAvel = tu.getPnwGpsRotPoleAndVelocity()
 
   def checkLayersCreated(self): 
     self.NaPoleLayer = self.path_layer_manager.getInstance("NA pole", "red")
@@ -117,19 +121,6 @@ class YhsPath:
 
   def setDefaultNAPole(self):
     self.NAPAvel = PAvel(NA_plate_azimuth, NA_plate_speed)
-
-  def setGpsPoleModel(self):
-    sample_radius = 600.0 # km
-    self.Rot_Data_Sample_center = PLoc(-119.0, 45.0)
-    self.PnwRotPole, self.PnwVPAvel = self.getRotPoleAndVelocity(self.Rot_Data_Sample_center, sample_radius)
-
-  def getRotPoleAndVelocity(self, raw_data_center, distance):
-    # get rot data
-    lats, longs, ves, vns, wes, wns=\
-      tu.get_GPS_rotation_data(raw_data_center.long, raw_data_center.lat, distance * 1000)   
-
-    rot_pole, pnwVPAVel = epr.extractEulerPoleUsingCombinedRegressions(lats, longs, ves, vns, wes, wns)
-    return rot_pole, pnwVPAVel
 
   # Plot and label the NA Euler rotation pole
   def display_NA_pole_info(self):
@@ -184,7 +175,7 @@ class YhsPath:
       self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
       #loc_3.print("loc_3: ")
     
-    else: # pole model 3: run pole from start Ma but progress that point up to final ma
+    else: # pole model 3: run pole from start Ma but plot progress points up to final ma
       # self.parent.geoWhiteboard.draw_target(loc_1.long, loc_1.lat, f"{currentMa} Ma YHS ({loc_1.long:0.3f}, {loc_1.lat:0.3f})")
       loc_3 = self.PnwComboLayer.RenderComboPoleMotionForMa(loc_1, self.PnwVPole, runPnwRotPole, currentMa)
       self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")

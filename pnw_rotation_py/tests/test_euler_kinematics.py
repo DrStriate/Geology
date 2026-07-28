@@ -154,4 +154,15 @@ def test_movement_from_Euler_pole(): #test inverse: map above pole back to point
   assert new_point.long == pytest.approx(point.long)  # translation pole 90 degrees off reference
   assert new_point.lat == pytest.approx(point.lat + 1, abs = 2e-6) # 1 degree shift north
   assert vel == pytest.approx(gh.metersPerDegree()) # distance (meters) for 1 degree lat movement
+
+def test_3_pole_50ma_yhs_movement():
+  yhsLoc0Ma = PLoc(-110.67, 44.43 )
+  pnwRotPole, pnwVPavel = tu.getPnwGpsRotPoleAndVelocity()
+  naPAvel = PAvel(241.0, 23.0) # degrees, mm / yr
+  ma = -50.0 
   
+  yhsLoc50Ma = ek.getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, yhsLoc0Ma, ma)
+
+  ploc50maSB = PLoc(-124.34635456003335, 41.52218800247805)
+  assert yhsLoc50Ma.lat == pytest.approx(ploc50maSB.lat)
+  assert yhsLoc50Ma.long == pytest.approx(ploc50maSB.long)
