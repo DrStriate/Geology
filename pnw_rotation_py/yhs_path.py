@@ -4,7 +4,6 @@ from .src import euler_pole_regression as epr
 import json
 import dacite 
 
-from .src import geo_helper as gh
 from .src.geo_helper import PAvel, PLoc, PVel, EulerPole
 from .src import test_utils as tu
 from .src import euler_pole_regression as epr
@@ -135,7 +134,7 @@ class YhsPath:
 
     # get a local rot pole we can move as needed 
     runPnwRotPole = replace(self.PnwRotPole)
-    # get the PnwVPole which is invariant over time
+    # get the PnwVPole which is time invariant 
     self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(runPnwRotPole.ploc(), self.PnwVPAvel)
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
@@ -161,11 +160,6 @@ class YhsPath:
       t_RotPole = EulerPole(new_rot_pole_ploc.long, new_rot_pole_ploc.lat, runPnwRotPole.omega)
       self.parent.geoWhiteboard.draw_target(t_RotPole.long, t_RotPole.lat, 
                                             f"{currentMa} Ma pole ({t_RotPole.long:0.3f}, {t_RotPole.lat:0.3f})")
-      # if (self.PrintAlignmentErrors is True):
-      #   if self.cross is not None:  # r1 dot (r2 cross r3) == 0? Test big circle alignment
-      #     print(f"error m = {(gh.R * np.dot(ek.getRVector(new_rot_pole_ploc), self.cross))}")
-      #   self.cross = np.cross(ek.getRVector(new_rot_pole_ploc), ek.getRVector(runPnwRotPole.ploc()))
-
       # Rotate loc by pre-translated rot pole
       loc_2 = self.PnwRotPoleLayer.RenderPoleMotionForMa(loc_1, t_RotPole, currentMa) # WHY NOW POSITIVE Ma?
       #loc_2.print("loc_2: ")
@@ -176,10 +170,12 @@ class YhsPath:
       #loc_3.print("loc_3: ")
     
     else: # pole model 3: run pole from start Ma but plot progress points up to final ma
+
       # self.parent.geoWhiteboard.draw_target(loc_1.long, loc_1.lat, f"{currentMa} Ma YHS ({loc_1.long:0.3f}, {loc_1.lat:0.3f})")
       loc_3 = self.PnwComboLayer.RenderComboPoleMotionForMa(loc_1, self.PnwVPole, runPnwRotPole, currentMa)
       self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
-        
+      self.PnwRotPoleLayer.RenderAzimuthMarkersforMa(loc_1, self.PnwVPole, runPnwRotPole, currentMa)
+  
     return loc_3
 
   def displayGPSDataAndPoles(self):

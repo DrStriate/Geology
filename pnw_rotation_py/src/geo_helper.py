@@ -74,18 +74,18 @@ class EulerPole:
     #     return ek.getPoleRotationOfPoint(self, ploc, ma)[0]
 ###
 
-# Velocity in M/S
-def getPointFromAzimuthDistance(start_point, azimuth_degrees, velocity):
+# Get point from PAvel new point pavel * ma distant
+def getPointFromPavel(start_point, pAVel, ma):
     """
     Calculates the destination latitude/longitude using a spherical Earth model.
     """
     # Convert degrees to radians
     lat1 = np.radians(start_point.lat)
     lon1 = np.radians(start_point.long)
-    azimuth = np.radians(azimuth_degrees)
+    azimuth = np.radians(pAVel.azimuth)
     
     # Angular distance covered
-    angular_vel = velocity / R
+    angular_vel = ( pAVel.vel * ma ) / R
     
     # Calculate destination latitude
     lat2 = np.arcsin(np.sin(lat1) * np.cos(angular_vel) +
@@ -147,9 +147,6 @@ def longitudeFromDistE(latitude, dist): # meters East
     radiusOfParallel = R * np.cos(latitudeRadians) # m
     longitudeDeltaRadians = dist / radiusOfParallel
     return np.degrees(longitudeDeltaRadians)
-
-def getPlocForPlocAndPAdist(ploc, PAdist): #PLoc is start lat, long and PAdist is azimuth and distance (returns a PLoc)
-    return getPointFromAzimuthDistance(ploc, PAdist.azimuth, PAdist.dist)
 
 # Great circle distance
 def getDistanceBetweenPoints(point1, point2): #both PLocs

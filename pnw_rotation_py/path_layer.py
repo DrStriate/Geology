@@ -9,7 +9,9 @@ from qgis.core import (
 from PyQt5.QtCore import QVariant
 from PyQt5.QtGui import QColor
 
+import numpy as np
 from .src import euler_kinematics as ek
+from .src import geo_helper as gh
 
 class PathLayerManager():
   def __init__(self):
@@ -87,34 +89,45 @@ class PathLayer():
   
   # plots path from start_point around Euler pole for specified time (ma)
   def RenderPoleMotionForMa(self, start_point, pole, ma, N=20):
-    yhs_rot_paths = []
+    layer_paths = []
     start_loc = start_point
     for i in range(0, N+1):
-      if i < N+1:
-        sample_ma = i * ma / N 
-      else:
-        sample_ma = ma
-      next_loc = ek.getPoleRotationOfPoint(pole, start_point, sample_ma)[0]
-      yhs_rot_paths.append(
+      next_ma = i * ma / N
+      next_loc = ek.getPoleRotationOfPoint(pole, start_point, next_ma)[0]
+      layer_paths.append(
         [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
       start_loc = next_loc
-      self.add_run_paths_to_path_layer(yhs_rot_paths)
+      self.add_run_paths_to_path_layer(layer_paths)
+      #print(f"next_ma {next_ma}")
     return next_loc
   
   # plots path from start_point around compound translation and rotation Euler poles for specified time (ma)
   def RenderComboPoleMotionForMa(self, start_point, vPole, rPole, ma, N=20):
-    yhs_rot_paths = []
+    layer_paths = []
     start_loc = start_point
     for i in range(0, N+1):
-      if i < N+1:
-        sample_ma = i * ma / N 
-      else:
-        sample_ma = ma
-      next_loc = ek.getCompoundRotationTranslationOfPoint(vPole, rPole, start_point, sample_ma)
-      yhs_rot_paths.append(
+      next_ma = i * ma / N
+      next_loc = ek.getCompoundRotationTranslationOfPoint(vPole, rPole, start_point, next_ma)
+      layer_paths.append(
         [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
       start_loc = next_loc
-      self.add_run_paths_to_path_layer(yhs_rot_paths)
+      self.add_run_paths_to_path_layer(layer_paths)
+      #print (f"next_ma: {next_ma}")
+    return next_loc
+
+  # combo plot azimuth of cumilative rotation plot 
+  def RenderAzimuthMarkersforMa(self, start_point, vPole, rPole, ma, N=5):
+    layer_paths = []
+    start_loc = start_point
+    for i in range(0, N+1):
+      next_ma = (i + 1) * ma / N
+      next_loc = ek.getCompoundRotationTranslationOfPoint(vPole, rPole, start_point, next_ma)
+      rot_angle = -rPole.omega * i * ma / N
+      mark_ploc = gh.getPointFromPavel(start_loc, gh.PAvel(rot_angle, 50), 1000 ) # arbitrary length
+      layer_paths.append(
+        [(start_loc.long, start_loc.lat), (mark_ploc.long, mark_ploc.lat), f"mark step {N}"])
+      start_loc = next_loc
+      self.add_run_paths_to_path_layer(layer_paths)
     return next_loc
   
   def clear_layer(self):

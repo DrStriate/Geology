@@ -1,16 +1,13 @@
 Bugs
-- rbPoleOrderSwap (blank) button is still on the UI. Remove and clean up legacy code stubs. (FIXED)
-- The "Set PNW Gps Poles" needs to be renamed to "GPS Vectors & Poles" (FIXED)
 - Add back velocity vector to GPS Vectors and Poles demo
-- The "Set..." button no longer shows poles (Whiteboard pins) w text (FIXED)
-- It appears that the pole-finding code of the "Set Pnw GPS Poles" button don't match the new "GPS Pole" button. This needs investigation to find the bug that causes the difference and then the two need to be unified. The "Set..." button needs to purely a two-step demo (and renamed) while the "GPS Pole" button need to simply set the poles in the UI. (FIXED)
-- Part II: Loading poles can and will set the NA Pole settings, so the GPS Pole button should also set the default setting for NA. (FIXED)
+- It appears that the pole-finding code of the "Set Pnw GPS Poles" button don't match the new "GPS Pole" button. This needs investigation to find the bug that causes the difference and then the two need to be unified. The "Set..." button needs to purely a two-step demo (and renamed) while the "GPS Pole" button need to simply set the poles in the UI. (FIXED - Also added a unit test for a full run)
 
 Further validation needed
 - Odd translation moves: In running the "Brocher-Wells 2017 Jdf sample path.pb" setup in V-R mode for 5 10ma steps, the rot poles move down vertically (in keeping with the 0 degree azimuth for V) but the last move up step they splay out as they move north (the western most leg changes longitude by at least 0.4 degrees). Since (at least intuitively) this last step is primarily to restore the vertical drop of the rotation pole, it seems the 0 degrees azimuth last move should be vertical too? (On the other hand, the final YHS locations match on all configurations)
 
 Feature changes needed
 - We have a demo of coming up with an Euler pole pair for the PNW GPS velocity data. What we need is a reverse demo of both the combined R-V field (for random points) and the R-only view 
+- We need a visualization - especially for the combo run - of the change in azimuth of the track as it proceeds from 50Ma to 0Ma to emphasize the actual rotation taking place. (COMPLETED)
 
 Research
 - Need to validate the current combo pole - which is actually a small-increment t R and V step model - can be equivalently (and possibly preferentially) done with a single Euler pole derived from both R and V. For GPoles we envisioned a Rot pole center moved by a V pole as the model for combining them and getting the rot field to move with V, but the Combo model derives the V pole from the R Pole (and leaved the R pole in place) while tying the evolution 
