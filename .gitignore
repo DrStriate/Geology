@@ -44,4 +44,5 @@ PNW-Rotation1/build/**
 PnwRotPlugin/build/**
 Python Plugin/firstaid/**
 Python Plugin/pluginbuilder3
-pnw_rotation_py/misc/gplately.log
+pnw_rotation_py/na_plate_gplates/gplately.log
+pnw_rotation_py/na_plate_gplates/ptt.log
