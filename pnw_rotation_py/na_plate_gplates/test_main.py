@@ -16,7 +16,8 @@ if __name__ == "__main__":
     print(f"Searching locally at: {file_path}")
     
     try:
-        lat, lon = ry.get_interpolated_yhs_position(file_path, test_age)
+        datapoints = ry.load_data(file_path)
+        lat, lon = ry.get_interpolated_yhs_position(datapoints, test_age)
         if lat is not None:
             print(f"Target Age: {test_age} Ma")
             print(f"Estimated Yellowstone Location -> Lat: {lat:.4f}° | Lon: {lon:.4f}°")

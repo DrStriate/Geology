@@ -12,6 +12,7 @@ from PyQt5.QtGui import QColor
 import numpy as np
 from .src import euler_kinematics as ek
 from .src import geo_helper as gh
+from .na_plate_gplates import read_yhs_location as ry
 
 class PathLayerManager():
   def __init__(self):
@@ -96,6 +97,22 @@ class PathLayer():
       next_loc = ek.getPoleRotationOfPoint(pole, start_point, next_ma)[0]
       layer_paths.append(
         [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
+      start_loc = next_loc
+      self.add_run_paths_to_path_layer(layer_paths)
+      #print(f"next_ma {next_ma}")
+    return next_loc
+
+  def RenderYHSPoleMotionForMa(self, yhs_path_data, ma):
+    layer_paths = []
+    #lat, long = ry.get_interpolated_yhs_position(yhs_path_data, 0.0)
+    t1, lat, long = yhs_path_data[0]
+    start_loc = gh.PLoc(long, lat)
+    for next_ma in range(1, int(ma) + 1):
+      #lat, long = ry.get_interpolated_yhs_position(yhs_path_data, next_ma)
+      t1, lat, long = yhs_path_data[int(next_ma)]
+      next_loc = gh.PLoc(long, lat)
+      layer_paths.append(
+        [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {ma}"])
       start_loc = next_loc
       self.add_run_paths_to_path_layer(layer_paths)
       #print(f"next_ma {next_ma}")

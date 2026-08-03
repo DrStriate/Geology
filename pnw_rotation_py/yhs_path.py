@@ -3,6 +3,7 @@ from dataclasses import dataclass, asdict, replace
 from .src import euler_pole_regression as epr
 import json
 import dacite 
+import os
 
 from .src.geo_helper import PAvel, PLoc, PVel, EulerPole
 from .src import test_utils as tu
@@ -10,55 +11,33 @@ from .src import euler_pole_regression as epr
 from .src import gauss_newton as gn
 from .src import euler_kinematics as ek
 from . import path_layer as pl
+from .na_plate_gplates import read_yhs_location as ry
 
 SF = 1000.0 # conversion from units in km/ma and yrs to get meters (km/ma * yrs / SF = m)
 
 YHS_lat = 44.43           # Yellowstone caldera yhs @ 0 Ma
 YHS_long = -110.67
 
-NA_plate_speed = 23.0     # mm / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma
-NA_plate_azimuth = 241.0  # degrees 
+# NA_plate_speed = 23.0     # mm / yr (Current) = Adjusted to Owyhee=Humbolt cauldera ~14Ma
+# NA_plate_azimuth = 241.0  # degrees 
 
 @dataclass
 class YhsPropertyBag:
-  NAPAvel: PAvel
+  NaPlateDataName: str
   PnwVPAvel: PAvel
   PnwRotPole: EulerPole
 
 class YhsPath:
-  PrintAlignmentErrors = False
   def __init__(self, parent):
     self.parent = parent
     self.path_layer_manager = pl.PathLayerManager()
-    
-    self.PrintAlignmentErrors = False
-    # self.cross = None # Test PrintAlignmentErrors vector
 
-    ### Data structures needed 
-    self.yhs_loc = PLoc(YHS_long, YHS_lat)
-
-    # NA Plate 
-    self.NAPAvel = PAvel(NA_plate_azimuth, NA_plate_speed)
-    self.NAPole = None # Set up from above NAPADist in setupEulerPoles()
-    #self.yhs_pole = EulerPole( -76.38, 49.60,  0.774 ) ?/
-
-    # PNW Rotation 
-    self.PnwRotPole = None # Set up from above NAPADist in setupEulerPoles()
-
-    # PNW Translation 
-    self.PnwVPAvel = PAvel(0, 0)
-    self.PnwVPole = None # Set up from above NAPADist in setupEulerPoles()
-
-    ###
-
-    self.PnwVPoleLayer = None
-    self.PnwRotPoleLayer = None
-    self.NaPoleLayer = None
-    self.PnwComboLayer = None
-
+    # Set up deault plate data
+    self.setupNAPLateData("yhs_continuous_1ma_Muller2019.geojson")
     self.useGpsData = False
     self.pole_model = 2 # 1 is NA then Pole-V then Pole-R, 2 is NA - Translated-R - Pole-V
     self.setupEulerPoles(True)
+    self.yhs_loc = PLoc(YHS_long, YHS_lat)
 
     self.delta_ve = 0
     self.delta_vn = 0
@@ -75,27 +54,32 @@ class YhsPath:
     # dacite automatically looks at the type hints (e.g., NAPAvel: PAvel)
     # and recursively instantiates the inner classes for you.
     propertyBag = dacite.from_dict(data_class=YhsPropertyBag, data=data_dict)
-    self.NAPAvel = propertyBag.NAPAvel
+    self.NaPlateDataName = propertyBag.NaPlateDataName
     self.PnwVPAvel = propertyBag.PnwVPAvel
     self.PnwRotPole = propertyBag.PnwRotPole  
   
   def getYhsPropertyBag(self):
-    propertyBag = YhsPropertyBag(self.NAPAvel, self.PnwVPAvel, self.PnwRotPole)
+    propertyBag = YhsPropertyBag(self.NaPlateDataName, self.PnwVPAvel, self.PnwRotPole)
     return propertyBag
   
   def setYhsPropertyBag(self, propertyBag):
-    self.NAPAvel = propertyBag.NAPAvel
+    self.NaPlateDataName = propertyBag.NaPlateDataName
     self.PnwVPAvel = propertyBag.PnwVPAvel
     self.PnwRotPole = propertyBag.PnwRotPole
     self.useGpsData = False
     self.setupEulerPoles(False)
+
+  def setupNAPLateData(self, fileName):
+    script_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "na_plate_gplates")
+    na_file_path = os.path.join(script_dir, fileName)
+    self.yhs_path_data = ry.load_data(na_file_path)
+    self.NaPlateDataName = fileName
 
   def setupEulerPoles (self, useGpsData):
     if self.useGpsData == useGpsData:
       return
     if useGpsData:
       self.PnwRotPole, self.PnwVPAvel = tu.getPnwGpsRotPoleAndVelocity()
-
     self.useGpsData = useGpsData
     self.erase_everything()
 
@@ -118,14 +102,11 @@ class YhsPath:
   def modeSet(self, poleModel):
     self.pole_model = poleModel
 
-  def setDefaultNAPole(self):
-    self.NAPAvel = PAvel(NA_plate_azimuth, NA_plate_speed)
-
   # Plot and label the NA Euler rotation pole
   def display_NA_pole_info(self):
     label_text1 = f"0 Ma YHS ({self.yhs_loc.long:.3f}, {self.yhs_loc.lat:.3f}), "
-    label_text2 = f"az: {self.NAPAvel.azimuth:.1f} deg, v: {(self.NAPAvel.vel):.1f} km/Ma"
-    self.parent.geoWhiteboard.draw_target(self.yhs_loc.long, self.yhs_loc.lat, label_text1 + label_text2)
+    # label_text2 = f"az: {self.NAPAvel.azimuth:.1f} deg, v: {(self.NAPAvel.vel):.1f} km/Ma"
+    self.parent.geoWhiteboard.draw_target(self.yhs_loc.long, self.yhs_loc.lat, label_text1)
     self.parent.geoWhiteboard.draw_target(self.PnwRotPole.long, self.PnwRotPole.lat, 
                                  f"0 Ma pole ({self.PnwRotPole.long:0.3f}, {self.PnwRotPole.lat:0.3f})")
     
@@ -134,18 +115,21 @@ class YhsPath:
 
     # get a local rot pole we can move as needed 
     runPnwRotPole = replace(self.PnwRotPole)
+    runPnwRotPole.print("runPnwRotPole: ")
     # get the PnwVPole which is time invariant 
     self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(runPnwRotPole.ploc(), self.PnwVPAvel)
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
-    self.NAPole = ek.getEulerPoleFromPlocAndPavel(self.yhs_loc, self.NAPAvel)
-    loc_1 = self.NaPoleLayer.RenderPoleMotionForMa(self.yhs_loc, self.NAPole, -currentMa)
+    # self.NAPole = ek.getEulerPoleFromPlocAndPavel(self.yhs_loc, self.NAPAvel)
+    # loc_1 = self.NaPoleLayer.RenderPoleMotionForMa(self.yhs_loc, self.NAPole, -currentMa)
+    loc_1 = self.NaPoleLayer.RenderYHSPoleMotionForMa(self.yhs_path_data, -currentMa)
     #loc_1.print("loc_1")
 
     if self.pole_model == 1: # move YHS loc by PnwVPole then rotate (most direct model)
 
       # 2: Move by ma scaled pole translation v (blue line) - note pole is position dpendent
       loc_2 = self.PnwVPoleLayer.RenderPoleMotionForMa(loc_1, self.PnwVPole, -currentMa)
+      self.PnwVPole.print("PnwVPole: ")
       #loc_2.print("loc_2: ")
 
       # 3: Rotate by ma scaled pole omega 

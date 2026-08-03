@@ -25,19 +25,12 @@
 import os
 
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtWidgets import QSpinBox, QGroupBox, QVBoxLayout, QDoubleSpinBox, QFileDialog, QMessageBox
-from qgis.gui import QgsDoubleSpinBox
+from qgis.PyQt.QtWidgets import  QDoubleSpinBox, QFileDialog, QMessageBox
 from qgis._core import (QgsMessageLog,
                         Qgis,
-                        QgsPoint,
+
                         QgsVectorLayer,
-                        QgsFeature,
-                        QgsGeometry,
-                        QgsProject,
-                        QgsCategorizedSymbolRenderer,
-                        QgsRendererCategory,
-                        QgsSymbol,
-                        QgsWkbTypes)
+                        QgsProject)
 from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
 from qgis.utils import iface
 
@@ -80,6 +73,19 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.saveButton.clicked.connect(self.save_data_to_file)
         self.loadButton.clicked.connect(self.load_data_from_file)
 
+        self.comboBoxLabels = [
+            "Müller et al. (2019)",
+            "Matthews et al. (2016)",
+            "Seton et al. (2012)"
+        ]
+        self.NAPlateFiles = [
+            "yhs_continuous_1ma_Muller2019.geojson", #"Müller et al. (2019)",
+            "yhs_continuous_1ma_Matthews2016.geojson", #"Matthews et al. (2016)",
+            "yhs_continuous_1ma_Seton2012.geojson"  #"Seton et al. (2012)"
+        ]
+        self.comboBoxNAPlate.addItems(self.comboBoxLabels)
+        self.comboBoxNAPlate.currentIndexChanged.connect(self.NAPlateChanged)
+
         self.uiPropertieesSet = False
         spin_boxes = self.groupParamBox.findChildren(QDoubleSpinBox)
         for spin_box in spin_boxes:
@@ -94,9 +100,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def setDialogueProperties(self): # Set UI from yhs_Path
         self.uiPropertieesSet = False # ignore changed events until done
+        index = -1
+        for i in range(len(self.NAPlateFiles)):
+            if self.NAPlateFiles[i] == self.yhsPath.NaPlateDataName:
+                index = i
         propertyBag = self.yhsPath.getYhsPropertyBag()
-        self.spbNaPlateazimuth.setValue(propertyBag.NAPAvel.azimuth)
-        self.spbNaPlateSpeed.setValue(propertyBag.NAPAvel.vel)
+        if index >= 0:
+            self.comboBoxNAPlate.setCurrentIndex(index)
+
         self.spbPnwVPoleAzimuth.setValue(propertyBag.PnwVPAvel.azimuth)
         self.spbPnwVPoleSpeed.setValue(propertyBag.PnwVPAvel.vel)
         if propertyBag.PnwRotPole:
@@ -109,8 +120,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.uiPropertieesSet:
                return
         #changed_box = self.sender() # Might prove handy for special handling (none needed yet)
+        selectedIndex = self.comboBoxNAPlate.currentIndex()
         propertyBag = YhsPropertyBag(
-            PAvel(self.spbNaPlateazimuth.value(), self.spbNaPlateSpeed.value()),
+            self.NAPlateFiles[selectedIndex],
             PAvel(self.spbPnwVPoleAzimuth.value(), self.spbPnwVPoleSpeed.value()),
             EulerPole(self.spbPnwRPoleLong.value(), self.spbPnwRPoleLat.value(), self.spbPnwRPoleOmega.value()))
         self.yhsPath.setYhsPropertyBag(propertyBag)
@@ -252,11 +264,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.yhsPath.get_yhs_loc(currentMa, deltaMa, steps)
         return
 
+    def NAPlateChanged(self, id):
+        self.yhsPath.setupNAPLateData(self.NAPlateFiles[id])
+
     # GPS Pole button pressed
     def getGpsPoleData(self):
         self.clearData()
         self.yhsPath.getPnwGpsRotPoleAndVelocity()
-        self.yhsPath.setDefaultNAPole()
+        # self.yhsPath.setDefaultNAPole()
         self.setDialogueProperties() # upload properties to UI
     
     def configRV(self):

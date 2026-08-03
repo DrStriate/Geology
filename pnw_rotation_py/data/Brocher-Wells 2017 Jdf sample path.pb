@@ -1,8 +1,5 @@
 {
-    "NAPAvel": {
-        "azimuth": 241.0,
-        "vel": 22.0
-    },
+    "NaPlateDataName": "yhs_continuous_1ma_Muller2019.geojson",
     "PnwVPAvel": {
         "azimuth": 15.0,
         "vel": 10.0

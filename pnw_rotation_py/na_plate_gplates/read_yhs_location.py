@@ -2,19 +2,11 @@ import json
 import os
 import math
 
-def get_interpolated_yhs_position(geojson_path: str, age_ma: float) -> tuple:
-    """
-    Reads a pre-computed kinematics/track GeoJSON file and returns the estimated 
-    (Latitude, Longitude) for any requested target age (Ma).
-    
-    Bypasses spatial dependencies entirely for fast, online QGIS plugin processing.
-    
+def load_data(geojson_path: str):
+    """ 
+    Reads a pre-computed kinematics/track GeoJSON file and returns a data structuure
     Parameters:
         geojson_path (str): Full system file path to the output track file.
-        age_ma (float): The desired target reconstruction age in millions of years.
-        
-    Returns:
-        tuple: (Latitude, Longitude) as decimal floats, or (None, None) if out of bounds.
     """
     if not os.path.exists(geojson_path):
         raise FileNotFoundError(f"Target track layer not found at: {geojson_path}")
@@ -39,7 +31,21 @@ def get_interpolated_yhs_position(geojson_path: str, age_ma: float) -> tuple:
             
     # Sort data chronologically to ensure binary searching works smoothly
     datapoints.sort(key=lambda x: x[0])
+    return datapoints    
+
+def get_interpolated_yhs_position(datapoints, age_ma: float) -> tuple:
+    """
+    returns the estimated (Latitude, Longitude) for any requested target age (Ma).
     
+    Bypasses spatial dependencies entirely for fast, online QGIS plugin processing.
+    
+    Parameters:
+        datapoints: structure derived from file read method above
+        age_ma (float): The desired target reconstruction age in millions of years.
+        
+    Returns:
+        tuple: (Latitude, Longitude) as decimal floats, or (None, None) if out of bounds.
+    """
     # Boundary constraints safeguard checks
     if age_ma <= datapoints[0][0]:
         return datapoints[0][1], datapoints[0][2]

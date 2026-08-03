@@ -42,26 +42,6 @@
     <string>Calculate YHS Loc</string>
    </property>
   </widget>
-  <widget class="QLabel" name="StartLatLabel_2">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>2</y>
-     <width>101</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>9</pointsize>
-     <weight>50</weight>
-     <bold>false</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>NA pole az / sp</string>
-   </property>
-  </widget>
   <widget class="QSpinBox" name="sbSteps">
    <property name="geometry">
     <rect>
@@ -260,10 +240,10 @@
   <widget class="QLabel" name="StartLatLabel_8">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>2</y>
+     <x>170</x>
+     <y>8</y>
      <width>101</width>
-     <height>31</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="font">
@@ -274,16 +254,16 @@
     </font>
    </property>
    <property name="text">
-    <string>Pnw V pole az / sp</string>
+    <string>Pnw V pole az/V</string>
    </property>
   </widget>
   <widget class="QLabel" name="StartLatLabel_9">
    <property name="geometry">
     <rect>
      <x>280</x>
-     <y>2</y>
+     <y>9</y>
      <width>101</width>
-     <height>31</height>
+     <height>20</height>
     </rect>
    </property>
    <property name="font">
@@ -396,7 +376,7 @@
    <widget class="QDoubleSpinBox" name="spbPnwVPoleSpeed">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>160</x>
       <y>60</y>
       <width>101</width>
       <height>22</height>
@@ -424,7 +404,7 @@
    <widget class="QDoubleSpinBox" name="spbPnwVPoleAzimuth">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>160</x>
       <y>30</y>
       <width>101</width>
       <height>22</height>
@@ -449,67 +429,11 @@
      <double>0.000000000000000</double>
     </property>
    </widget>
-   <widget class="QDoubleSpinBox" name="spbNaPlateSpeed">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>60</y>
-      <width>91</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="suffix">
-     <string> mm/yr</string>
-    </property>
-    <property name="decimals">
-     <number>1</number>
-    </property>
-    <property name="minimum">
-     <double>0.000000000000000</double>
-    </property>
-    <property name="maximum">
-     <double>1000.000000000000000</double>
-    </property>
-    <property name="singleStep">
-     <double>0.001000000000000</double>
-    </property>
-    <property name="value">
-     <double>0.000000000000000</double>
-    </property>
-   </widget>
-   <widget class="QDoubleSpinBox" name="spbNaPlateazimuth">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>30</y>
-      <width>91</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="suffix">
-     <string> °</string>
-    </property>
-    <property name="decimals">
-     <number>2</number>
-    </property>
-    <property name="minimum">
-     <double>0.000000000000000</double>
-    </property>
-    <property name="maximum">
-     <double>359.990000000000009</double>
-    </property>
-    <property name="singleStep">
-     <double>1.000000000000000</double>
-    </property>
-    <property name="value">
-     <double>0.000000000000000</double>
-    </property>
-   </widget>
    <widget class="QPushButton" name="saveButton">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>125</y>
+      <x>140</x>
+      <y>127</y>
       <width>111</width>
       <height>20</height>
      </rect>
@@ -521,8 +445,8 @@
    <widget class="QPushButton" name="loadButton">
     <property name="geometry">
      <rect>
-      <x>140</x>
-      <y>125</y>
+      <x>20</x>
+      <y>127</y>
       <width>111</width>
       <height>20</height>
      </rect>
@@ -534,7 +458,7 @@
    <widget class="QPushButton" name="pbGpsPole">
     <property name="geometry">
      <rect>
-      <x>262</x>
+      <x>270</x>
       <y>125</y>
       <width>91</width>
       <height>21</height>
@@ -544,12 +468,38 @@
      <string>GPS Pole</string>
     </property>
    </widget>
+   <widget class="QComboBox" name="comboBoxNAPlate">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>131</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>-1</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>9</x>
+      <y>10</y>
+      <width>91</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string> NA Plate</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
-     <x>261</x>
-     <y>160</y>
+     <x>270</x>
+     <y>180</y>
      <width>120</width>
      <height>81</height>
     </rect>
@@ -603,7 +553,6 @@
   <zorder>groupParamBox</zorder>
   <zorder>clearDataButton</zorder>
   <zorder>pbRunYhsLocButton</zorder>
-  <zorder>StartLatLabel_2</zorder>
   <zorder>sbSteps</zorder>
   <zorder>StartLatLabel_4</zorder>
   <zorder>StartLatLabel_5</zorder>
@@ -613,9 +562,9 @@
   <zorder>rbApplyMaScaling</zorder>
   <zorder>rbShowJdFOcclusion</zorder>
   <zorder>pbGpsDataAndPoles</zorder>
+  <zorder>groupBox</zorder>
   <zorder>StartLatLabel_8</zorder>
   <zorder>StartLatLabel_9</zorder>
-  <zorder>groupBox</zorder>
  </widget>
  <resources/>
  <connections/>
