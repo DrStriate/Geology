@@ -1,5 +1,5 @@
 import numpy as np
-from geo_helper import EulerPole, getPAvel, PLoc
+from geo_helper import EulerPole, PAvel, PLoc, getPAvel
 import test_utils as tu
 from gauss_newton import solve_gauss_newton_2D_transform_geo_wtd
 
@@ -142,7 +142,8 @@ def fit_euler_pole_linear_wtd(lats, lons, v_east_obs, v_north_obs, s_e, s_n, ali
 def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_list, we_list, wn_list):
     # get data Euler pole from the raw data set
     raw_pole = fit_euler_pole_linear_wtd(lat_list, long_list, ve_list, vn_list, we_list, wn_list)
-
+    # raw_pole.print("1: rotPole: ")
+     
     # apply Gauss-Newton analysis to get any translation (non-rotation) components
     gn_out = solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole.ploc())
 
@@ -152,6 +153,7 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
 
     # get data Euler pole from the raw data set
     rot_pole = fit_euler_pole_linear_wtd(lat_list, long_list, rot_ve_list, rot_vn_list, we_list, wn_list)
+    # rot_pole.print("2: rotPole: ")
 
     # get Velocity pole PAVel info 
     pnwVPAVel = getPAvel(gn_out['t_x'] * 1e-3, gn_out['t_y'] * 1e-3)

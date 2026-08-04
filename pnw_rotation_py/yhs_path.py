@@ -5,7 +5,7 @@ import json
 import dacite 
 import os
 
-from .src.geo_helper import PAvel, PLoc, PVel, EulerPole
+from .src.geo_helper import PAvel, PLoc, PVel, EulerPole, getPAvel
 from .src import test_utils as tu
 from .src import euler_pole_regression as epr
 from .src import gauss_newton as gn
@@ -36,7 +36,7 @@ class YhsPath:
     self.setupNAPLateData("yhs_continuous_1ma_Muller2019.geojson")
     self.useGpsData = False
     self.pole_model = 2 # 1 is NA then Pole-V then Pole-R, 2 is NA - Translated-R - Pole-V
-    self.setupEulerPoles(True)
+    # self.setupEulerPoles(True)
     self.yhs_loc = PLoc(YHS_long, YHS_lat)
 
     self.delta_ve = 0
@@ -66,22 +66,14 @@ class YhsPath:
     self.NaPlateDataName = propertyBag.NaPlateDataName
     self.PnwVPAvel = propertyBag.PnwVPAvel
     self.PnwRotPole = propertyBag.PnwRotPole
-    self.useGpsData = False
-    self.setupEulerPoles(False)
+    # self.useGpsData = False
+    # self.setupEulerPoles(False)
 
   def setupNAPLateData(self, fileName):
     script_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "na_plate_gplates")
     na_file_path = os.path.join(script_dir, fileName)
     self.yhs_path_data = ry.load_data(na_file_path)
     self.NaPlateDataName = fileName
-
-  def setupEulerPoles (self, useGpsData):
-    if self.useGpsData == useGpsData:
-      return
-    if useGpsData:
-      self.PnwRotPole, self.PnwVPAvel = tu.getPnwGpsRotPoleAndVelocity()
-    self.useGpsData = useGpsData
-    self.erase_everything()
 
   def getPnwGpsRotPoleAndVelocity(self):
       self.PnwRotPole, self.PnwVPAvel = tu.getPnwGpsRotPoleAndVelocity()
@@ -162,44 +154,47 @@ class YhsPath:
   
     return loc_3
 
+  # Get rot and translation pole from GPS data. This is the graphical model tied to the UX but identical to
+  # tu.getPnwGpsRotPoleAndVelocity which is a cleaner design
+  
   def displayGPSDataAndPoles(self):
-    # delta_ve = 0
-    # delta_vn = 0
-    # get rot data
     diam = 600 # km
     center_lat = 45.0
     center_long = -119.0
-    lat_list, long_list, ve_list, vn_list, se, sn =\
+    lat_list, long_list, ve_list, vn_list, s_e, s_n =\
       tu.get_GPS_rotation_data(center_long, center_lat, diam * 1000)
     mod_ve_list = np.array(ve_list) - self.delta_ve
     mod_vn_list = np.array(vn_list) - self.delta_vn
-    self.delta_ve, self.delta_vn = self.finish_test_setup(
-    lat_list, long_list, mod_ve_list, mod_vn_list, diam, self.delta_ve, self.delta_vn, se, sn)
 
-  def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = None, d_vn = None, s_e = None, s_n = None ):
-    # clear and set rot data in Qgis
     self.parent.rotDestLayer.dataProvider().truncate()
     self.parent.yhsRotFeatureList = []
     for i in range(len(lat_list)):
       feature = self.parent.rotData.createRotFeature(
-          PLoc(long_list[i], lat_list[i]), PVel(ve_list[i], vn_list[i]), 0.001)
+          PLoc(long_list[i], lat_list[i]), PVel(mod_ve_list[i], mod_vn_list[i]), 0.001)
       self.parent.yhsRotFeatureList.append(feature)        
 
     # get euler pole and gauss newton results and display
-    pole = epr.fit_euler_pole_linear_wtd(lat_list, long_list, ve_list, vn_list, s_e, s_n)
-    gn_out = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, s_e, s_n, pole)
+    self.PnwRotPole = epr.fit_euler_pole_linear_wtd(lat_list, long_list, mod_ve_list, mod_vn_list, s_e, s_n)
+    self.PnwRotPole.print("self.PnwRotPole: ")
 
-    label_text1 = f"{pole.long:.4f}, {pole.lat:.4f}, {pole.omega:.3f} deg, "
+    gn_out = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, mod_ve_list, mod_vn_list, s_e, s_n, self.PnwRotPole )
+
+    label_text1 = f"{self.PnwRotPole.long:.4f}, {self.PnwRotPole.lat:.4f}, {self.PnwRotPole.omega:.3f} deg, "
     label_text2 = f"e: {(gn_out['t_x'] / 1E3):.2f} km, n: {(gn_out['t_y'] / 1E3):.2f} km, {diam} km"
-    self.parent.geoWhiteboard.draw_target(pole.long, pole.lat, label_text1 + label_text2)
+    self.parent.geoWhiteboard.draw_target(self.PnwRotPole.long, self.PnwRotPole.lat, label_text1 + label_text2)
     #print(label_text1 + label_text2)
 
     # if translation correction added, add a delta_V vector to the target to sho that
-    if d_ve != 0.0 or d_vn != 0.0:    
+    if self.delta_ve != 0.0 or self.delta_vn != 0.0:    
       feature = self.parent.rotData.createRotFeature(
-        PLoc(pole.long, pole.long), PVel(self.delta_ve + d_ve, self.delta_vn + d_vn), 0.001) 
+        PLoc(self.PnwRotPole.long, self.PnwRotPole.long), PVel(self.delta_ve + gn_out['t_x'], self.delta_vn + gn_out['t_y']), 0.001) 
       self.parent.yhsRotFeatureList.append(feature)
-    return gn_out['t_x'], gn_out['t_y']
+      self.PnwVPAvel  = getPAvel(self.delta_ve * 1e-3, self.delta_vn * 1e-3)
+    else:
+      self.PnwVPAvel = PAvel(0, 0)
+  
+    self.delta_ve = gn_out['t_x']
+    self.delta_vn = gn_out['t_y']
 
   def clearGPSparams(self):
     self.delta_ve = 0.0

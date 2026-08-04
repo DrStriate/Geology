@@ -96,6 +96,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupRotDisplayLayer()
         self.yhsPath = YhsPath(self)
         self.configCombo()
+        self.yhsPath.getPnwGpsRotPoleAndVelocity() # default to GPS regression
         self.setDialogueProperties()
 
     def setDialogueProperties(self): # Set UI from yhs_Path
@@ -232,8 +233,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         QgsProject.instance().addMapLayer(self.rotDestLayer)
         self.rotDestLayer.triggerRepaint()
 
-        #BUG THe above test run pass does not agree with the (better) yhs_path calculations so we update and use those
-        self.yhsPath.setupEulerPoles(True)
+        # self.yhsPath.setupEulerPoles(True)
         self.setDialogueProperties()
 
     def clearRotDataLayer(self):
@@ -269,7 +269,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     # GPS Pole button pressed
     def getGpsPoleData(self):
-        self.clearData()
         self.yhsPath.getPnwGpsRotPoleAndVelocity()
         # self.yhsPath.setDefaultNAPole()
         self.setDialogueProperties() # upload properties to UI
@@ -277,16 +276,14 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     def configRV(self):
         if self.rbConfigRV.isChecked():
             self.yhsPath.modeSet(1)
-            self.clearData()
     
     def configVR(self):
         if self.rbConfigVR.isChecked():
-            self.clearData()
             self.yhsPath.modeSet(2)
 
     def configCombo(self):
         if self.rbConfigCombo.isChecked():
-            self.clearData()
+
             self.yhsPath.modeSet(3)
         
     def removeLayer(self, layer):
