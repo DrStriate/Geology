@@ -6,7 +6,6 @@ import pytest
 import numpy as np
 from pyproj import Geod
 
-# Using new combined euler pole and offset regression
 def test_quad_pole():
   geod = Geod(a=R, b=R) 
   euler_pole  = EulerPole(-99, 45.0, 1.32) # long, lat, omega
@@ -46,7 +45,7 @@ def test_offset_quad_pole():
   sample_v_north += sample_vs[1]
 
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
-  pole_result.print("pole_result")
+  # pole_result.print("pole_result")
 
   v_offset = gn.solve_gauss_newton_translation(sample_lats, sample_lons, sample_v_east, sample_v_north, pole_result)
   # print(f"v_offset1: {v_offset}")
@@ -197,152 +196,7 @@ def calculate_v_from_Euler_pole(Omega, p, omega, realWorld):
       v = project_V_to_v(V, p)
       return v
 
-# Legacy 'decomposed' (separate and iterated pole and offset regressions)
-def fit_euler_pole_linear_legacy(lats, lons, v_east_obs, v_north_obs, s_e = None, s_n = None):
-    """
-    Finds the exact best-fitting Euler pole using linear least squares.
-    
-    Args:
-      lats (list/array): Latitudes of stations in decimal degrees
-      lons (list/array): Longitudes of stations in decimal degrees
-      v_east (list/array): East velocity components in mm/yr
-      v_north (list/array): North velocity components in mm/yr
 
-      align_pole tests for euler pole pointing to incoming n/s hemisphere (i.e Omega pole flip)
-    """
-    R = 6371.0E3 # Earth's radius in m
-    
-    num_stations = len(lats)
-    
-    # Initialize design matrix A and observation vector B
-    A = np.zeros((2 * num_stations, 3))
-    B = np.zeros(2 * num_stations)
-    
-    sum_lats = 0
-    for i in range(num_stations):
-        # Convert input coordinates to radians
-        phi = np.radians(lats[i])
-        lam = np.radians(lons[i])
-        sum_lats += lats[i]
-        
-        # root weights for this station
-        if s_n is not None and s_e is not None:
-            sw_e = 1.0 / s_e[i]
-            sw_n = 1.0 / s_n[i]
-        else:
-            sw_e = 1.0
-            sw_n = 1.0
-        
-        # Weighted East velocity row equations (even rows: 2*i)
-        A[2*i, 0] = -R * np.sin(phi) * np.cos(lam)  * sw_e
-        A[2*i, 1] = -R * np.sin(phi) * np.sin(lam)  * sw_e
-        A[2*i, 2] = R * np.cos(phi)                 * sw_e
-        B[2*i]    = v_east_obs[i]                   * sw_e
-        
-        # Weighted North velocity row equations (odd rows: 2*i+1)
-        A[2*i+1, 0] = R * np.sin(lam)               * sw_n
-        A[2*i+1, 1] = -R * np.cos(lam)              * sw_n
-        A[2*i+1, 2] = 0.0                           * sw_n
-        B[2*i+1]    = v_north_obs[i]                * sw_n
-        
-    north_hemisphere = (sum_lats > 0.0)
-    
-    # Solves the weighted normal equations: A^T * W * A * omega = A^T * W * B
-    omega_cartesian, residuals, rank, s = np.linalg.lstsq(A, B, rcond=None)
-    
-    wx, wy, wz = omega_cartesian
-
-    if (wz > 0) != north_hemisphere: # if w and incoming data not in the same N/S hemisphere
-        wx = -wx
-        wy = -wy
-        wz = -wz
-    
-    # Convert the Cartesian angular velocity vector back into Euler Pole parameters
-    # 1. Total angular rotation magnitude (rad/yr converted back to deg/Myr)
-    # Factor: (1e6 years * 180 degrees) / (pi radians * 1e9 mm to km conversion scale)
-    # Since velocities are in mm/yr and R is in km, scaling matches naturally:
-    omega_mag_rad = np.sqrt(wx**2 + wy**2 + wz**2) # rad per million years / 1000
-
-    omega_deg_myr = np.degrees(omega_mag_rad) 
-
-    # 2. Latitude and Longitude of the Pole
-    lat_pole = np.degrees(np.arcsin(wz / omega_mag_rad))
-    lon_pole = np.degrees(np.arctan2(wy, wx))
-    
-    return EulerPole(lon_pole, lat_pole, omega_deg_myr)
-
-def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, s_e=None, s_n=None):
-    """
-    Finds the best-fitting Euler pole and localized horizontal translation
-    simultaneously, accounting for legacy m/Ma inputs safely.
-    """
-    num_stations = len(lats)
-    
-    A_joint = np.zeros((2 * num_stations, 5))
-    B = np.zeros(2 * num_stations)
-    
-    sum_lats = 0
-    # Use Earth's radius in kilometers to keep the matrix columns well-conditioned
-    R_km = 6371.0  
-
-    for i in range(num_stations):
-        phi = np.radians(lats[i])
-        lam = np.radians(lons[i])
-        sum_lats += lats[i]
-        
-        if s_n is not None and s_e is not None:
-            sw_e = 1.0 / s_e[i]
-            sw_n = 1.0 / s_n[i]
-        else:
-            sw_e = 1.0
-            sw_n = 1.0
-
-        e_hat = np.array([-np.sin(lam), np.cos(lam), 0.0])
-        n_hat = np.array([-np.sin(phi) * np.cos(lam), -np.sin(phi) * np.sin(lam), np.cos(phi)])
-        
-        # 1. Build position vector in KILOMETERS 
-        P_km = R_km * np.array([np.cos(phi) * np.cos(lam), np.cos(phi) * np.sin(lam), np.sin(phi)])
-        
-        row_east_pole = np.cross(P_km, e_hat)
-        row_north_pole = np.cross(P_km, n_hat)
-        
-        idx_e = 2 * i
-        idx_n = 2 * i + 1
-        
-        A_joint[idx_e, 0:3] = row_east_pole * sw_e
-        A_joint[idx_n, 0:3] = row_north_pole * sw_n
-        
-        # 2. Convert translation columns to kilometer-scale scaling to match P_km matrix weight
-        A_joint[idx_e, 3] = 1.0 * sw_e   
-        A_joint[idx_e, 4] = 0.0
-        A_joint[idx_n, 3] = 0.0
-        A_joint[idx_n, 4] = 1.0 * sw_n   
-        
-        # 3. Scale input velocities down from m/Ma to mm/yr (which equals km/Ma)
-        # This completely strips out the legacy x1000 multiplier during the inversion
-        B[idx_e] = (v_east_obs[i] / 1000.0) * sw_e
-        B[idx_n] = (v_north_obs[i] / 1000.0) * sw_n
-        
-    north_hemisphere = (sum_lats > 0.0)
-    
-    Sol_joint, residuals, rank, s = np.linalg.lstsq(A_joint, B, rcond=None)
-    
-    Omega_c = Sol_joint[0:3]
-    Offset_raw = Sol_joint[3:5]  # Extracted cleanly in mm/yr (km/Ma)
-    
-    if (Omega_c[2] > 0) != north_hemisphere:
-        Omega_c = -Omega_c
-        
-    Omega_mag = np.linalg.norm(Omega_c)
-    omega_deg_myr = np.degrees(Omega_mag)  
-    
-    lat_pole = np.degrees(np.arcsin(Omega_c[2] / Omega_mag))
-    lon_pole = np.degrees(np.arctan2(Omega_c[1], Omega_c[0]))
-    
-    # 4. Convert your output offset BACK to your legacy application's expected m/Ma scaling
-    Offset_legacy = Offset_raw * 1000.0
-    
-    return EulerPole(lon_pole, lat_pole, omega_deg_myr), Offset_legacy
 
 
 

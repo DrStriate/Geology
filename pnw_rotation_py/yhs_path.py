@@ -76,7 +76,7 @@ class YhsPath:
     self.NaPlateDataName = fileName
 
   def getPnwGpsRotPoleAndVelocity(self):
-      self.PnwRotPole, self.PnwVPAvel = tu.getPnwGpsRotPoleAndVelocity()
+      self.PnwRotPole, self.PnwVPAvel = epr.getPnwGpsRotPoleAndVelocity()
 
   def checkLayersCreated(self): 
     self.NaPoleLayer = self.path_layer_manager.getInstance("NA pole", "red")
@@ -154,15 +154,12 @@ class YhsPath:
   
     return loc_3
 
-  # Get rot and translation pole from GPS data. This is the graphical model tied to the UX but identical to
-  # tu.getPnwGpsRotPoleAndVelocity which is a cleaner design
-
   def displayGPSDataAndPoles(self):
     diam = 600 # km
     center_lat = 45.0
     center_long = -119.0
     lat_list, long_list, ve_list, vn_list, s_e, s_n =\
-      tu.get_GPS_rotation_data(center_long, center_lat, diam * 1000)
+      epr.get_GPS_rotation_data(center_long, center_lat, diam * 1000)
     mod_ve_list = np.array(ve_list) - self.delta_ve
     mod_vn_list = np.array(vn_list) - self.delta_vn
 

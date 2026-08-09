@@ -169,7 +169,7 @@ def test_movement_from_Euler_pole(): #test inverse: map above pole back to point
 
 def test_3_pole_50ma_yhs_movement():
   yhsLoc0Ma = PLoc(-110.67, 44.43 )
-  pnwRotPole, pnwVPavel = tu.getPnwGpsRotPoleAndVelocity()
+  pnwRotPole, pnwVPavel = epr.getPnwGpsRotPoleAndVelocity()
   naPAvel = PAvel(241.0, 23.0) # degrees, mm / yr
   ma = -50.0 
   
