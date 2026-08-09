@@ -3,8 +3,10 @@ from haversine import haversine, Unit
 from pyproj import Geod
 from dataclasses import dataclass
 
-geod = Geod(ellps="WGS84")
+
 R = 6371.0E3 # Earth radius in m
+geod = Geod(ellps="WGS84")
+
 def metersPerDegree():
     return 2 * np.pi * R / 360.0
 

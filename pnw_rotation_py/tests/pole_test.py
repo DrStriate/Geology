@@ -1,4 +1,4 @@
-from geo_helper import EulerPole, R, PLoc # R is earth radius
+from geo_helper import EulerPole, R, PLoc, geod # R is earth radius
 import euler_pole_regression as epr
 import gauss_newton as gn
 import test_utils as tu
@@ -6,12 +6,8 @@ import pytest
 import numpy as np
 from pyproj import Geod
 
-#geod = Geod(ellps='WGS84')
-
-
 # Using new combined euler pole and offset regression
 def test_quad_pole():
-  #test setup
   geod = Geod(a=R, b=R) 
   euler_pole  = EulerPole(-99, 45.0, 1.32) # long, lat, omega
   azimuths  = [45.0, 135.0, 225.0, 315.0] # directions  to test lat/long
@@ -22,17 +18,16 @@ def test_quad_pole():
   #  Create samples, regress to pole
   sample_lons, sample_lats, sample_v_east, sample_v_north = create_simple_sample_quad1(euler_pole, azimuths, sample_dist, realWorld)
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
-
-    # BUG - gn regression offsets rot data when the offset detected should be 0
-#   pole_result, v_offset = epr.extractEulerPoleUsingCombinedRegressions(sample_lats, sample_lons, sample_v_east, sample_v_north)
-#   pole_result.print("pole_result1")
-#   print(f"v_offset1: {v_offset}")
+  #pole_result.print("pole_result")
+   
+  v_offset = gn.solve_gauss_newton_translation(sample_lats, sample_lons, sample_v_east, sample_v_north, pole_result)
+  #print(f"v_offset1: {v_offset}")
 
   assert pole_result.omega == pytest.approx(euler_pole.omega, abs=1e-8)
   assert pole_result.lat == pytest.approx(euler_pole.lat, abs=1e-8)
   assert pole_result.long == pytest.approx(euler_pole.long, abs=1e-8)
-#   assert v_offset[0] == pytest.approx (0.0, abs=1e-8)
-#   assert v_offset[1] == pytest.approx (0.0, abs=1e-8)
+  assert v_offset[0] == pytest.approx (0.0, abs=1e-8)
+  assert v_offset[1] == pytest.approx (0.0, abs=1e-8)
 
 # demonstrating new pole-offset results in same pole when v's moved by constant and good extraction
 def test_offset_quad_pole():
@@ -41,27 +36,30 @@ def test_offset_quad_pole():
   azimuths  = [45.0, 135.0, 225.0, 315.0] # directions  to test lat/long
   sample_dist = 50000 # m
   realWorld = False
-#   print("")
 
   #  Create samples, regress to pole
   sample_lons, sample_lats, sample_v_east, sample_v_north = create_simple_sample_quad1(euler_pole, azimuths, sample_dist, realWorld)
-  sample_v_east += 1.0
-  sample_v_north += 2.0
-  pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
 
-#   pole_result, v_offset = epr.extractEulerPoleUsingCombinedRegressions(sample_lats, sample_lons, sample_v_east, sample_v_north)
-#   pole_result.print("pole_result")
-#   print(f"v_offset: {v_offset}")
+  # relatively inaccurate global v change: using a pole would be more accurate
+  sample_vs = [1.0, 2.0]
+  sample_v_east += sample_vs[0]
+  sample_v_north += sample_vs[1]
+
+  pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north)
+  pole_result.print("pole_result")
+
+  v_offset = gn.solve_gauss_newton_translation(sample_lats, sample_lons, sample_v_east, sample_v_north, pole_result)
+  # print(f"v_offset1: {v_offset}")
 
   assert pole_result.omega == pytest.approx(euler_pole.omega, abs=1e-5)
   assert pole_result.lat == pytest.approx(euler_pole.lat, abs=1e-3)
   assert pole_result.long == pytest.approx(euler_pole.long, abs=0.002)
-#   assert v_offset[0] == pytest.approx (1.0, abs=1e-6)
-#   assert v_offset[1] == pytest.approx (2.0, abs=1e-6)
+  assert v_offset[0] == pytest.approx (sample_vs[0], rel=0.002) 
+  assert v_offset[1] == pytest.approx (sample_vs[1], rel=0.002)
 
 # repo of 'decomposed' regression we used to iterate to get offset. Note sb pole 
 def test_euler_GPS_pole_extraction_legacy():
-  # geod = Geod(ellps='WGS84')
+  geod = Geod(ellps='WGS84')
   center_lat = 45.0
   center_long = -118
   max_distance = 600000 # m
@@ -76,6 +74,7 @@ def test_euler_GPS_pole_extraction_legacy():
   assert pole_result.omega == pytest.approx(pole_result_sb.omega)
 
 def test_euler_GPS_pole_extraction2():
+  geod = Geod(ellps='WGS84')
   center_lat = 45.0
   center_long = -118
   max_distance = 600000 

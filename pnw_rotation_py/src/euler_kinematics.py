@@ -1,10 +1,6 @@
 import numpy as np
-from pyproj import Geod
 import geo_helper as gh
-from geo_helper import PLoc, EulerPole
-
-geod = Geod(ellps="WGS84")
-R = 6371.0E3 # Earth radius in m
+from geo_helper import PLoc, EulerPole, R, geod
 
 # get cartesian value of PLoc lat/long
 def getRVector(ploc):
@@ -95,15 +91,16 @@ def testIfBigCircleCoplanarity(ploc1, ploc2, ploc3): # (r1 x r2) dot r3 == 0
     test = np.linalg.cross(r1, r2).dot(r3)
     return test
 
-def getFwdAzimuth(ploc1, ploc2):
-    # Initialize the WGS84 ellipsoid model
-    geod = Geod(ellps='WGS84')
+# use geo_helper for geod to keep models consistent
+# def getFwdAzimuth(ploc1, ploc2):
+#     # Initialize the WGS84 ellipsoid model
+#     geod = Geod(ellps='WGS84')
     
-    # inv() expects longitude first, then latitude
-    fwd_azimuth, back_azimuth, distance = geod.inv(ploc1.long, ploc1.lat, ploc2.lon, ploc2.lat)
+#     # inv() expects longitude first, then latitude
+#     fwd_azimuth, back_azimuth, distance = geod.inv(ploc1.long, ploc1.lat, ploc2.lon, ploc2.lat)
     
-    # Normalize azimuth to a 0-360 degree scale
-    return fwd_azimuth % 360
+#     # Normalize azimuth to a 0-360 degree scale
+#     return fwd_azimuth % 360
 
 
 # Code below probably needs to be refactored to use code/methods above which are more accurate
