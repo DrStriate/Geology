@@ -166,7 +166,7 @@ def normalize(vect):
         return vect / mag
     return vect
 
-def getCartesianFromLanLong (pLoc):
+def getCartesianFromLatLong (pLoc):
     lam, phi = locToRadians(pLoc)
     P = np.array([0, 0, 0])
     P[0] = R * np.cos(lam) * np.cos(phi)

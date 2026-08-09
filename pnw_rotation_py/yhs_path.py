@@ -107,9 +107,10 @@ class YhsPath:
 
     # get a local rot pole we can move as needed 
     runPnwRotPole = replace(self.PnwRotPole)
-    runPnwRotPole.print("runPnwRotPole: ")
+    #runPnwRotPole.print("runPnwRotPole: ") # these printouts useful for setting up GPlates
     # get the PnwVPole which is time invariant 
     self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(runPnwRotPole.ploc(), self.PnwVPAvel)
+    #self.PnwVPole.print("PnwVPole: ")
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
     # self.NAPole = ek.getEulerPoleFromPlocAndPavel(self.yhs_loc, self.NAPAvel)
@@ -121,7 +122,6 @@ class YhsPath:
 
       # 2: Move by ma scaled pole translation v (blue line) - note pole is position dpendent
       loc_2 = self.PnwVPoleLayer.RenderPoleMotionForMa(loc_1, self.PnwVPole, -currentMa)
-      self.PnwVPole.print("PnwVPole: ")
       #loc_2.print("loc_2: ")
 
       # 3: Rotate by ma scaled pole omega 
@@ -156,7 +156,7 @@ class YhsPath:
 
   # Get rot and translation pole from GPS data. This is the graphical model tied to the UX but identical to
   # tu.getPnwGpsRotPoleAndVelocity which is a cleaner design
-  
+
   def displayGPSDataAndPoles(self):
     diam = 600 # km
     center_lat = 45.0
@@ -174,7 +174,7 @@ class YhsPath:
       self.parent.yhsRotFeatureList.append(feature)        
 
     # get euler pole and gauss newton results and display
-    self.PnwRotPole = epr.fit_euler_pole_linear_wtd(lat_list, long_list, mod_ve_list, mod_vn_list, s_e, s_n)
+    self.PnwRotPole = epr.fit_euler_pole_linear(lat_list, long_list, mod_ve_list, mod_vn_list, s_e, s_n)
     self.PnwRotPole.print("self.PnwRotPole: ")
 
     gn_out = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, mod_ve_list, mod_vn_list, s_e, s_n, self.PnwRotPole )

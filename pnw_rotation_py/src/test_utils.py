@@ -60,6 +60,8 @@ def create_simple_sample_quad(euler_pole, azimuths, dist):
     sample = ek.create_sample(euler_pole.long, euler_pole.lat, azimuths[i], dist)
     p = {"phi": np.radians(sample.lat), "lamb": np.radians(sample.long)}
     v = ek.calculate_v_from_Euler_pole(Omega, p, Omega['omega']);
+    # v_e, v_n = ek.calculate_v_from_AzDist(euler_pole, np.fmod(azimuths[i] + 90.0, 360.0), dist)
+    # print (f"v_e: {v_e}, v_n: {v_n}")
     longs.append(sample.long)
     lats.append(sample.lat)
     v_easts.append(v['v_e'])

@@ -79,7 +79,7 @@ def getEulerPoleFromPlocAndPavel(ploc, pAvel):
     degreesPerMa = pAvel.vel * KmPerMaToDegreesPerMa
     omega = degreesPerMa
     
-    P = gh.getCartesianFromLanLong(ploc)
+    P = gh.getCartesianFromLatLong(ploc)
     V_e, V_n = gh.getVeVnFromAzvel(ploc, pAvel)
     V = V_e + V_n
     pe_hat = gh.normalize(np.cross(P, V)) # epipolar unit direction vector
@@ -140,3 +140,15 @@ def calculate_v_from_Euler_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {
   v = project_V_to_v(V, p)
   return v
 
+def calculate_v_from_AzDist(pole, az, distance):
+    # Linear speed (v = omega * distance)
+    # Ensure omega and distance units match (e.g., rad/s and meters -> m/s)
+    speed = np.radians(pole.omega) * distance
+    
+    # Convert azimuth from degrees to radians
+    azimuth_rad = np.radians(az)
+    
+    # Calculate east and north components
+    v_east = speed * np.sin(azimuth_rad)
+    v_north = speed * np.cos(azimuth_rad)
+    return v_east, v_north

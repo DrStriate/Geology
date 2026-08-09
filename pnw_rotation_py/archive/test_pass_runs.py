@@ -73,7 +73,7 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = 
     self.yhsRotFeatureList.append(feature)        
 
   # get euler pole and gauss newton results and display
-  pole = epr.fit_euler_pole_linear_wtd(lat_list, long_list, ve_list, vn_list, s_e, s_n)
+  pole = epr.fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list, s_e, s_n)
   gn_out = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, s_e, s_n, pole)
 
   label_text1 = f"{pole.long:.4f}, {pole.lat:.4f}, {pole.omega:.3f} deg, "

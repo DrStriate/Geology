@@ -35,4 +35,6 @@ def test_GPS_data():
   max_distance = 550000 # meters
   lats, longs, ve_list, vn_list, s_e, s_n = tu.get_GPS_rotation_data(center_pole.long, center_pole.lat, max_distance)
   avg_angle = gh.find_moments(longs, lats, ve_list, vn_list, center_pole)
-  print(f"avg_angle: {avg_angle:5f}, length: {len(lats)}")
+  #print(f"avg_angle: {avg_angle:5f}, length: {len(lats)}")
+  assert avg_angle == pytest.approx(0.680641)
+  assert len(lats) == pytest.approx(1351)
