@@ -1,4 +1,5 @@
 import geo_helper as gh
+
 def solve_gauss_newton_translation(lats, lons, v_e_obs, v_n_obs, euler_pole):
   return solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, None, None, euler_pole)
 def solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, s_e, s_n, euler_pole):
@@ -10,9 +11,6 @@ def solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, s_e, s_n, e
     
     # 3D ECEF parameter tracking vector [Tx, Ty, Tz]
     T = np.zeros(3) 
-    
-    # Use Earth's radius in METERS to match your baseline test environments
-    R_meters = 6371000.0 
     
     # Convert deg/Ma directly to rad/Ma
     omega_rad_ma = np.radians(euler_pole.omega)
@@ -41,7 +39,7 @@ def solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, s_e, s_n, e
             n_hat = np.array([-np.sin(phi) * np.cos(lam), -np.sin(phi) * np.sin(lam), np.cos(phi)])
             
             # 1. Build position vector in METERS
-            P_m = R_meters * np.array([np.cos(phi) * np.cos(lam), np.cos(phi) * np.sin(lam), np.sin(phi)])
+            P_m = gh.R * np.array([np.cos(phi) * np.cos(lam), np.cos(phi) * np.sin(lam), np.sin(phi)])
             
             # 2. Rigid rotation velocity in meters per million years (m/Ma)
             V_m_ma = np.cross(O, P_m)

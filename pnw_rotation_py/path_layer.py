@@ -140,7 +140,7 @@ class PathLayer():
       next_ma = (i + 1) * ma / N
       next_loc = ek.getCompoundRotationTranslationOfPoint(vPole, rPole, start_point, next_ma)
       rot_angle = -rPole.omega * i * ma / N
-      mark_ploc = gh.getPointFromPavel(start_loc, gh.PAvel(rot_angle, 50), 1000 ) # arbitrary length
+      mark_ploc = gh.getPointFromPavel(start_loc, gh.PAvel(rot_angle, .05), 1000 ) # arbitrary length
       layer_paths.append(
         [(start_loc.long, start_loc.lat), (mark_ploc.long, mark_ploc.lat), f"mark step {N}"])
       start_loc = next_loc

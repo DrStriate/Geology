@@ -159,7 +159,7 @@ class YhsPath:
     center_lat = 45.0
     center_long = -119.0
     lat_list, long_list, ve_list, vn_list, s_e, s_n =\
-      epr.get_GPS_rotation_data(center_long, center_lat, diam * 1000)
+      tu.get_GPS_rotation_data(center_long, center_lat, diam * 1000)
     mod_ve_list = np.array(ve_list) - self.delta_ve
     mod_vn_list = np.array(vn_list) - self.delta_vn
 
@@ -167,31 +167,31 @@ class YhsPath:
     self.parent.yhsRotFeatureList = []
     for i in range(len(lat_list)):
       feature = self.parent.rotData.createRotFeature(
-          PLoc(long_list[i], lat_list[i]), PVel(mod_ve_list[i], mod_vn_list[i]), 0.001)
+          PLoc(long_list[i], lat_list[i]), PVel(mod_ve_list[i], mod_vn_list[i]))
       self.parent.yhsRotFeatureList.append(feature)        
 
     # get euler pole and gauss newton results and display
     self.PnwRotPole = epr.fit_euler_pole_linear(lat_list, long_list, mod_ve_list, mod_vn_list, s_e, s_n)
     self.PnwRotPole.print("self.PnwRotPole: ")
 
-    gn_out = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, mod_ve_list, mod_vn_list, s_e, s_n, self.PnwRotPole )
+    offsets = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, mod_ve_list, mod_vn_list, s_e, s_n, self.PnwRotPole )
 
     label_text1 = f"{self.PnwRotPole.long:.4f}, {self.PnwRotPole.lat:.4f}, {self.PnwRotPole.omega:.3f} deg, "
-    label_text2 = f"e: {(gn_out['t_x'] / 1E3):.2f} km, n: {(gn_out['t_y'] / 1E3):.2f} km, {diam} km"
+    label_text2 = f"e: {offsets[0]:.2f} km, n: {offsets[1]:.2f} km, {diam} km"
     self.parent.geoWhiteboard.draw_target(self.PnwRotPole.long, self.PnwRotPole.lat, label_text1 + label_text2)
     #print(label_text1 + label_text2)
 
     # if translation correction added, add a delta_V vector to the target to sho that
     if self.delta_ve != 0.0 or self.delta_vn != 0.0:    
       feature = self.parent.rotData.createRotFeature(
-        PLoc(self.PnwRotPole.long, self.PnwRotPole.long), PVel(self.delta_ve + gn_out['t_x'], self.delta_vn + gn_out['t_y']), 0.001) 
+        PLoc(self.PnwRotPole.long, self.PnwRotPole.long), PVel(self.delta_ve + offsets[0], self.delta_vn + offsets[1])) 
       self.parent.yhsRotFeatureList.append(feature)
       self.PnwVPAvel  = getPAvel(self.delta_ve * 1e-3, self.delta_vn * 1e-3)
     else:
       self.PnwVPAvel = PAvel(0, 0)
   
-    self.delta_ve = gn_out['t_x']
-    self.delta_vn = gn_out['t_y']
+    self.delta_ve = offsets[0]
+    self.delta_vn = offsets[1]
 
   def clearGPSparams(self):
     self.delta_ve = 0.0

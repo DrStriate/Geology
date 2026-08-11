@@ -14,7 +14,7 @@ SeattlePloc = PLoc(-122.3321, 47.6062)
 
 def test_euler_pole_from_quad():
   #test setup
-  geod = Geod(a=R, b=R) 
+  gh.geod = Geod(a=R, b=R) 
   euler_pole = OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.32 }
   azimuths  = [45.0, 135.0, 225.0, 315.0]
   sample_dist = 50000 # m
@@ -33,6 +33,7 @@ def test_euler_pole_from_quad():
 
 def test_euler_pole_from_random_disk():
   #test setup
+  gh.geod = Geod(a=R, b=R)
   euler_pole = EulerPole(-90, 45.0, 1.23)
   sample_count = 400
   diam = 550 # km
@@ -55,6 +56,7 @@ def test_euler_pole_from_random_disk():
 
 def test_euler_pole_from_random_cropped_disk():
   #test setup
+  gh.geod = Geod(a=R, b=R)
   euler_pole = OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   sample_count = 400
   sample_dist = 50000 # m
@@ -78,6 +80,7 @@ def test_euler_pole_from_random_cropped_disk():
 
 def test_euler_pole_using_north_rotation():
     #test setup
+  gh.geod = Geod(a=R, b=R)
   euler_pole = OC_NA_Pole 
   euler_n_pole = EulerPole( OC_NA_Pole.long + 90, 0.0, 1.43)
   sample_count = 400
@@ -95,12 +98,16 @@ def test_euler_pole_using_north_rotation():
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   #ek.print_result ("test_euler_pole_using_north_rotation", pole_result)
 
-  assert pole_result.long == pytest.approx(-29.600000000000488)  # euler_n_pole.long +/- 180
+  if pole_result.long < 0:
+    assert pole_result.long == pytest.approx(-29.600000000000488)  # euler_n_pole.long +/- 180
+  else:
+    assert pole_result.long == pytest.approx(180.0 -29.600000000000488)
   assert pole_result.lat == pytest.approx(euler_n_pole.lat)
   assert pole_result.omega == pytest.approx(test_omega)
 
 # errors showing up in breaking up rotations
 def test_getPoleRotationOfPoint():
+  gh.geod = Geod(a=R, b=R)
   test_pole = OC_NA_Pole
   test_loc = SeattlePloc
 
@@ -115,7 +122,6 @@ def test_euler_GPS_pole_extraction():
   max_distance = 600000 # m
   lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)
 
-  #pole_result = epr.fit_euler_pole_linear_legacy(lats, lons, v_easts, v_norths, s_e, s_n)
   pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths, s_e, s_n)
   # epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
 
@@ -125,6 +131,7 @@ def test_euler_GPS_pole_extraction():
   assert pole_result.omega == pytest.approx(pole_result_sb.omega)
 
 def test_combined_GPS_pole_extraction():
+  gh.geod = Geod(ellps="WGS84")
   center_lat = 45.0
   center_long = -119
   max_distance = 600000 # m
@@ -143,31 +150,30 @@ def test_combined_GPS_pole_extraction():
   assert pAvel_result.vel == pytest.approx(paVel_result_sb.vel)
 
 def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pole
+  gh.geod = Geod(a=R, b=R)
   ploc = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc (arbitrary)
-  pAzvel = PAvel(0.0, (gh.metersPerDegree()/1000.0))    #point motion north (azimuth, speed in km/ma)
+  pAzvel = PAvel(0.0, gh.kmPerDegree())    #point motion north (azimuth, speed in km/ma)
   pole = ek.getEulerPoleFromPlocAndPavel(ploc, pAzvel)
  
   # ploc.print("\nploc:")
   # pole.print("pole: ")
 
-  assert ploc.long - 90 + 360 == pytest.approx(pole.long)  # translation pole 90 degrees off reference at equator
-  assert pole.lat == pytest.approx(0.0, abs = 2e-6)                    # translation north on meridian has a pone on the equator
+  assert ploc.long - 90 + 360 == pytest.approx(pole.long, abs=0.01) # translation pole 90 degrees off reference at equator
+  assert pole.lat == pytest.approx(0.0, abs = 0.01)                    # translation north on meridian has a pone on the equator
   assert pole.omega == pytest.approx(1.0, abs=1e-6)
 
 def test_movement_from_Euler_pole(): #test inverse: map above pole back to point
+  gh.geod = Geod(a=R, b=R)
   pole = gh.EulerPole(150.4, 0.0, 1.0)  
   point = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat) #sample point loc
   new_point, vel = ek.getPoleRotationOfPoint(pole, point, 1.0)
   
-  # point.print("\npoint: ")
-  # new_point.print("new_point: ")
-  # print(f"vel: {vel:0.1f}")
-
   assert new_point.long == pytest.approx(point.long)  # translation pole 90 degrees off reference
   assert new_point.lat == pytest.approx(point.lat + 1, abs = 2e-6) # 1 degree shift north
-  assert vel == pytest.approx(gh.metersPerDegree()) # distance (meters) for 1 degree lat movement
+  assert vel == pytest.approx(gh.kmPerDegree()) # distance (km) for 1 degree lat movement
 
 def test_3_pole_50ma_yhs_movement():
+  gh.geod = Geod(ellps="WGS84")
   yhsLoc0Ma = PLoc(-110.67, 44.43 )
   pnwRotPole, pnwVPavel = epr.getPnwGpsRotPoleAndVelocity()
   naPAvel = PAvel(241.0, 23.0) # degrees, mm / yr

@@ -1,6 +1,6 @@
 import numpy as np
 import geo_helper as gh
-from geo_helper import PLoc, EulerPole, R, geod
+from geo_helper import PLoc, EulerPole, R
 
 # get cartesian value of PLoc lat/long
 def getRVector(ploc):
@@ -71,7 +71,7 @@ def getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, ploc, ma):
  # Big circle pole for given loc and velocity vector. pAvel is azimuth and speed (e.f. km/ma or mm/yr)
 def getEulerPoleFromPlocAndPavel(ploc, pAvel):
     MetersPerDegree = 2 * np.pi * R / 360.0
-    KmPerMaToDegreesPerMa = 1000.0 / MetersPerDegree
+    KmPerMaToDegreesPerMa = 1.0 / MetersPerDegree
     degreesPerMa = pAvel.vel * KmPerMaToDegreesPerMa
     omega = degreesPerMa
     
@@ -90,28 +90,6 @@ def testIfBigCircleCoplanarity(ploc1, ploc2, ploc3): # (r1 x r2) dot r3 == 0
 
     test = np.linalg.cross(r1, r2).dot(r3)
     return test
-
-# use geo_helper for geod to keep models consistent
-# def getFwdAzimuth(ploc1, ploc2):
-#     # Initialize the WGS84 ellipsoid model
-#     geod = Geod(ellps='WGS84')
-    
-#     # inv() expects longitude first, then latitude
-#     fwd_azimuth, back_azimuth, distance = geod.inv(ploc1.long, ploc1.lat, ploc2.lon, ploc2.lat)
-    
-#     # Normalize azimuth to a 0-360 degree scale
-#     return fwd_azimuth % 360
-
-
-# Code below probably needs to be refactored to use code/methods above which are more accurate
-def create_sample (start_lon, start_lat, azimuth, distance):
-    # Calculate the terminus point
-    end_lon, end_lat, back_azimuth = geod.fwd(
-        start_lon, 
-        start_lat, 
-        azimuth, 
-        distance)
-    return gh.PLoc(end_lon, end_lat)
 
 def project_V_to_v (V, p): #V is 3D cartesion velocity, phi and lamb in radians
   e_hat = np.array([-np.sin(p['lamb']), np.cos(p['lamb']), 0 ])

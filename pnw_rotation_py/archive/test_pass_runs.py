@@ -69,7 +69,7 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = 
   self.yhsRotFeatureList = []
   for i in range(len(lat_list)):
     feature = self.rotData.createRotFeature(
-        PLoc(long_list[i], lat_list[i]), PVel(ve_list[i], vn_list[i]), 0.001)
+        PLoc(long_list[i], lat_list[i]), PVel(ve_list[i], vn_list[i]))
     self.yhsRotFeatureList.append(feature)        
 
   # get euler pole and gauss newton results and display
@@ -84,7 +84,7 @@ def finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam, d_ve = 
   # if translation correction added, add a delta_V vector to the target to sho that
   if d_ve != 0.0 or d_vn != 0.0:    
     feature = self.rotData.createRotFeature(
-      PLoc(pole.long, pole.long), PVel(delta_ve + d_ve, delta_vn + d_vn), 0.001) 
+      PLoc(pole.long, pole.long), PVel(delta_ve + d_ve, delta_vn + d_vn)) 
     self.yhsRotFeatureList.append(feature)
 
   return gn_out['t_x'], gn_out['t_y']

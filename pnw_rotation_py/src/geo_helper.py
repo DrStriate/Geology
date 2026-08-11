@@ -4,11 +4,12 @@ from pyproj import Geod
 from dataclasses import dataclass
 
 
-R = 6371.0E3 # Earth radius in m
+R = 6371.0 # Earth radius in km
+
 geod = Geod(ellps="WGS84")
 
-def metersPerDegree():
-    return 2 * np.pi * R / 360.0
+def kmPerDegree():
+    return R * np.pi / 180.0
 
 def getMagnitude(d_e, d_n):    # only use for very small distances
     return np.sqrt(d_e * d_e + d_n * d_n)
@@ -106,9 +107,8 @@ def getPointFromPavel(start_point, pAVel, ma):
     
     return PLoc(destination_lon, destination_lat)
 
-# This is an approximation and proxy for angular easterly and northerly rotation angles, not dists
+# This is for angular easterly and northerly rotation angles, not dists
 def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
-    # inv() expects (lon1, lat1, lon2, lat2)
     # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
     forward_azimuth, back_azimuth, distance_meters = geod.inv(lon1, lat1, lon2, lat2)
 
@@ -124,6 +124,27 @@ def getFwdAzimuthFromLocations (point1, point2):
    # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
     forward_azimuth, back_azimuth, distance_meters = geod.inv(point1.long, point1.lat, point2.long, point2.lat)
     return forward_azimuth
+
+# Code below probably needs to be refactored to use code/methods above which are more accurate
+def create_sample (start_lon, start_lat, azimuth, distance):
+    # Calculate the terminus point
+    end_lon, end_lat, back_azimuth = geod.fwd(
+        start_lon, 
+        start_lat, 
+        azimuth, 
+        distance)
+    return PLoc(end_lon, end_lat)
+
+# using geo_helper for geod to keep models consistent
+# def getFwdAzimuth(ploc1, ploc2):
+#     # Initialize the WGS84 ellipsoid model
+#     geod = Geod(ellps='WGS84')
+    
+#     # inv() expects longitude first, then latitude
+#     fwd_azimuth, back_azimuth, distance = geod.inv(ploc1.long, ploc1.lat, ploc2.lon, ploc2.lat)
+    
+#     # Normalize azimuth to a 0-360 degree scale
+#     return fwd_azimuth % 360
 
 # gets lat and long converted to coordinate distances from pole. This is an approximation 
 def getSamplePoints(long_list, lat_list, center_ploc):

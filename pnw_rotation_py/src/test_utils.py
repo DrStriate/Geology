@@ -4,6 +4,7 @@ import euler_kinematics as ek
 import euler_pole_regression as epr
 import geopandas as gpd
 import geo_helper as gh
+from geo_helper import R, EulerPole
 
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 
@@ -16,8 +17,6 @@ def get_data_file_path(name):
 
 def get_test_data():
   return get_GPS_rotation_data(OC_NA_Pole.long, OC_NA_Pole.lat, 6e5)
-
-MM_PER_YEAR_TO_M_PER_MA = 1000.0
 
 def get_GPS_rotation_data (center_long, center_lat, max_distance):
   file_path = get_data_file_path("NSHM2023_GPS_velocity.zip")
@@ -41,34 +40,34 @@ def get_GPS_rotation_data (center_long, center_lat, max_distance):
     if dist < max_distance:
       lats.append(list_lats[i])
       lons.append(list_lons[i])
-      v_east.append(list_v_east[i] * MM_PER_YEAR_TO_M_PER_MA)
-      v_north.append(list_v_north[i] * MM_PER_YEAR_TO_M_PER_MA)
-      s_east.append(list_s_east[i] * MM_PER_YEAR_TO_M_PER_MA)
-      s_north.append(list_s_north[i] * MM_PER_YEAR_TO_M_PER_MA)
+      v_east.append(list_v_east[i])
+      v_north.append(list_v_north[i])
+      s_east.append(list_s_east[i])
+      s_north.append(list_s_north[i])
   return lats, lons, v_east, v_north, s_east, s_north
 
-# Some doubt about calculate_v_from_Euler_pole in the tests below. 
-def create_simple_sample_quad(euler_pole, azimuths, dist):
-  longs = []
-  lats = []
-  v_easts = []  # mm/ yr
-  v_norths = [] # mm/ yr
+# # Some doubt about calculate_v_from_Euler_pole in the tests below. 
+# def create_simple_sample_quad(euler_pole, azimuths, dist):
+#   longs = []
+#   lats = []
+#   v_easts = []  # mm/ yr
+#   v_norths = [] # mm/ yr
 
-  Omega = {"omega": euler_pole.omega, "phi": np.radians(euler_pole.lat), "lamb": np.radians(euler_pole.long)}
-  # print("")
-  for i in range(len(azimuths)):
-    sample = ek.create_sample(euler_pole.long, euler_pole.lat, azimuths[i], dist)
-    p = {"phi": np.radians(sample.lat), "lamb": np.radians(sample.long)}
-    v = ek.calculate_v_from_Euler_pole(Omega, p, Omega['omega']);
-    # v_e, v_n = ek.calculate_v_from_AzDist(euler_pole, np.fmod(azimuths[i] + 90.0, 360.0), dist)
-    # print (f"v_e: {v_e}, v_n: {v_n}")
-    longs.append(sample.long)
-    lats.append(sample.lat)
-    v_easts.append(v['v_e'])
-    v_norths.append(v['v_n'])
-    #print(f"{i}: sample.long: {sample.long:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
-  return longs, lats, v_easts, v_norths
-  
+#   Omega = {"omega": euler_pole.omega, "phi": np.radians(euler_pole.lat), "lamb": np.radians(euler_pole.long)}
+#   # print("")
+#   for i in range(len(azimuths)):
+#     sample = gh.create_sample(euler_pole.long, euler_pole.lat, azimuths[i], dist)
+#     p = {"phi": np.radians(sample.lat), "lamb": np.radians(sample.long)}
+#     v = ek.calculate_v_from_Euler_pole(Omega, p, Omega['omega']);
+#     # v_e, v_n = ek.calculate_v_from_AzDist(euler_pole, np.fmod(azimuths[i] + 90.0, 360.0), dist)
+#     # print (f"v_e: {v_e}, v_n: {v_n}")
+#     longs.append(sample.long)
+#     lats.append(sample.lat)
+#     v_easts.append(v['v_e'])
+#     v_norths.append(v['v_n'])
+#     #print(f"{i}: sample.long: {sample.long:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
+#   return longs, lats, v_easts, v_norths
+
 def create_random_sample_ring(euler_pole, count, 
                               max_dist, 
                               test_omega, 
@@ -88,12 +87,12 @@ def create_random_sample_ring(euler_pole, count,
   else:
     Omega_source = Omega
 
-  max_long =  ek.create_sample(euler_pole.long, euler_pole.lat, 90.0, max_dist).long
-  min_long =  ek.create_sample(euler_pole.long, euler_pole.lat, 270.0, max_dist).long
+  max_long =  gh.create_sample(euler_pole.long, euler_pole.lat, 90.0, max_dist).long
+  min_long =  gh.create_sample(euler_pole.long, euler_pole.lat, 270.0, max_dist).long
   crop_long = min_long + (max_long - min_long) * crop
   cropped_samples = 0;
   for i in range(len(rands)):
-    sample = ek.create_sample(euler_pole.long, euler_pole.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
+    sample = gh.create_sample(euler_pole.long, euler_pole.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
     p = {"phi": np.radians(sample.lat), "lamb": np.radians(sample.long)}
     v = ek.calculate_v_from_Euler_pole(Omega_source, p, test_omega); 
 
@@ -108,3 +107,95 @@ def create_random_sample_ring(euler_pole, count,
   #print(f"samples = {cropped_samples} out of {count}")
   
   return sample_n, sample_e, sample_v_east, sample_v_north
+
+#dist in km
+def create_simple_sample_quad(euler_pole, azimuths, dist, realWorld = False):
+  longs = np.zeros(4)
+  lats = np.zeros(4)
+  v_easts = np.zeros(4)
+  v_norths = np.zeros(4)
+
+  Omega = {"omega": euler_pole.omega, "phi": np.radians(euler_pole.lat), "lamb": np.radians(euler_pole.long)}
+  
+  # Calculate angular radius in radians (distance / Earth radius)
+  angular_radius = dist / R  
+
+  for i in range(len(azimuths)):
+    az_rad = np.radians(azimuths[i])
+    
+    # Spherically calculate points strictly relative to the pole coordinates
+    # This ensures perfect small-circle symmetry
+    sample_lat_rad = np.arcsin(np.sin(Omega['phi']) * np.cos(angular_radius) + 
+                               np.cos(Omega['phi']) * np.sin(angular_radius) * np.cos(az_rad))
+    
+    sample_lon_rad = Omega['lamb'] + np.arctan2(np.sin(az_rad) * np.sin(angular_radius) * np.cos(Omega['phi']),
+                                                np.cos(angular_radius) - np.sin(Omega['phi']) * np.sin(sample_lat_rad))
+    
+    sample_lat = np.degrees(sample_lat_rad)
+    sample_lon = np.degrees(sample_lon_rad)
+    
+    p = {"phi": sample_lat_rad, "lamb": sample_lon_rad}
+    v = calculate_v_from_Euler_pole(Omega, p, Omega['omega'], realWorld)
+
+    # print(f"{i}: sample.long: {sample_lon:.3f}, sample.lat: {sample_lat:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
+
+    longs[i] = sample_lon
+    lats[i] = sample_lat
+    v_easts [i] = v['v_e']
+    v_norths[i] = v['v_n']
+    
+  return longs, lats, v_easts, v_norths
+
+def calculate_v_from_Euler_pole(Omega, p, omega, realWorld):
+    if realWorld: 
+      # p: dict with {'phi': lat_rad, 'lamb': lon_rad}
+      # Omega: dict with {'phi': pole_lat_rad, 'lamb': pole_lon_rad}
+      # omega: scalar rotation rate (degrees/Myr or rad/yr depending on your scaling)
+      
+      # 1. Compute the local radius of curvature along the prime vertical (R_N)
+      # This accounts for the ellipsoidal bulge at the station's exact latitude
+      R_N = WGS84_A / np.sqrt(1.0 - WGS84_E2 * np.sin(p['phi'])**2)
+      
+      # 2. Build the 3D position vector using the local radius
+      # For horizontal velocities, assume ellipsoidal height h = 0
+      P = R_N * get_hat_p(p)
+      
+      # 3. Convert angular velocity to radians per unit time and build rotation vector
+      omega_rad = np.radians(omega)
+      O = omega_rad * get_hat_p(Omega)
+      
+      # 4. Standard rigid cross product 
+      V = np.cross(O, P)  # Note: O x P yields the standard right-hand velocity vector
+      
+      # 5. Project 3D vector to local East and North ellipsoidal vectors
+      v = project_V_to_v(V, p)
+      return v
+    else: # Idealized: usually functional test
+      P = R * get_hat_p(p)
+      O = np.radians(omega) * get_hat_p(Omega)
+      V = np.cross(O, P)  # Standard kinematic rotation vector (Omega x P)
+      v = project_V_to_v(V, p)
+      return v
+
+def project_V_to_v (V, p): #V is 3D cartesion velocity, phi and lamb in radians
+  e_hat = np.array([-np.sin(p['lamb']), np.cos(p['lamb']), 0 ])
+  n_hat = np.array([-np.sin(p['phi']) * np.cos(p['lamb']), -np.sin(p['phi']) * np.sin(p['lamb']), np.cos(p['phi'])])
+  v_e = np.dot(V, e_hat)
+  v_n = np.dot(V, n_hat)
+  return {"v_e" : v_e, "v_n" : v_n}
+
+def get_hat(lat, long):
+   return get_hat_p({'lamb': np.radians(long), 'phi': np.radians(lat)})
+
+# WGS84 Constants required for geodetic-to-cartesian conversions
+WGS84_A = 6378137.0         # Semi-major axis (meters)
+WGS84_E2 = 0.00669437999014  # First eccentricity squared
+
+def get_hat_p(p): 
+    # Returns a unit normal vector to the geodetic phi, lamb point
+    return np.array([ 
+        np.cos(p['phi']) * np.cos(p['lamb']),
+        np.cos(p['phi']) * np.sin(p['lamb']),
+        np.sin(p['phi'])
+    ])
+

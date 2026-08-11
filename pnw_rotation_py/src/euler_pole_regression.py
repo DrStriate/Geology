@@ -16,7 +16,6 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, s_e = None, s_n =
 
       align_pole tests for euler pole pointing to incoming n/s hemisphere (i.e Omega pole flip)
     """
-    R = 6371.0E3 # Earth's radius in m
     
     num_stations = len(lats)
     
@@ -248,7 +247,7 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
     # rot_pole.print("2: rotPole: ")
 
     # get Velocity pole PAVel info 
-    pnwVPAVel = getPAvel(offset[0] * 1e-3, offset[1] * 1e-3)
+    pnwVPAVel = getPAvel(offset[0], offset[1])
 
     # offset is in meters per ma and we want a rate (km/ma or mm/yr) so we need to scale
     return rot_pole, pnwVPAVel

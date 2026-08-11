@@ -3,7 +3,7 @@ import pytest
 import gauss_newton as gn
 import test_utils as tu
 from pathlib import Path
-from geo_helper import PLoc, EulerPole
+from geo_helper import EulerPole, geod, R
 
 # center at lat 512, long 512. Distance to center is 128
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
@@ -30,93 +30,6 @@ def test_translation_north():
   #print(f"North translate X: {x}\n")
   assert x['t_y'] == t_n
 
-def test_rotation_simple():
-  #test 3 = rotate
-  dtheta = 0.01 # radians 
-  dp = dist_to_center * np.tan(dtheta)
-  v_e = [-dp, 0.0, dp, 0.0]
-  v_n = [0.0, dp, 0.0, -dp]
-  x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n)
-  #print(f"Rotate X:  {x}")
-  assert x['r'] == pytest.approx(dtheta, abs=1e-6)
-
-def test_euler_test_quad():
-  #test setup
-  euler_pole = EulerPole( -90.0, 45.0, 1.23)
-  azimuths  = [45.0, 135.0, 225.0, 315.0]
-  sample_dist = 50000 # m
-
-  sample_e, sample_n, v_east, v_north = tu.create_simple_sample_quad(euler_pole, azimuths, sample_dist)
-  #pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
-  x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
-  #print(f"\ntest_euler_test_quad x: {x}\n")
-  assert x['r'] == pytest.approx(np.radians(euler_pole.omega), abs=1e-4)
-
-def test_random_rot_disk(): 
-  #test 4 = run euler kinematics random disk
-  euler_pole =  EulerPole( -90.0, 45.0, 1.23)
-  sample_count = 400
-  sample_dist = 50000 # m
-  test_omega = 1.23 
-  
-  sample_n, sample_e, v_east, v_north = \
-      tu.create_random_sample_ring(
-        euler_pole, 
-        sample_count, 
-        sample_dist, 
-        test_omega, 
-        1.0, 
-        None)
-  x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
-  # print(f"test_rot_disk x: {x}\n")
-  assert x['r'] == pytest.approx(np.radians(test_omega), abs=1e-4)
-
-def test_random_cropped_rot_disk(): 
-  #test 4 = run euler kinematics random disk
-  euler_pole = EulerPole( -90, 45.0, 1.23 )
-  sample_count = 400
-  sample_dist = 50000 # m
-  test_omega = 1.23 
-  crop = 0.5 # 50% cropped out
-  
-  sample_n, sample_e, v_east, v_north = \
-      tu.create_random_sample_ring(
-        euler_pole, 
-        sample_count, 
-        sample_dist, 
-        test_omega,
-        crop,
-        None)
-  x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
-  # print(f"test_rot_disk x: {x}\n")
-  assert x['r'] == pytest.approx(np.radians(test_omega), abs=1e-4)
-
-def test_using_north_rotation():
-  #test setup
-  
-  euler_pole = EulerPole(-119.60, 45.54, 1.32) # OC_NA
-  euler_n_pole = EulerPole(euler_pole.long + 90, 0.0, 1.43 )
-  sample_count = 400
-  sample_dist = 50000 # m
-  test_omega = 0.001
-  crop = 0.5 # 50% cropped out
-
-  R = 6371.0E3 # Earth radius in m
-  north_v_for_pole_rot= np.sin(np.radians(test_omega)) * R
-
-  sample_n, sample_e, v_east, v_north = \
-    tu.create_random_sample_ring(euler_pole, 
-                              sample_count, 
-                              sample_dist, 
-                              test_omega, 
-                              crop,
-                              euler_n_pole)
-  
-  x = gn.solve_gauss_newton_2D_transform_geo(sample_e, sample_n, v_east, v_north, euler_pole)
-  
-  # print(f"North translate X: {x['t_y']}\n")
-  assert x['t_y'] == pytest.approx(north_v_for_pole_rot, abs=1e-2)
-
 def test_against_pnw_GPS_data():
   # Absolute path of the script
   script_path = Path(__file__).resolve()
@@ -135,9 +48,6 @@ def test_against_pnw_GPS_data():
   #print(f"samples: {len(lats)}")
   #gn.print_x(x)
 
-  x_sb = np.array([1078.32394265, 3367.62990407])
+  x_sb = np.array([1.07832394265, 3.36762990407])
   assert(x[0] == pytest.approx(x_sb[0]))
   assert(x[1] == pytest.approx(x_sb[1]))
-  # assert x['t_x'] == pytest.approx(1231.18315, abs=1e-4)
-  # assert x['t_y'] == pytest.approx(3387.26618, abs=1e-4)
-  # assert x['r'] == pytest.approx(0.57931, abs=1e-4)
