@@ -5,7 +5,7 @@ import json
 import dacite 
 import os
 
-from .src.geo_helper import PAvel, PLoc, PVel, EulerPole, getPAvel
+from .src.geo_helper import PAvel, PLoc, PVel, EulerPole, getPAvel, setGeod
 from .src import test_utils as tu
 from .src import euler_pole_regression as epr
 from .src import gauss_newton as gn
@@ -36,7 +36,6 @@ class YhsPath:
     self.setupNAPLateData("yhs_continuous_1ma_Muller2019.geojson")
     self.useGpsData = False
     self.pole_model = 2 # 1 is NA then Pole-V then Pole-R, 2 is NA - Translated-R - Pole-V
-    # self.setupEulerPoles(True)
     self.yhs_loc = PLoc(YHS_long, YHS_lat)
 
     self.delta_ve = 0
@@ -51,8 +50,6 @@ class YhsPath:
   def deserialize_and_set_bag(self, json_str: str) -> YhsPropertyBag:
     data_dict = json.loads(json_str)
     
-    # dacite automatically looks at the type hints (e.g., NAPAvel: PAvel)
-    # and recursively instantiates the inner classes for you.
     propertyBag = dacite.from_dict(data_class=YhsPropertyBag, data=data_dict)
     self.NaPlateDataName = propertyBag.NaPlateDataName
     self.PnwVPAvel = propertyBag.PnwVPAvel
@@ -66,8 +63,6 @@ class YhsPath:
     self.NaPlateDataName = propertyBag.NaPlateDataName
     self.PnwVPAvel = propertyBag.PnwVPAvel
     self.PnwRotPole = propertyBag.PnwRotPole
-    # self.useGpsData = False
-    # self.setupEulerPoles(False)
 
   def setupNAPLateData(self, fileName):
     script_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "na_plate_gplates")
@@ -155,6 +150,7 @@ class YhsPath:
     return loc_3
 
   def displayGPSDataAndPoles(self):
+    setGeod(realWorld = True)
     diam = 600 # km
     center_lat = 45.0
     center_long = -119.0
@@ -184,9 +180,9 @@ class YhsPath:
     # if translation correction added, add a delta_V vector to the target to sho that
     if self.delta_ve != 0.0 or self.delta_vn != 0.0:    
       feature = self.parent.rotData.createRotFeature(
-        PLoc(self.PnwRotPole.long, self.PnwRotPole.long), PVel(self.delta_ve + offsets[0], self.delta_vn + offsets[1])) 
+        PLoc(self.PnwRotPole.long, self.PnwRotPole.lat), PVel(self.delta_ve + offsets[0], self.delta_vn + offsets[1])) 
       self.parent.yhsRotFeatureList.append(feature)
-      self.PnwVPAvel  = getPAvel(self.delta_ve * 1e-3, self.delta_vn * 1e-3)
+      self.PnwVPAvel  = getPAvel(self.delta_ve, self.delta_vn)
     else:
       self.PnwVPAvel = PAvel(0, 0)
   

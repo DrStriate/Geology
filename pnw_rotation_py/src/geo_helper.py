@@ -8,6 +8,12 @@ R = 6371.0 # Earth radius in km
 
 geod = Geod(ellps="WGS84")
 
+def setGeod(realWorld):
+    if realWorld:
+        geod = Geod(ellps="WGS84")
+    else:
+        geod = Geod(a=R, b=R)
+
 def kmPerDegree():
     return R * np.pi / 180.0
 
@@ -123,9 +129,8 @@ def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
 def getFwdAzimuthFromLocations (point1, point2):
    # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
     forward_azimuth, back_azimuth, distance_meters = geod.inv(point1.long, point1.lat, point2.long, point2.lat)
-    return forward_azimuth
+    return forward_azimuth % 360
 
-# Code below probably needs to be refactored to use code/methods above which are more accurate
 def create_sample (start_lon, start_lat, azimuth, distance):
     # Calculate the terminus point
     end_lon, end_lat, back_azimuth = geod.fwd(
@@ -135,30 +140,19 @@ def create_sample (start_lon, start_lat, azimuth, distance):
         distance)
     return PLoc(end_lon, end_lat)
 
-# using geo_helper for geod to keep models consistent
-# def getFwdAzimuth(ploc1, ploc2):
-#     # Initialize the WGS84 ellipsoid model
-#     geod = Geod(ellps='WGS84')
-    
-#     # inv() expects longitude first, then latitude
-#     fwd_azimuth, back_azimuth, distance = geod.inv(ploc1.long, ploc1.lat, ploc2.lon, ploc2.lat)
-    
-#     # Normalize azimuth to a 0-360 degree scale
-#     return fwd_azimuth % 360
+def clamp(value, minimum, maximum):
+    return max(minimum, min(value, maximum))
+
+# Code below probably needs to be refactored to use code/methods above which are more accurate
 
 # gets lat and long converted to coordinate distances from pole. This is an approximation 
 def getSamplePoints(long_list, lat_list, center_ploc):
-  pe_list = []
-  pn_list = []
+  p_e = np.zeros(len(long_list))
+  p_n = np.zeros(len(long_list))
   for i in range(len(long_list)):
     # convert sample points to meters
-    p_n, p_e = getNortherlyEasterlyFromLatLongPoints(center_ploc.long, center_ploc.lat, long_list[i], lat_list[i])
-    pe_list.append(p_e)
-    pn_list.append(p_n)
-  return pe_list, pn_list 
-
-def clamp(value, minimum, maximum):
-    return max(minimum, min(value, maximum))
+    p_n[i], p_e[i] = getNortherlyEasterlyFromLatLongPoints(center_ploc.long, center_ploc.lat, long_list[i], lat_list[i])
+  return p_e, p_n 
 
 # Be wary of use of these distance metrics. 
 def latitudeFromDistN(dist): # dist in meters North

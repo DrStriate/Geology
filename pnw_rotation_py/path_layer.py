@@ -146,6 +146,12 @@ class PathLayer():
       start_loc = next_loc
       self.add_run_paths_to_path_layer(layer_paths)
     return next_loc
+
+  # add arbitrary vector to layer
+  def AddVectorToPath(self, start_loc, end_loc):
+    layer_paths = [
+        [(start_loc.long, start_loc.lat), (end_loc.long, end_loc.lat), f"Add vector "]]
+    self.add_run_paths_to_path_layer(layer_paths)
   
   def clear_layer(self):
     # if self.path_layer :

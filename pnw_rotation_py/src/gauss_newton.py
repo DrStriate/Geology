@@ -38,7 +38,7 @@ def solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, s_e, s_n, e
             e_hat = np.array([-np.sin(lam), np.cos(lam), 0.0])
             n_hat = np.array([-np.sin(phi) * np.cos(lam), -np.sin(phi) * np.sin(lam), np.cos(phi)])
             
-            # 1. Build position vector in METERS
+            # 1. Build position vector in km
             P_m = gh.R * np.array([np.cos(phi) * np.cos(lam), np.cos(phi) * np.sin(lam), np.sin(phi)])
             
             # 2. Rigid rotation velocity in meters per million years (m/Ma)
@@ -190,7 +190,6 @@ def solve_gauss_newton_2D_transform_wtd(sample_e, sample_n, v_e, v_n, w_e, w_n, 
   x, residuals, rank, s = np.linalg.lstsq(J, R, rcond=None)
   
   return {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : np.degrees(x[3])}
-
 
 def gn_print(x):
   print(f"\nt_x:\t {x['t_x']:.5f}")
