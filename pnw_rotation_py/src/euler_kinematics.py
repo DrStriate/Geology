@@ -96,7 +96,7 @@ def project_V_to_v (V, p): #V is 3D cartesion velocity, phi and lamb in radians
   n_hat = np.array([-np.sin(p['phi']) * np.cos(p['lamb']), -np.sin(p['phi']) * np.sin(p['lamb']), np.cos(p['phi'])])
   v_e = np.dot(V, e_hat)
   v_n = np.dot(V, n_hat)
-  return {"v_e" : v_e, "v_n" : v_n}
+  return np.array([v_e, v_n])
 
 def get_hat_p(p): # returns a normal to the phi,lamb point
   return np.array([ 

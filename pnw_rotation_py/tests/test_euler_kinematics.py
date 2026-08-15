@@ -7,12 +7,13 @@ import test_utils as tu
 import geo_helper as gh
 from geo_helper import PLoc, PAvel, EulerPole, R
 import gauss_newton as gn
+import gauss_newton_old as gno
 from pyproj import Geod
 
 OC_NA_Pole = EulerPole(-119.60, 45.54, 1.32)
 SeattlePloc = PLoc(-122.3321, 47.6062)
 
-def test_euler_pole_from_quad():
+def test_rot_pole_from_quad():
   #test setup
   gh.geod = Geod(a=R, b=R) 
   euler_pole = OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.32 }
@@ -30,6 +31,45 @@ def test_euler_pole_from_quad():
   assert pole_result.omega == pytest.approx(euler_pole.omega, abs=2e-3)
   assert pole_result.lat == pytest.approx(euler_pole.lat, abs=0.002)
   assert pole_result.long == pytest.approx(euler_pole.long)
+
+def test_translation_from_quad():
+  #test setup
+  gh.geod = Geod(a=R, b=R) 
+  euler_pole = EulerPole(-90, 45, 0.0)
+  v_trans = [1.0, 5.0] # mm/Yr
+  azimuths  = [45.0, 135.0, 225.0, 315.0]
+  sample_dist = 50000 # m
+
+  sample_lons, sample_lats, sample_v_east, sample_v_north = \
+    tu.create_simple_sample_quad_w_trans(euler_pole, v_trans, azimuths, sample_dist)
+
+  gn_out = gn.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole.ploc())
+
+  # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
+  gn_out2 = gn.solve_gauss_newton_translation(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole)
+
+  assert gn_out[0] == pytest.approx(v_trans[0])
+  assert gn_out[1] == pytest.approx(v_trans[1])
+
+# Debugging test
+# def test_translation_w_rot_from_quad():
+#   # Now add rotation and test translation
+#   gh.geod = Geod(a=R, b=R) 
+#   euler_pole = EulerPole(-90, 45, 1.0)
+#   v_trans = [1.0, 5.0] # mm/Yr
+#   azimuths  = [45.0, 135.0, 225.0, 315.0]
+#   sample_dist = 50000 # m
+
+#   sample_lons, sample_lats, sample_v_east, sample_v_north = \
+#     tu.create_simple_sample_quad_w_trans(euler_pole, v_trans, azimuths, sample_dist)
+
+#   gn_out = gn.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole.ploc())
+
+#   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
+#   gn_out2 = gn.getWeightedAverageValocity_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole)
+
+#   assert gn_out[0] == pytest.approx(v_trans[0])
+#   assert gn_out[1] == pytest.approx(v_trans[1])
 
 def test_euler_pole_from_random_disk():
   #test setup
@@ -49,7 +89,8 @@ def test_euler_pole_from_random_disk():
    # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
   gn_out = gn.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc())
   gn_out2 = gn.solve_gauss_newton_translation(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result)
-  
+  #gn_old = gno.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc())
+
   assert pole_result.omega == pytest.approx(test_omega)
   assert pole_result.long == pytest.approx(euler_pole.long)
   assert pole_result.lat == pytest.approx(euler_pole.lat)

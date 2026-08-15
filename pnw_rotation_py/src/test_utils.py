@@ -72,9 +72,26 @@ def create_random_sample_ring(euler_pole, count,
                               max_dist, 
                               test_omega, 
                               crop = 1.0, 
-                              source_poll = None):
+                              source_poll = None, 
+                              rms = 0.0):
+    return create_random_sample_ring_w_trans(euler_pole, count, 
+                                             np.zeros(2), 
+                                             max_dist, 
+                                             test_omega, 
+                                             crop, 
+                                             source_poll, 
+                                             rms)   
+              
+def create_random_sample_ring_w_trans(euler_pole, count, 
+                              translate_v,
+                              max_dist, 
+                              test_omega, 
+                              crop = 1.0, 
+                              source_poll = None, 
+                              rms = 0.0):
   rng = np.random.default_rng(seed=42)
   rands = rng.random(size=(count, 2))
+  v_noise = rng.normal(loc=0.0, scale=rms, size=(count, 2))
 
   sample_n = []
   sample_e = []
@@ -94,13 +111,13 @@ def create_random_sample_ring(euler_pole, count,
   for i in range(len(rands)):
     sample = gh.create_sample(euler_pole.long, euler_pole.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
     p = {"phi": np.radians(sample.lat), "lamb": np.radians(sample.long)}
-    v = ek.calculate_v_from_Euler_pole(Omega_source, p, test_omega); 
+    v = ek.calculate_v_from_Euler_pole(Omega_source, p, test_omega) + v_noise[i] + translate_v 
 
     if sample.long < crop_long:
       sample_e.append(sample.long)
       sample_n.append(sample.lat)
-      sample_v_east.append(v['v_e'])
-      sample_v_north.append(v['v_n'])
+      sample_v_east.append(v[0])
+      sample_v_north.append(v[1])
 
     # print(f"{i}: sample.long: {sample.long:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
     cropped_samples += 1
@@ -110,6 +127,8 @@ def create_random_sample_ring(euler_pole, count,
 
 #dist in km
 def create_simple_sample_quad(euler_pole, azimuths, dist, realWorld = False):
+  return create_simple_sample_quad_w_trans(euler_pole, [0, 0], azimuths, dist, realWorld)
+def create_simple_sample_quad_w_trans(euler_pole, v_trans, azimuths, dist, realWorld = False):
   longs = np.zeros(4)
   lats = np.zeros(4)
   v_easts = np.zeros(4)
@@ -141,8 +160,8 @@ def create_simple_sample_quad(euler_pole, azimuths, dist, realWorld = False):
 
     longs[i] = sample_lon
     lats[i] = sample_lat
-    v_easts [i] = v['v_e']
-    v_norths[i] = v['v_n']
+    v_easts [i] = v['v_e'] + v_trans[0]
+    v_norths[i] = v['v_n'] + v_trans[1]
     
   return longs, lats, v_easts, v_norths
 
@@ -177,6 +196,13 @@ def calculate_v_from_Euler_pole(Omega, p, omega, realWorld):
       v = project_V_to_v(V, p)
       return v
 
+# Calculates omega rotation around euler_pole as experienced by p_loc as {v_e, v_n} dict velocity
+def calculate_v_from_Euler_pole2(euler_pole, ploc, omega, realWorld): # omaga is angle of pole rotation
+  Omega = {"omega": euler_pole.omega, "phi": np.radians(euler_pole.lat), "lamb": np.radians(euler_pole.long)}
+  p = {"phi": np.radians(ploc.lat), "lamb": np.radians(ploc.long)}
+  v = calculate_v_from_Euler_pole(Omega, p, omega, realWorld)
+  return v
+
 def project_V_to_v (V, p): #V is 3D cartesion velocity, phi and lamb in radians
   e_hat = np.array([-np.sin(p['lamb']), np.cos(p['lamb']), 0 ])
   n_hat = np.array([-np.sin(p['phi']) * np.cos(p['lamb']), -np.sin(p['phi']) * np.sin(p['lamb']), np.cos(p['phi'])])
@@ -199,3 +225,31 @@ def get_hat_p(p):
         np.sin(p['phi'])
     ])
 
+# Testing regression inversions like  x, residuals, rank, s = np.linalg.lstsq(A, B, rcond=None)
+def test_regression_stats(x, A, B, residuals, verbose = False):
+  if residuals.size == 0:
+    y_pred = A @ x
+    ssr = np.sum((B - y_pred) ** 2)
+  else:
+      ssr = residuals[0]  # Sum of squared residuals
+
+  # Total sum of squares
+  tss = np.sum((B - np.mean(B)) ** 2)
+
+  # R-squared (R2)
+  r_squared = 1 - (ssr / tss)
+
+  # Root Mean Squared Error (RMSE)
+  n = len(B)
+  rmse = np.sqrt(ssr / n)
+
+  if verbose or test_verbose:
+    print("")
+    print(f"Sum of Squared Residuals (SSR): {ssr:.4f}")
+    print(f"R-squared (Goodness of Fit): {r_squared:.4f}")
+    print(f"Root Mean Squared Error (RMSE): {rmse:.4f}")
+
+  return  {"ssr" : ssr, "r_squared" : r_squared, "rmse" : rmse}  
+
+
+test_verbose = False

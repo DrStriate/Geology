@@ -171,9 +171,10 @@ class YhsPath:
     self.PnwRotPole.print("self.PnwRotPole: ")
 
     offsets = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, mod_ve_list, mod_vn_list, s_e, s_n, self.PnwRotPole )
+    print(f"offsets: {offsets}")
 
     label_text1 = f"{self.PnwRotPole.long:.4f}, {self.PnwRotPole.lat:.4f}, {self.PnwRotPole.omega:.3f} deg, "
-    label_text2 = f"e: {offsets[0]:.2f} km, n: {offsets[1]:.2f} km, {diam} km"
+    label_text2 = f"e: {offsets[0]:.3f} km, n: {offsets[1]:.3f} km, {diam} km"
     self.parent.geoWhiteboard.draw_target(self.PnwRotPole.long, self.PnwRotPole.lat, label_text1 + label_text2)
     #print(label_text1 + label_text2)
 
@@ -184,6 +185,7 @@ class YhsPath:
       self.parent.yhsRotFeatureList.append(feature)
       self.PnwVPAvel  = getPAvel(self.delta_ve, self.delta_vn)
     else:
+
       self.PnwVPAvel = PAvel(0, 0)
   
     self.delta_ve = offsets[0]

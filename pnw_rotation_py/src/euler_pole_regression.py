@@ -51,10 +51,11 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, s_e = None, s_n =
         B[2*i+1]    = v_north_obs[i]                * sw_n
         
     north_hemisphere = (sum_lats > 0.0)
-    
+
     # Solves the weighted normal equations: A^T * W * A * omega = A^T * W * B
     omega_cartesian, residuals, rank, s = np.linalg.lstsq(A, B, rcond=None)
-    
+    tu.test_regression_stats(omega_cartesian, A, B, residuals, False)
+
     wx, wy, wz = omega_cartesian
 
     if (wz > 0) != north_hemisphere: # if w and incoming data not in the same N/S hemisphere
@@ -89,8 +90,6 @@ def fit_euler_pole_linear2(lats, lons, v_east_obs, v_north_obs, s_e=None, s_n=No
     B = np.zeros(2 * num_stations)
     
     sum_lats = 0
-    # Use Earth's radius in kilometers to keep the matrix columns well-conditioned
-    R_km = 6371.0  
 
     for i in range(num_stations):
         phi = np.radians(lats[i])
@@ -108,10 +107,10 @@ def fit_euler_pole_linear2(lats, lons, v_east_obs, v_north_obs, s_e=None, s_n=No
         n_hat = np.array([-np.sin(phi) * np.cos(lam), -np.sin(phi) * np.sin(lam), np.cos(phi)])
         
         # 1. Build position vector in KILOMETERS 
-        P_km = R_km * np.array([np.cos(phi) * np.cos(lam), np.cos(phi) * np.sin(lam), np.sin(phi)])
+        P = R * np.array([np.cos(phi) * np.cos(lam), np.cos(phi) * np.sin(lam), np.sin(phi)])
         
-        row_east_pole = np.cross(P_km, e_hat)
-        row_north_pole = np.cross(P_km, n_hat)
+        row_east_pole = np.cross(P, e_hat)
+        row_north_pole = np.cross(P, n_hat)
         
         idx_e = 2 * i
         idx_n = 2 * i + 1
@@ -147,7 +146,7 @@ def fit_euler_pole_linear2(lats, lons, v_east_obs, v_north_obs, s_e=None, s_n=No
     lon_pole = np.degrees(np.arctan2(Omega_c[1], Omega_c[0]))
     
     # 4. Convert your output offset BACK to your legacy application's expected m/Ma scaling
-    Offset_legacy = Offset_raw * 1000.0
+    Offset_legacy = Offset_raw
     
     return EulerPole(lon_pole, lat_pole, omega_deg_myr), Offset_legacy
 
@@ -232,15 +231,17 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
 
     # get data Euler pole from the raw data set
     raw_pole = fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list, we_list, wn_list)
-    #raw_pole.print("1: rotPole: ")
+    # raw_pole.print("1: rotPole: ")
      
     # apply Gauss-Newton analysis to get any translation (non-rotation) components
     offset = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
-    # print(f"gn_out: {offset}")
+    # offset = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
+
+    # print(f"solve_gauss_newton_translation_wtd: {offset}")
 
     # strip any translation element to get rot-only 
-    rot_ve_list = np.array(ve_list) - offset[0] #gn_out['t_x']
-    rot_vn_list = np.array(vn_list) - offset[1] #gn_out['t_y']
+    rot_ve_list = np.array(ve_list) - offset[0]
+    rot_vn_list = np.array(vn_list) - offset[1] 
 
     # get data Euler pole from the raw data set
     rot_pole = fit_euler_pole_linear(lat_list, long_list, rot_ve_list, rot_vn_list, we_list, wn_list)

@@ -19,7 +19,10 @@ def test_translation_east():
   v_n = [0.0, 0.0, 0.0, 0.0]
   x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n)
   #print(f"east translate X: {x}\n")
-  assert x['t_x'] == t_e
+  assert x[0] == t_e
+  assert x[1] == 0.0
+
+  
 
 def test_translation_north():
   #test 2 = translate north
@@ -28,9 +31,10 @@ def test_translation_north():
   v_n = [t_n, t_n, t_n, t_n]
   x = gn.solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n)
   #print(f"North translate X: {x}\n")
-  assert x['t_y'] == t_n
+  assert x[0] == 0.0
+  assert x[1] == t_n
 
-def test_against_pnw_GPS_data():
+def test_gm_regress_against_pnw_GPS_data():
   # Absolute path of the script
   script_path = Path(__file__).resolve()
   # print(script_path)
@@ -42,7 +46,6 @@ def test_against_pnw_GPS_data():
   lats, lons, v_easts, v_norths, s_e, s_n = \
     tu.get_GPS_rotation_data(center_ploc.long, center_ploc.lat, max_distance)
 
-  # x = gn.solve_gauss_newton_2D_transform_geo_wtd(lons, lats, v_easts, v_norths, s_e, s_n, center_ploc)
   x = gn.solve_gauss_newton_translation_wtd(lons, lats, v_easts, v_norths, s_e, s_n, euler_pole)
 
   #print(f"samples: {len(lats)}")
@@ -51,3 +54,4 @@ def test_against_pnw_GPS_data():
   x_sb = np.array([1.07832394265, 3.36762990407])
   assert(x[0] == pytest.approx(x_sb[0]))
   assert(x[1] == pytest.approx(x_sb[1]))
+

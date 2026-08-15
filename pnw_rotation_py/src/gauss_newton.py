@@ -1,4 +1,5 @@
 import geo_helper as gh
+import test_utils as tu
 
 def solve_gauss_newton_translation(lats, lons, v_e_obs, v_n_obs, euler_pole):
   return solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, None, None, euler_pole)
@@ -67,9 +68,11 @@ def solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, s_e, s_n, e
             J[idx_n, 0:3] = n_hat * sw_n
             
         try:
-            delta, _, _, _ = np.linalg.lstsq(J, r, rcond=None)
+            delta, residual, _, _ = np.linalg.lstsq(J, r, rcond=None)
         except np.linalg.LinAlgError:
             break
+
+        tu.test_regression_stats(delta, J, r, residual, False)
             
         T += delta
         if np.linalg.norm(delta) < 1e-6:
@@ -135,7 +138,10 @@ def solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n, normalize = Tr
     # JTR = JT.dot(R)
 
   x, residuals, rank, s = np.linalg.lstsq(J, R, rcond=None)
-  return  {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : x[3]}
+  tu.test_regression_stats(x, J, R, residuals, False)
+
+  #return  {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : x[3]}
+  return np.array([x[0], x[1]])
 
 # Gauss-Newton 2d *weighted* solver for translation, rotation and scale in 2D 
 import numpy as np
@@ -188,11 +194,46 @@ def solve_gauss_newton_2D_transform_wtd(sample_e, sample_n, v_e, v_n, w_e, w_n, 
   # np.linalg.lstsq solves the system: (sqrt(W)*J)^T * (sqrt(W)*J) * x = (sqrt(W)*J)^T * (sqrt(W)*r)
   # Which simplifies exactly to: J^T * W * J * x = J^T * W * r
   x, residuals, rank, s = np.linalg.lstsq(J, R, rcond=None)
+  tu.test_regression_stats(x, J, R, residuals, False)
   
-  return {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : np.degrees(x[3])}
+  # return {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : np.degrees(x[3])}
+  return np.array([x[0], x[1]])
 
-def gn_print(x):
-  print(f"\nt_x:\t {x['t_x']:.5f}")
-  print(f"t_y:\t {x['t_y']:.5f}")
-  print(f"s:  \t {x['s']:.5f}")
-  print(f"r:  \t {x['r']:.5f}°")
+# Gauss-Newton 2d solver for translation, rotation and scale in 2D 
+def getAverageValocity_geo(sample_long, sample_lat, v_e, v_n, euler_pole): # meters and mm/Y units 
+  sample_e, sample_n = gh.getSamplePoints(sample_long, sample_lat, euler_pole)
+  return getWeightedAverageValocity(sample_e, sample_n, v_e, v_n)
+
+# lats and longs should be normalized relative to "center" of rotation for best results
+def getWeightedAverageValocity(sample_e, sample_n, v_e, v_n): # meters and mm/Y units 
+  N = len(v_e)
+  
+  J = np.zeros((2 * N, 2))
+  R = np.zeros(2 * N)
+
+  j_idx = 0
+  for i in range(N):
+
+    J[j_idx, 0] = 1.0
+    J[j_idx, 1] = 0.0
+
+    R[j_idx] = v_e[i]
+    j_idx += 1
+
+    J[j_idx, 0] = 0.0
+    J[j_idx, 1] = 1.0
+
+    R[j_idx] = v_n[i]
+    j_idx += 1
+
+
+  x, residuals, rank, s = np.linalg.lstsq(J, R, rcond=None)
+  tu.test_regression_stats(x, J, R, residuals, False)
+
+  return np.array([x[0], x[1]])
+
+# def gn_print(x):
+#   print(f"\nt_x:\t {x['t_x']:.5f}")
+#   print(f"t_y:\t {x['t_y']:.5f}")
+#   print(f"s:  \t {x['s']:.5f}")
+#   print(f"r:  \t {x['r']:.5f}°")
