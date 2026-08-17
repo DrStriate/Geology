@@ -108,22 +108,17 @@ def get_hat_p(p): # returns a normal to the phi,lamb point
 def get_hat(lat, long):
    return get_hat_p({'lamb': np.radians(long), 'phi': np.radians(lat)})
 
+# omega not passed makes v based on euler_pole.omega, otherwise we use argument omega
+def calculate_v_from_EulerPole(euler_pole, ploc, omega = None):
+  Omega = {"omega": euler_pole.omega, "phi": np.radians(euler_pole.lat), "lamb": np.radians(euler_pole.long)}
+  p = {"phi": np.radians(ploc.lat), "lamb": np.radians(ploc.long)}
+  v = calculate_v_from_Euler_pole(Omega, p, euler_pole.omega if omega is None else omega)
+  # BUG - not clear why the sign is flipped on V (see test_v_pole_from_sample_point)
+  return -v
+
 def calculate_v_from_Euler_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {phi, lamb, omega} radians
   P = R * get_hat_p(p)
   O = np.radians(omega) * get_hat_p(Omega)
   V = np.cross(P, O)
   v = project_V_to_v(V, p)
   return v
-
-def calculate_v_from_AzDist(pole, az, distance):
-    # Linear speed (v = omega * distance)
-    # Ensure omega and distance units match (e.g., rad/s and meters -> m/s)
-    speed = np.radians(pole.omega) * distance
-    
-    # Convert azimuth from degrees to radians
-    azimuth_rad = np.radians(az)
-    
-    # Calculate east and north components
-    v_east = speed * np.sin(azimuth_rad)
-    v_north = speed * np.cos(azimuth_rad)
-    return v_east, v_north

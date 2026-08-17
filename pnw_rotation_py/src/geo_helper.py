@@ -3,7 +3,6 @@ from haversine import haversine, Unit
 from pyproj import Geod
 from dataclasses import dataclass
 
-
 R = 6371.0 # Earth radius in km
 
 geod = Geod(ellps="WGS84")
@@ -12,7 +11,7 @@ def setGeod(realWorld):
     if realWorld:
         geod = Geod(ellps="WGS84")
     else:
-        geod = Geod(a=R, b=R)
+        geod = Geod(a=R*1e3, b=R*1e3)
 
 def kmPerDegree():
     return R * np.pi / 180.0
@@ -58,14 +57,17 @@ class PVel:
 
 @dataclass
 # PAvel azimuth is in degrees (cw from N) and vel is in  mm/yr or km/Ma (equiv)
-# PAvel is an Azimuth & Speed proxy for PVel
-# as with PVel, distance measurements in plate kinematics should be in degrees, not kilometers.
+# Note that distance measurements in plate kinematics should be in degrees, not kilometers.
 class PAvel:
     azimuth: float
     vel: float
     def print(self, label = ""): 
         print (f"{label} azimuth: {self.azimuth:0.3f}, vel:  {self.vel:0.3f}")
-    #def getAzimuth (ploc1, ploc2): #useful to track forward azimuth on 
+    @classmethod
+    def from_V(cls, v2) -> 'PAvel': # V2 is [east_v, north_v]
+        return cls(
+            np.degrees(np.arctan2(v2[0], v2[1])),
+            np.hypot(v2[0], v2[1]))
        
 @dataclass
 class EulerPole:
@@ -131,13 +133,13 @@ def getFwdAzimuthFromLocations (point1, point2):
     forward_azimuth, back_azimuth, distance_meters = geod.inv(point1.long, point1.lat, point2.long, point2.lat)
     return forward_azimuth % 360
 
-def create_sample (start_lon, start_lat, azimuth, distance):
+def create_sample (start_lon, start_lat, azimuth, distance): # distance in km
     # Calculate the terminus point
     end_lon, end_lat, back_azimuth = geod.fwd(
         start_lon, 
         start_lat, 
         azimuth, 
-        distance)
+        distance * 1e3,) # convert km to m
     return PLoc(end_lon, end_lat)
 
 def clamp(value, minimum, maximum):

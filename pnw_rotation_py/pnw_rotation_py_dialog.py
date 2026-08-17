@@ -50,6 +50,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     name = 'PnwRotPyDialog'
     destRotDataLayerName = 'Pnw Rotation Data'
+    TEST_DATA = True
 
     def __init__(self, parent=None):
         super(PnwRotPyDialog, self).__init__(parent)
@@ -227,7 +228,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
 
-        self.yhsPath.displayGPSDataAndPoles()
+        self.yhsPath.displayGPSDataAndPoles(self.TEST_DATA)
 
         self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
         QgsProject.instance().addMapLayer(self.rotDestLayer)

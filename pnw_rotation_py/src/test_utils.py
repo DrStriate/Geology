@@ -1,10 +1,10 @@
 import os
 import numpy as np
 import euler_kinematics as ek
-import euler_pole_regression as epr
 import geopandas as gpd
 import geo_helper as gh
-from geo_helper import R, EulerPole
+from geo_helper import R, PAvel, PLoc
+from pyproj import Geod
 
 OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
 
@@ -19,6 +19,7 @@ def get_test_data():
   return get_GPS_rotation_data(OC_NA_Pole.long, OC_NA_Pole.lat, 6e5)
 
 def get_GPS_rotation_data (center_long, center_lat, max_distance):
+  gh.setGeod(realWorld=True)
   file_path = get_data_file_path("NSHM2023_GPS_velocity.zip")
   gdf = gpd.read_file(f"/vsizip/{file_path}")
   list_lats = gdf['geometry'].y.values
@@ -68,26 +69,26 @@ def get_GPS_rotation_data (center_long, center_lat, max_distance):
 #     #print(f"{i}: sample.long: {sample.long:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
 #   return longs, lats, v_easts, v_norths
 
-def create_random_sample_ring(euler_pole, count, 
-                              max_dist, 
-                              test_omega, 
-                              crop = 1.0, 
-                              source_poll = None, 
-                              rms = 0.0):
-    return create_random_sample_ring_w_trans(euler_pole, count, 
-                                             np.zeros(2), 
-                                             max_dist, 
-                                             test_omega, 
-                                             crop, 
-                                             source_poll, 
-                                             rms)   
+# for use in qgis in to run synthetic test data 
+def setup_test_disc(center_long, center_lat, max_dist):
+  centerPloc = PLoc(center_long, center_lat)
+
+  #pole for generating samples
+  v_in = [0.767, 3.545] # v pavel from typical calibration
+  v_pavel = PAvel.from_V(v_in) 
+  pnwVPole = ek.getEulerPoleFromPlocAndPavel(centerPloc, v_pavel)
+
+  gh.setGeod(realWorld = False)
+  sample_count = 400
+  crop = 1.0 # no crop
+  return create_random_sample_ring(pnwVPole, centerPloc, sample_count, max_dist, pnwVPole.omega, crop)
               
-def create_random_sample_ring_w_trans(euler_pole, count, 
-                              translate_v,
+def create_random_sample_ring(euler_pole, 
+                              sample_ploc,
+                              count,
                               max_dist, 
                               test_omega, 
                               crop = 1.0, 
-                              source_poll = None, 
                               rms = 0.0):
   rng = np.random.default_rng(seed=42)
   rands = rng.random(size=(count, 2))
@@ -98,20 +99,14 @@ def create_random_sample_ring_w_trans(euler_pole, count,
   sample_v_east = []
   sample_v_north = [] # mm/ yr
 
-  Omega = {"omega": euler_pole.omega, "phi": np.radians(euler_pole.lat), "lamb": np.radians(euler_pole.long)}
-  if source_poll:
-    Omega_source = {"omega": source_poll.omega, "phi": np.radians(source_poll.lat), "lamb": np.radians(source_poll.long)}
-  else:
-    Omega_source = Omega
-
-  max_long =  gh.create_sample(euler_pole.long, euler_pole.lat, 90.0, max_dist).long
-  min_long =  gh.create_sample(euler_pole.long, euler_pole.lat, 270.0, max_dist).long
+  max_long =  gh.create_sample(sample_ploc.long, sample_ploc.lat, 90.0, max_dist).long
+  min_long =  gh.create_sample(sample_ploc.long, sample_ploc.lat, 270.0, max_dist).long
   crop_long = min_long + (max_long - min_long) * crop
   cropped_samples = 0;
+
   for i in range(len(rands)):
-    sample = gh.create_sample(euler_pole.long, euler_pole.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
-    p = {"phi": np.radians(sample.lat), "lamb": np.radians(sample.long)}
-    v = ek.calculate_v_from_Euler_pole(Omega_source, p, test_omega) + v_noise[i] + translate_v 
+    sample = gh.create_sample(sample_ploc.long, sample_ploc.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
+    v = ek.calculate_v_from_EulerPole(euler_pole, sample, test_omega) + v_noise[i]
 
     if sample.long < crop_long:
       sample_e.append(sample.long)
@@ -121,8 +116,9 @@ def create_random_sample_ring_w_trans(euler_pole, count,
 
     # print(f"{i}: sample.long: {sample.long:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
     cropped_samples += 1
+
   #print(f"samples = {cropped_samples} out of {count}")
-  
+
   return sample_n, sample_e, sample_v_east, sample_v_north
 
 #dist in km

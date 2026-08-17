@@ -8,7 +8,7 @@ import numpy as np
 from pyproj import Geod
 
 def test_quad_pole():
-  gh.geod = Geod(a=R, b=R) 
+  gh.setGeod(realWorld = False) 
   euler_pole  = EulerPole(-99, 45.0, 1.32) # long, lat, omega
   azimuths  = [45.0, 135.0, 225.0, 315.0] # directions  to test lat/long
   sample_dist = 50000 # m
@@ -31,7 +31,7 @@ def test_quad_pole():
 
 # demonstrating new pole-offset results in same pole when v's moved by constant and good extraction
 def test_offset_quad_pole():
-  gh.geod = Geod(a=R, b=R) 
+  gh.setGeod(realWorld = False) 
   euler_pole  = EulerPole(-99, 45.0, 1.32) # long, lat, omega
   azimuths  = [45.0, 135.0, 225.0, 315.0] # directions  to test lat/long
   sample_dist = 50 # km
@@ -59,7 +59,7 @@ def test_offset_quad_pole():
 
 # repo of 'decomposed' regression we used to iterate to get offset. Note sb pole 
 def test_euler_GPS_pole_extraction_legacy():
-  gh.geod = Geod(ellps='WGS84')
+  gh.setGeod(realWorld = True)
   center_lat = 45.0
   center_long = -118
   max_distance = 600000 # m
@@ -74,7 +74,7 @@ def test_euler_GPS_pole_extraction_legacy():
   assert pole_result.omega == pytest.approx(pole_result_sb.omega)
 
 def test_euler_GPS_pole_extraction2():
-  gh.geod = Geod(ellps='WGS84')
+  gh.setGeod(realWorld = True)
   center_lat = 45.0
   center_long = -118
   max_distance = 600000 # m

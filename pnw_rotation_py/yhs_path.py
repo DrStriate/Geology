@@ -149,13 +149,20 @@ class YhsPath:
   
     return loc_3
 
-  def displayGPSDataAndPoles(self):
+  def displayGPSDataAndPoles(self, test):
     setGeod(realWorld = True)
     diam = 600 # km
-    center_lat = 45.0
-    center_long = -119.0
-    lat_list, long_list, ve_list, vn_list, s_e, s_n =\
-      tu.get_GPS_rotation_data(center_long, center_lat, diam * 1000)
+    center = PLoc(45.0, -119.9)
+
+    if test:
+      lat_list, long_list, ve_list, vn_list =\
+        tu.setup_test_disc(center.long, center.lat, diam)
+      s_e = None
+      s_n = None
+    else:
+      lat_list, long_list, ve_list, vn_list, s_e, s_n =\
+        tu.get_GPS_rotation_data(center.long, center.lat, diam)
+      
     mod_ve_list = np.array(ve_list) - self.delta_ve
     mod_vn_list = np.array(vn_list) - self.delta_vn
 
