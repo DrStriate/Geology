@@ -97,8 +97,8 @@ def solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, s_e, s_n, e
 
 # Gauss-Newton 2d solver for translation, rotation and scale in 2D 
 import numpy as np
-def solve_gauss_newton_2D_transform_geo(sample_long, sample_lat, v_e, v_n, euler_pole, normalize = True): # meters and mm/Y units 
-  sample_e, sample_n = gh.getSamplePoints(sample_long, sample_lat, euler_pole)
+def solve_gauss_newton_2D_transform_geo(sample_long, sample_lat, v_e, v_n, center_ploc, normalize = True): # meters and mm/Y units 
+  sample_e, sample_n = gh.getSamplePoints(sample_long, sample_lat, center_ploc)
   return solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n, normalize)
 
 # lats and longs should be normalized relative to "center" of rotation for best results
@@ -237,8 +237,8 @@ def getWeightedAverageValocity(sample_e, sample_n, v_e, v_n): # meters and mm/Y 
 
   return np.array([x[0], x[1]])
 
-# def gn_print(x):
-#   print(f"\nt_x:\t {x['t_x']:.5f}")
-#   print(f"t_y:\t {x['t_y']:.5f}")
-#   print(f"s:  \t {x['s']:.5f}")
-#   print(f"r:  \t {x['r']:.5f}°")
+def gn_print(x):
+  print(f"\nt_x:\t {x['t_x']:.5f}")
+  print(f"t_y:\t {x['t_y']:.5f}")
+  print(f"s:  \t {x['s']:.5f}")
+  print(f"r:  \t {x['r']:.5f}°")

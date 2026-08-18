@@ -16,7 +16,7 @@ def test_rot_pole_from_quad():
   gh.setGeod(realWorld = False) 
   euler_pole = OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.32 }
   azimuths  = [45.0, 135.0, 225.0, 315.0]
-  sample_dist = 50 # m
+  sample_dist = 50 # km
 
   sample_lons, sample_lats, sample_v_east, sample_v_north = tu.create_simple_sample_quad(euler_pole, azimuths, sample_dist)
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
@@ -36,7 +36,7 @@ def test_translation_from_quad():
   euler_pole = EulerPole(-90, 45, 0.0)
   v_trans = [1.0, 5.0] # mm/Yr
   azimuths  = [45.0, 135.0, 225.0, 315.0]
-  sample_dist = 50 # m
+  sample_dist = 50 # km
 
   sample_lons, sample_lats, sample_v_east, sample_v_north = \
     tu.create_simple_sample_quad_w_trans(euler_pole, v_trans, azimuths, sample_dist)
@@ -56,7 +56,7 @@ def test_translation_from_quad():
 #   euler_pole = EulerPole(-90, 45, 1.0)
 #   v_trans = [1.0, 5.0] # mm/Yr
 #   azimuths  = [45.0, 135.0, 225.0, 315.0]
-#   sample_dist = 50000 # m
+#   sample_dist = 50 # km
 
 #   sample_lons, sample_lats, sample_v_east, sample_v_north = \
 #     tu.create_simple_sample_quad_w_trans(euler_pole, v_trans, azimuths, sample_dist)
