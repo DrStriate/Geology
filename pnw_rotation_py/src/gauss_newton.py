@@ -174,9 +174,8 @@ def solve_gauss_newton_2D_transform_wtd(sample_e, sample_n, v_e, v_n, w_e, w_n, 
     u = sample_e[i] - c[0]
     v = sample_n[i] - c[1]
 
-    # Current root weights for this point
-    sw_e = 1.0 / w_e[i]
-    sw_n = 1.0 / w_n[i]
+    sw_e = 1.0 / w_e[i] if w_e is not None else 1.0
+    sw_n = 1.0 / w_n[i] if w_n is not None else 1.0
 
     # Weighted Jacobian and Residual elements for Easting (Dx)
     J[j_idx, 0] = 1.0 * sw_e

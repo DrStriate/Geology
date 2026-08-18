@@ -237,10 +237,10 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
     # raw_pole.print("1: rotPole: ")
      
     # apply Gauss-Newton analysis to get any translation (non-rotation) components
-    offset = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
-    # offset = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
+    # offset = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
+    offset = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
 
-    # print(f"solve_gauss_newton_translation_wtd: {offset}")
+    # print(f"solve_gauss_newton_2D_transform_geo_wtd: {offset}")
 
     # strip any translation element to get rot-only 
     rot_ve_list = np.array(ve_list) - offset[0]
