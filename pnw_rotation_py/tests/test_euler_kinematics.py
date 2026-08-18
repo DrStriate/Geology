@@ -18,13 +18,12 @@ def test_rot_pole_from_quad():
   azimuths  = [45.0, 135.0, 225.0, 315.0]
   sample_dist = 50 # km
 
-  sample_lons, sample_lats, sample_v_east, sample_v_north = \
-    tu.create_simple_sample_quad(euler_pole, azimuths, sample_dist)
+  sample_lons, sample_lats, sample_v_east, sample_v_north = tu.create_simple_sample_quad(euler_pole, azimuths, sample_dist)
   pole_result = epr.fit_euler_pole_linear(sample_lats, sample_lons, sample_v_east, sample_v_north, True)
   # ek.print_result ("test_euler_pole_from_quad", pole_result)
 
   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc())
+  gn_out = gn.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc())
   gn_out2 = gn.solve_gauss_newton_translation(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result)
 
   assert pole_result.omega == pytest.approx(euler_pole.omega, abs=2e-3)
@@ -42,7 +41,7 @@ def test_translation_from_quad():
   sample_lons, sample_lats, sample_v_east, sample_v_north = \
     tu.create_simple_sample_quad_w_trans(euler_pole, v_trans, azimuths, sample_dist)
 
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole.ploc())
+  gn_out = gn.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole.ploc())
 
   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
   gn_out2 = gn.solve_gauss_newton_translation(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole)
@@ -62,7 +61,7 @@ def test_translation_from_quad():
 #   sample_lons, sample_lats, sample_v_east, sample_v_north = \
 #     tu.create_simple_sample_quad_w_trans(euler_pole, v_trans, azimuths, sample_dist)
 
-#   gn_out = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole.ploc())
+#   gn_out = gn.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole.ploc())
 
 #   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
 #   gn_out2 = gn.getWeightedAverageValocity_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, euler_pole)
@@ -85,8 +84,9 @@ def test_euler_pole_from_random_disk():
   # ek.print_result ("test_euler_pole_from_random_disk", pole_result)
 
    # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc())
+  gn_out = gn.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc())
   gn_out2 = gn.solve_gauss_newton_translation(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result)
+  #gn_old = gno.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc())
 
   assert pole_result.omega == pytest.approx(test_omega)
   assert pole_result.long == pytest.approx(euler_pole.long)
@@ -120,7 +120,7 @@ def test_v_pole_from_random_disk():
     tu.create_random_sample_ring(pnwVPole, rotPole.ploc(), sample_count, diam, pnwVPole.omega, crop)
   
   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(sample_lons, sample_lats, sample_v_east, sample_v_north, rotPole.ploc())
+  gn_out = gn.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, rotPole.ploc())
   gn_out2 = gn.solve_gauss_newton_translation(sample_lons, sample_lats, sample_v_east, sample_v_north, rotPole)
 
   assert gn_out == pytest.approx(v_in, abs=0.005)
@@ -212,11 +212,11 @@ def test_combined_GPS_pole_extraction():
   #epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
   #pAvel_result.print("PAvel_result: ")
 
-  pole_result_sb = EulerPole(-120.0989074197468, 44.42671931880976, 0.5949532453109426)
+  pole_result_sb = EulerPole(-120.1513016164426, 44.52374883336583, 0.5953505334803234)
   assert pole_result.long == pytest.approx(pole_result_sb.long)
   assert pole_result.lat == pytest.approx(pole_result_sb.lat)
   assert pole_result.omega == pytest.approx(pole_result_sb.omega)
-  paVel_result_sb = PAvel(12.210188380575712, 3.6270103641193825)
+  paVel_result_sb = PAvel(13.769589307629431, 3.6941074873911446)
   assert pAvel_result.azimuth == pytest.approx(paVel_result_sb.azimuth)
   assert pAvel_result.vel == pytest.approx(paVel_result_sb.vel)
 
@@ -268,6 +268,6 @@ def test_3_pole_50ma_yhs_movement():
   
   yhsLoc50Ma = ek.getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, yhsLoc0Ma, ma)
 
-  ploc50maSB = PLoc(-124.3471338274746, 41.53563788930763)
+  ploc50maSB = PLoc(-124.34636238042988, 41.522228097217834)
   assert yhsLoc50Ma.lat == pytest.approx(ploc50maSB.lat)
   assert yhsLoc50Ma.long == pytest.approx(ploc50maSB.long)

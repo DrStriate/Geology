@@ -185,7 +185,7 @@ class YhsPath:
     self.PnwRotPole = epr.fit_euler_pole_linear(lat_list, long_list, mod_ve_list, mod_vn_list, s_e, s_n)
     self.PnwRotPole.print("self.PnwRotPole: ")
 
-    offsets = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, mod_ve_list, mod_vn_list, s_e, s_n, self.PnwRotPole )
+    offsets = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, mod_ve_list, mod_vn_list, s_e, s_n, self.PnwRotPole )
     print(f"offsets: {offsets}")
 
     label_text1 = f"{self.PnwRotPole.long:.4f}, {self.PnwRotPole.lat:.4f}, {self.PnwRotPole.omega:.3f} deg, "
