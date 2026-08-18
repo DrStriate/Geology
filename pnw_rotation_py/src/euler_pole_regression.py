@@ -18,6 +18,9 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, s_e = None, s_n =
     """
     
     num_stations = len(lats)
+
+    if num_stations < 3:
+        return EulerPole(0, 0, 0)
     
     # Initialize design matrix A and observation vector B
     A = np.zeros((2 * num_stations, 3))
@@ -253,8 +256,7 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
     # offset is in meters per ma and we want a rate (km/ma or mm/yr) so we need to scale
     return rot_pole, pnwVPAVel
 
-def getPnwGpsRotPoleAndVelocity(sample_radius = 600): 
-  sample_center = PLoc(-119.0, 45.0) # just used to filter candidate points for regression
+def getPnwGpsRotPoleAndVelocity(sample_center, sample_radius): 
   lats, longs, ves, vns, wes, wns=\
     tu.get_GPS_rotation_data(sample_center.long, sample_center.lat, sample_radius * 1000)   
   rot_pole, pnwVPAVel = extractEulerPoleUsingCombinedRegressions(lats, longs, ves, vns, wes, wns)

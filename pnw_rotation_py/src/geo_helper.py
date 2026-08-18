@@ -133,13 +133,13 @@ def getFwdAzimuthFromLocations (point1, point2):
     forward_azimuth, back_azimuth, distance_meters = geod.inv(point1.long, point1.lat, point2.long, point2.lat)
     return forward_azimuth % 360
 
-def create_sample (start_lon, start_lat, azimuth, distance): # distance in km
+def create_sample (start_lon, start_lat, azimuth, distance): # distance in meters!
     # Calculate the terminus point
     end_lon, end_lat, back_azimuth = geod.fwd(
         start_lon, 
         start_lat, 
         azimuth, 
-        distance * 1e3,) # convert km to m
+        distance) 
     return PLoc(end_lon, end_lat)
 
 def clamp(value, minimum, maximum):
@@ -208,22 +208,3 @@ def getVeVnFromAzvel(pLoc, pAzvel): #cartesian Ve and Vn for point, and motion a
                     np.cos(np.radians(pAzvel.azimuth)) * pAzvel.vel])
     # return scaled velocity in easterly and northerly directions
     return e_hat * V[0], n_hat * V[1]
-
-def find_moments(long_list, lat_list, ve_list, vn_list, pole):
-    sum_alpha = 0.0
-    avg_alpha = 0.0
-    count = len(ve_list) 
-    pe_list, pn_list = getSamplePoints(long_list, lat_list, pole)
-    for i in range(count):
-        v = np.array([ve_list[i], vn_list[i]])
-        p = np.array([pe_list[i], pn_list[i]])
-        s = p + v
-        norm_s = np.linalg.norm(s)
-        norm_p = np.linalg.norm(p)
-        dot_vp = np.dot(s, p)/(norm_p * norm_s)
-        angle_vp = np.degrees(np.acos(dot_vp))
-        # print(f"angle_vp: {angle_vp:.4f}")
-        sum_alpha += angle_vp
-    if count > 0:
-        avg_alpha = sum_alpha / count
-    return avg_alpha

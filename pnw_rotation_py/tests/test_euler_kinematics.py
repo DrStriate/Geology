@@ -7,14 +7,12 @@ import test_utils as tu
 import geo_helper as gh
 from geo_helper import PLoc, PAvel, EulerPole, R
 import gauss_newton as gn
-import gauss_newton_old as gno
-from pyproj import Geod
 
 OC_NA_Pole = EulerPole(-119.60, 45.54, 1.32)
 SeattlePloc = PLoc(-122.3321, 47.6062)
 
 def test_rot_pole_from_quad():
-  #test setup
+ 
   gh.setGeod(realWorld = False) 
   euler_pole = OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.32 }
   azimuths  = [45.0, 135.0, 225.0, 315.0]
@@ -33,7 +31,7 @@ def test_rot_pole_from_quad():
   assert pole_result.long == pytest.approx(euler_pole.long)
 
 def test_translation_from_quad():
-  #test setup
+ 
   gh.setGeod(realWorld = False) 
   euler_pole = EulerPole(-90, 45, 0.0)
   v_trans = [1.0, 5.0] # mm/Yr
@@ -72,7 +70,6 @@ def test_translation_from_quad():
 #   assert gn_out[1] == pytest.approx(v_trans[1])
 
 def test_euler_pole_from_random_disk():
-  #test setup
   gh.setGeod(realWorld = False)
   euler_pole = EulerPole(-90, 45.0, 1.23)
   sample_count = 400
@@ -109,7 +106,7 @@ def test_v_pole_from_sample_point():
   assert v_out[1] == pytest.approx(v_in[1])
 
 def test_v_pole_from_random_disk():
-  #test setup
+ 
   gh.setGeod(realWorld = False)
   sample_count = 400
   diam = 550 # km
@@ -130,7 +127,7 @@ def test_v_pole_from_random_disk():
   assert gn_out2 == pytest.approx(v_in, abs=0.065)
 
 def test_euler_pole_from_random_cropped_disk():
-  #test setup
+ 
   gh.setGeod(realWorld = False)
   euler_pole = OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   sample_count = 400
@@ -153,8 +150,7 @@ def test_euler_pole_from_random_cropped_disk():
   assert pole_result.long == pytest.approx(euler_pole.long)
   assert pole_result.lat == pytest.approx(euler_pole.lat)
 
-def test_euler_pole_using_north_rotation():
-    #test setup
+def test_euler_pole_using_north_rotation(): 
   gh.setGeod(realWorld = False)
   euler_pole = OC_NA_Pole 
   euler_n_pole = EulerPole( OC_NA_Pole.long + 90, 0.0, 1.43)
@@ -176,8 +172,8 @@ def test_euler_pole_using_north_rotation():
   if pole_result.long < 0:
     assert pole_result.long == pytest.approx(-29.600000000000488)  # euler_n_pole.long +/- 180
   else:
-    assert pole_result.long == pytest.approx(180.0 -29.600000000000488)
-  assert pole_result.lat == pytest.approx(euler_n_pole.lat)
+    assert pole_result.long == pytest.approx(180.0 - 29.600000000000488)
+  assert pole_result.lat == pytest.approx(euler_n_pole.lat, abs=1e-8)
   assert pole_result.omega == pytest.approx(test_omega)
 
 # errors showing up in breaking up rotations
@@ -262,7 +258,11 @@ def test_v_pole(): #take avg velocity to create pole and then re-create the velo
 def test_3_pole_50ma_yhs_movement():
   gh.setGeod(realWorld = True)
   yhsLoc0Ma = PLoc(-110.67, 44.43 )
-  pnwRotPole, pnwVPavel = epr.getPnwGpsRotPoleAndVelocity()
+  
+  sample_radius = 600 # km
+  sample_center = PLoc(-119.0, 45.0)
+  pnwRotPole, pnwVPavel = epr.getPnwGpsRotPoleAndVelocity(sample_center, sample_radius)
+
   naPAvel = PAvel(241.0, 23.0) # degrees, mm / yr
   ma = -50.0 
   

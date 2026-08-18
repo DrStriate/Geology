@@ -6,7 +6,7 @@ from qgis.core import (
   QgsPointXY,
   QgsField
 )
-from PyQt5.QtCore import QVariant
+from PyQt5.QtCore import QMetaType
 from PyQt5.QtGui import QColor
 
 import numpy as np
@@ -48,7 +48,7 @@ class PathLayer():
     
     # 3. Add attributes (optional, but useful if you want to label or color them later)
     provider = self.qvector_layer.dataProvider()
-    provider.addAttributes([QgsField("path_name", QVariant.String)])
+    provider.addAttributes([QgsField("path_name", QMetaType.Type.QString)])
     self.qvector_layer.updateFields() # Tell the layer to recognize the new fields
 
     renderer = self.qvector_layer.renderer()

@@ -46,7 +46,7 @@ def run_rand_disk_test_pass(self):
   finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam)
 
 def run_cropped_disk_test_test_pass(self):
-    #test setup
+   
   euler_pole = tu.OC_NA_Pole #{"lat" : 45.0,  "long" : -90, "omega" : 1.23 }
   sample_count = 400
   diam = 400 # km

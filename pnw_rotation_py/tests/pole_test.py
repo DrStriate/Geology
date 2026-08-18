@@ -5,7 +5,6 @@ import gauss_newton as gn
 import test_utils as tu
 import pytest
 import numpy as np
-from pyproj import Geod
 
 def test_quad_pole():
   gh.setGeod(realWorld = False) 

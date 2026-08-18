@@ -38,7 +38,7 @@ from .yhs_path import YhsPath, YhsPropertyBag
 from .jdf_plate import JFP
 from .rot_data import RotData
 from .geo_whiteboard import GeoWhiteboard
-from .src.geo_helper import PAvel, EulerPole
+from .src.geo_helper import PLoc, PAvel, EulerPole
 
 
 # Brothers_Lat = 47.652     
@@ -50,7 +50,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     name = 'PnwRotPyDialog'
     destRotDataLayerName = 'Pnw Rotation Data'
-    TEST_DATA = True
+    TEST_DATA = False
 
     def __init__(self, parent=None):
         super(PnwRotPyDialog, self).__init__(parent)
@@ -92,13 +92,18 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         for spin_box in spin_boxes:
             spin_box.setKeyboardTracking(False)
             spin_box.valueChanged.connect(self.getDialogueProperties)
-        
+
+        # parameters for PWN rot sample data        
+        self.sample_radius = 600 # km
+        self.sample_center = PLoc(-119.0, 45.0)
+
         self.rotData.load()
         self.setupRotDisplayLayer()
         self.yhsPath = YhsPath(self)
         self.configCombo()
-        self.yhsPath.getPnwGpsRotPoleAndVelocity() # default to GPS regression
+        self.yhsPath.getPnwGpsRotPoleAndVelocity(self.sample_center, self.sample_radius) # default to GPS regression
         self.setDialogueProperties()
+
 
     def setDialogueProperties(self): # Set UI from yhs_Path
         self.uiPropertieesSet = False # ignore changed events until done
@@ -228,14 +233,18 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
 
-        self.yhsPath.displayGPSDataAndPoles(self.TEST_DATA)
+        if self.yhsPath.displayGPSDataAndPoles(self.TEST_DATA, self.sample_center, self.sample_radius):
 
-        self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
-        QgsProject.instance().addMapLayer(self.rotDestLayer)
-        self.rotDestLayer.triggerRepaint()
+            self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
+            QgsProject.instance().addMapLayer(self.rotDestLayer)
+            self.rotDestLayer.triggerRepaint()
 
-        # self.yhsPath.setupEulerPoles(True)
-        self.setDialogueProperties()
+            # self.yhsPath.setupEulerPoles(True)
+            self.setDialogueProperties()
+
+        else:
+            QMessageBox.information(self, "Error", "Could not get and display pole data!")
+
 
     def clearRotDataLayer(self):
         if self.rotDestLayer: 
@@ -270,7 +279,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     # GPS Pole button pressed
     def getGpsPoleData(self):
-        self.yhsPath.getPnwGpsRotPoleAndVelocity()
+        self.yhsPath.getPnwGpsRotPoleAndVelocity(self.sample_center, self.sample_radius)
         # self.yhsPath.setDefaultNAPole()
         self.setDialogueProperties() # upload properties to UI
     

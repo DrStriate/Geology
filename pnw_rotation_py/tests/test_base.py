@@ -22,19 +22,3 @@ def test_lonitudeFromDistance():
     lon = gh.longitudeFromDistE(lat, distN)
     assert lon == pytest.approx(lonSb, abs=0.001)
 
-# Some question about getPoleRotation. Check and replace if needed
-# def test_pole_rotation():
-#   yhs = {"lat" : 44.43, "lon" :-110.67}
-#   V = gh.getPoleRotationV(yhs["lat"], yhs["lon"])
-#   assert V[0] == -0.0019364865124427936
-#   assert V[1] == -0.016349206364427868
-#   return
-
-def test_GPS_data():
-  center_pole = gh.PLoc(-118.5, 45.5)
-  max_distance = 550000 # meters
-  lats, longs, ve_list, vn_list, s_e, s_n = tu.get_GPS_rotation_data(center_pole.long, center_pole.lat, max_distance)
-  avg_angle = gh.find_moments(longs, lats, ve_list, vn_list, center_pole)
-  #print(f"avg_angle: {avg_angle:5f}, length: {len(lats)}")
-  assert avg_angle == pytest.approx(0.0006758670597992039)
-  assert len(lats) == pytest.approx(1351)

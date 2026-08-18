@@ -9,6 +9,11 @@ def solve_gauss_newton_translation_wtd(lats, lons, v_e_obs, v_n_obs, s_e, s_n, e
     Unified to handle standard deg/Ma and mm/yr inputs over a metric radius.
     """
     num_stations = len(lats)
+
+    x = {'t_x' : 0, 't_y': 0, 's' : 0, 'r' : 0}
+
+    if num_stations < 4: # need at least 4 points to solve
+      return np.zeros(2)
     
     # 3D ECEF parameter tracking vector [Tx, Ty, Tz]
     T = np.zeros(3) 
@@ -99,9 +104,9 @@ def solve_gauss_newton_2D_transform_geo(sample_long, sample_lat, v_e, v_n, euler
 # lats and longs should be normalized relative to "center" of rotation for best results
 def solve_gauss_newton_2D_transform(sample_e, sample_n, v_e, v_n, normalize = True, ): # meters and mm/Y units 
   N = len(v_e)
-  x = {'t_x' : 0, 't_y': 0, 's' : 0, 'r' : 0}
+
   if N < 4: # need at least 4 points to solve
-    return x
+    return np.zeros(2)
   
   c = [0.0, 0.0]
   if normalize:

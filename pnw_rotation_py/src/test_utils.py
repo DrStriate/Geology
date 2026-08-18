@@ -3,10 +3,9 @@ import numpy as np
 import euler_kinematics as ek
 import geopandas as gpd
 import geo_helper as gh
-from geo_helper import R, PAvel, PLoc
-from pyproj import Geod
+from geo_helper import R, PAvel, PLoc, EulerPole
 
-OC_NA_Pole = {"lat" : 45.54,  "long" : -119.60, "omega" : 1.32 }
+OC_NA_Pole = EulerPole(lat = 45.54, long = -119.60, omega = 1.32)
 
 def get_data_file_path(name):
   current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -47,42 +46,6 @@ def get_GPS_rotation_data (center_long, center_lat, max_distance):
       s_north.append(list_s_north[i])
   return lats, lons, v_east, v_north, s_east, s_north
 
-# # Some doubt about calculate_v_from_Euler_pole in the tests below. 
-# def create_simple_sample_quad(euler_pole, azimuths, dist):
-#   longs = []
-#   lats = []
-#   v_easts = []  # mm/ yr
-#   v_norths = [] # mm/ yr
-
-#   Omega = {"omega": euler_pole.omega, "phi": np.radians(euler_pole.lat), "lamb": np.radians(euler_pole.long)}
-#   # print("")
-#   for i in range(len(azimuths)):
-#     sample = gh.create_sample(euler_pole.long, euler_pole.lat, azimuths[i], dist)
-#     p = {"phi": np.radians(sample.lat), "lamb": np.radians(sample.long)}
-#     v = ek.calculate_v_from_Euler_pole(Omega, p, Omega['omega']);
-#     # v_e, v_n = ek.calculate_v_from_AzDist(euler_pole, np.fmod(azimuths[i] + 90.0, 360.0), dist)
-#     # print (f"v_e: {v_e}, v_n: {v_n}")
-#     longs.append(sample.long)
-#     lats.append(sample.lat)
-#     v_easts.append(v['v_e'])
-#     v_norths.append(v['v_n'])
-#     #print(f"{i}: sample.long: {sample.long:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
-#   return longs, lats, v_easts, v_norths
-
-# for use in qgis in to run synthetic test data 
-def setup_test_disc(center_long, center_lat, max_dist):
-  centerPloc = PLoc(center_long, center_lat)
-
-  #pole for generating samples
-  v_in = [0.767, 3.545] # v pavel from typical calibration
-  v_pavel = PAvel.from_V(v_in) 
-  pnwVPole = ek.getEulerPoleFromPlocAndPavel(centerPloc, v_pavel)
-
-  gh.setGeod(realWorld = False)
-  sample_count = 400
-  crop = 1.0 # no crop
-  return create_random_sample_ring(pnwVPole, centerPloc, sample_count, max_dist, pnwVPole.omega, crop)
-              
 def create_random_sample_ring(euler_pole, 
                               sample_ploc,
                               count,
@@ -101,6 +64,7 @@ def create_random_sample_ring(euler_pole,
 
   max_long =  gh.create_sample(sample_ploc.long, sample_ploc.lat, 90.0, max_dist).long
   min_long =  gh.create_sample(sample_ploc.long, sample_ploc.lat, 270.0, max_dist).long
+  long_range = max_long - min_long
   crop_long = min_long + (max_long - min_long) * crop
   cropped_samples = 0;
 
@@ -226,26 +190,27 @@ def test_regression_stats(x, A, B, residuals, verbose = False):
   if residuals.size == 0:
     y_pred = A @ x
     ssr = np.sum((B - y_pred) ** 2)
-  else:
-      ssr = residuals[0]  # Sum of squared residuals
-
-  # Total sum of squares
-  tss = np.sum((B - np.mean(B)) ** 2)
-
-  # R-squared (R2)
-  r_squared = 1 - (ssr / tss)
-
-  # Root Mean Squared Error (RMSE)
-  n = len(B)
-  rmse = np.sqrt(ssr / n)
-
-  if verbose or test_verbose:
     print("")
     print(f"Sum of Squared Residuals (SSR): {ssr:.4f}")
-    print(f"R-squared (Goodness of Fit): {r_squared:.4f}")
-    print(f"Root Mean Squared Error (RMSE): {rmse:.4f}")
+  else:
+    ssr = residuals[0]  # Sum of squared residuals
 
-  return  {"ssr" : ssr, "r_squared" : r_squared, "rmse" : rmse}  
+    # Total sum of squares
+    tss = np.sum((B - np.mean(B)) ** 2)
+
+    # R-squared (R2)
+    r_squared = 1 - (ssr / tss)
+
+    # Root Mean Squared Error (RMSE)
+    n = len(B)
+    rmse = np.sqrt(ssr / n)
+
+    if verbose or test_verbose:
+      print("")
+      print(f"Sum of Squared Residuals (SSR): {ssr:.4f}")
+      print(f"R-squared (Goodness of Fit): {r_squared:.4f}")
+      print(f"Root Mean Squared Error (RMSE): {rmse:.4f}")
+ 
 
 
 test_verbose = False

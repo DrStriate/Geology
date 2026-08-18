@@ -70,8 +70,8 @@ class YhsPath:
     self.yhs_path_data = ry.load_data(na_file_path)
     self.NaPlateDataName = fileName
 
-  def getPnwGpsRotPoleAndVelocity(self):
-      self.PnwRotPole, self.PnwVPAvel = epr.getPnwGpsRotPoleAndVelocity()
+  def getPnwGpsRotPoleAndVelocity(self, sample_center, sample_radius):
+      self.PnwRotPole, self.PnwVPAvel = epr.getPnwGpsRotPoleAndVelocity(sample_center, sample_radius)
 
   def checkLayersCreated(self): 
     self.NaPoleLayer = self.path_layer_manager.getInstance("NA pole", "red")
@@ -149,20 +149,28 @@ class YhsPath:
   
     return loc_3
 
-  def displayGPSDataAndPoles(self, test):
-    setGeod(realWorld = True)
-    diam = 600 # km
-    center = PLoc(45.0, -119.9)
+  def displayGPSDataAndPoles(self, test, center, radius):
+    setGeod(realWorld = True)    
 
-    if test:
+    if test: # show synthetic data
+      #pole for generating samples
+      v_in = [0.767, 3.545] # v pavel from typical calibration
+      v_pavel = PAvel.from_V(v_in) 
+      pnwVPole = ek.getEulerPoleFromPlocAndPavel(center, v_pavel)
+
+      sample_count = 400
+      crop = 1.0 # no crop
       lat_list, long_list, ve_list, vn_list =\
-        tu.setup_test_disc(center.long, center.lat, diam)
+        tu.create_random_sample_ring(pnwVPole, center, sample_count, radius, pnwVPole.omega, crop)
       s_e = None
       s_n = None
-    else:
+    else: # show GPS data
       lat_list, long_list, ve_list, vn_list, s_e, s_n =\
-        tu.get_GPS_rotation_data(center.long, center.lat, diam)
-      
+        tu.get_GPS_rotation_data(center.long, center.lat, radius * 1000.0)
+
+    if len(lat_list) < 3:
+      return False
+    
     mod_ve_list = np.array(ve_list) - self.delta_ve
     mod_vn_list = np.array(vn_list) - self.delta_vn
 
@@ -181,22 +189,22 @@ class YhsPath:
     print(f"offsets: {offsets}")
 
     label_text1 = f"{self.PnwRotPole.long:.4f}, {self.PnwRotPole.lat:.4f}, {self.PnwRotPole.omega:.3f} deg, "
-    label_text2 = f"e: {offsets[0]:.3f} km, n: {offsets[1]:.3f} km, {diam} km"
+    label_text2 = f"e: {offsets[0]:.3f} km, n: {offsets[1]:.3f} km, {radius} km"
     self.parent.geoWhiteboard.draw_target(self.PnwRotPole.long, self.PnwRotPole.lat, label_text1 + label_text2)
     #print(label_text1 + label_text2)
 
-    # if translation correction added, add a delta_V vector to the target to sho that
+    # if translation correction added, add a delta_V vector to the target to show that
     if self.delta_ve != 0.0 or self.delta_vn != 0.0:    
       feature = self.parent.rotData.createRotFeature(
         PLoc(self.PnwRotPole.long, self.PnwRotPole.lat), PVel(self.delta_ve + offsets[0], self.delta_vn + offsets[1])) 
       self.parent.yhsRotFeatureList.append(feature)
       self.PnwVPAvel  = getPAvel(self.delta_ve, self.delta_vn)
     else:
-
       self.PnwVPAvel = PAvel(0, 0)
   
     self.delta_ve = offsets[0]
     self.delta_vn = offsets[1]
+    return True
 
   def clearGPSparams(self):
     self.delta_ve = 0.0
