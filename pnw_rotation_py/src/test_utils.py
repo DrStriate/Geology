@@ -89,6 +89,48 @@ def create_random_sample_ring(euler_pole,
 
   return sample_n, sample_e, sample_v_east, sample_v_north
 
+def create_random_sample_dual_pole_ring(euler_pole1,
+                                        euler_pole2,
+                                        sample_ploc,
+                                        count,
+                                        max_dist, # meters
+                                        test_omega, 
+                                        crop = 1.0, 
+                                        rms = 0.0):
+  rng = np.random.default_rng(seed=42)
+  rands = rng.random(size=(count, 2))
+  v_noise1 = rng.normal(loc=0.0, scale=rms, size=(count, 2))
+  v_noise2 = rng.normal(loc=0.0, scale=rms, size=(count, 2))
+
+  sample_n = []
+  sample_e = []
+  sample_v_east = []
+  sample_v_north = [] # mm/ yr
+
+  max_long =  gh.create_sample(sample_ploc.long, sample_ploc.lat, 90.0, max_dist).long
+  min_long =  gh.create_sample(sample_ploc.long, sample_ploc.lat, 270.0, max_dist).long
+  crop_long = min_long + (max_long - min_long) * crop
+  cropped_samples = 0;
+
+  for i in range(len(rands)):
+    sample = gh.create_sample(sample_ploc.long, sample_ploc.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
+    v1 = ek.calculate_v_from_EulerPole(euler_pole1, sample, test_omega) + v_noise1[i]
+    v2 = ek.calculate_v_from_EulerPole(euler_pole1, sample, test_omega) + v_noise2[i]
+
+    if sample.long < crop_long:
+      sample_e.append(sample.long)
+      sample_n.append(sample.lat)
+      sample_v_east.append(v1[0] + v2[0])
+      sample_v_north.append(v2[1] + v2[1])
+
+    # print(f"{i}: sample.long: {sample.long:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
+    cropped_samples += 1
+
+  #print(f"samples = {cropped_samples} out of {count}")
+
+  return sample_n, sample_e, sample_v_east, sample_v_north
+
+
 #dist in km
 def create_simple_sample_quad(euler_pole, azimuths, dist, realWorld = False):
   return create_simple_sample_quad_w_trans(euler_pole, [0, 0], azimuths, dist, realWorld)

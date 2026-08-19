@@ -271,3 +271,46 @@ def test_3_pole_50ma_yhs_movement():
   ploc50maSB = PLoc(-124.34636238042988, 41.522228097217834)
   assert yhsLoc50Ma.lat == pytest.approx(ploc50maSB.lat)
   assert yhsLoc50Ma.long == pytest.approx(ploc50maSB.long)
+
+# Creates a synthethid rot field (based on Wells-Smith OC_NA pole) and extracts that pole back
+def test_rot_regressions_against_sim_data():
+  gh.setGeod(realWorld = True)
+  rotPole = tu.OC_NA_Pole
+
+  # create samples from pole 
+  sample_count = 400
+  lats, lons, v_easts, v_norths =\
+    tu.create_random_sample_ring(rotPole, tu.sample_center, sample_count, tu.sample_radius, None)
+
+  # extract rot pole from samples
+  out_pole = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths)
+
+  # compare poles 
+  assert out_pole.long == pytest.approx(rotPole.long)
+  assert out_pole.lat == pytest.approx(rotPole.lat)
+  assert out_pole.omega == pytest.approx(rotPole.omega)
+
+# def test_combined_regressions_against_sim_data():
+
+#   # pole for generating samples based on V
+#   sample_center = PLoc(-119.0, 45.0)
+#   v_in = [0.767, 3.545] # v pavel from typical calibration
+#   vPole = ek.getEulerPoleFromPlocAndPavel(sample_center, PAvel.from_V(v_in))
+#   rotPole = tu.OC_NA_Pole
+
+#   # create samples from pole 
+#   sample_count = 400
+#   lats, lons, v_easts, v_norths =\
+#     tu.create_random_sample_dual_pole_ring(vPole, rotPole, tu.sample_center, sample_count, tu.sample_radius, None)
+
+#   # extract translation V from samples
+#   out_rot_pole, out_v = epr.extractEulerPoleUsingCombinedRegressions(lats, lons, v_easts, v_norths)
+#   print(f"out_v: {out_v}")
+
+#   # compare poles 
+#   assert out_rot_pole.long == pytest.approx(rotPole.long)
+#   assert out_rot_pole.lat == pytest.approx(rotPole.lat)
+#   assert out_rot_pole.omega == pytest.approx(rotPole.omega)
+
+#   tolerance1 = 0.006
+#   assert out_v == pytest.approx(v_in, abs = tolerance1)

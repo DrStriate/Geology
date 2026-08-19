@@ -80,4 +80,4 @@ def test_gn_regressions_against_sim_data():
   # compare Vs 
   tolerance2 = 0.061
   assert v_out2 == pytest.approx(v_in, abs = tolerance2)
-
+  
