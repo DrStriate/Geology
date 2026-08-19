@@ -68,22 +68,39 @@ class PAvel:
         return cls(
             np.degrees(np.arctan2(v2[0], v2[1])),
             np.hypot(v2[0], v2[1]))
-       
+
 @dataclass
 class EulerPole:
     long: float
     lat: float
     omega: float
+    is_clockwise: bool = False  # Set to True for clockwise poles needing antipodal shift
+
     def ploc(self):
         return PLoc(self.long, self.lat)
-    # def setPloc(self, ploc):
-    #     self.lat = ploc.lat
-    #     self.long = ploc.long
-    def print(self, label = ""):
+
+    def print(self, label: str = ""):
         print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
-    # def pointRotateForMa(self, ploc, ma):
-    #     return ek.getPoleRotationOfPoint(self, ploc, ma)[0]
-###
+
+    def normalize(self) -> 'EulerPole':
+        """
+        Ensures right-hand rule math produces the correct surface motion.
+        If rotation is clockwise, returns a NEW EulerPole flipped to its 
+        antipodal position with is_clockwise=False so standard CCW vector math works.
+        """
+        if self.is_clockwise:
+            # Shift longitude by 180 and keep within [-180, 180]
+            new_long = (self.long + 180) % 360
+            if new_long > 180:
+                new_long -= 360
+
+            return EulerPole(
+                long=new_long,
+                lat=-self.lat,
+                omega=self.omega,
+                is_clockwise=False
+            )
+        return self        
 
 # Get point from PAvel new point pavel * ma distant
 def getPointFromPavel(start_point, pAVel, ma):

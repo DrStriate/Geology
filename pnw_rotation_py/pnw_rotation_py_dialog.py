@@ -50,7 +50,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     name = 'PnwRotPyDialog'
     destRotDataLayerName = 'Pnw Rotation Data'
-    TEST_DATA = False
+    TEST_CODE = 0
 
     def __init__(self, parent=None):
         super(PnwRotPyDialog, self).__init__(parent)
@@ -131,7 +131,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         propertyBag = YhsPropertyBag(
             self.NAPlateFiles[selectedIndex],
             PAvel(self.spbPnwVPoleAzimuth.value(), self.spbPnwVPoleSpeed.value()),
-            EulerPole(self.spbPnwRPoleLong.value(), self.spbPnwRPoleLat.value(), self.spbPnwRPoleOmega.value()))
+            EulerPole(self.spbPnwRPoleLong.value(), self.spbPnwRPoleLat.value(), self.spbPnwRPoleOmega.value(), is_clockwise=True))
         self.yhsPath.setYhsPropertyBag(propertyBag)
 
     def save_data_to_file(self):
@@ -233,7 +233,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.rotDisplayLayerSetup:
             self.setupRotDisplayLayer()
 
-        if self.yhsPath.displayGPSDataAndPoles(self.TEST_DATA, self.sample_center, self.sample_radius):
+        if self.yhsPath.displayGPSDataAndPoles(self.TEST_CODE, self.sample_center, self.sample_radius):
 
             self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
             QgsProject.instance().addMapLayer(self.rotDestLayer)

@@ -49,7 +49,7 @@ def getPoleRotationOfPoint(pole, ploc, ma):
 def getCompoundRotationTranslationOfPoint(vPole, rPole, ploc, ma):
     # move the rot pole to the proper loc for ma
     rot_pole_ma_ploc = getPoleRotationOfPoint(vPole, rPole.ploc(), ma)[0]
-    ma_rot_pole = gh.EulerPole(rot_pole_ma_ploc.long, rot_pole_ma_ploc.lat, rPole.omega)
+    ma_rot_pole = gh.EulerPole(rot_pole_ma_ploc.long, rot_pole_ma_ploc.lat, rPole.omega, is_clockwise=True)
 
     # Rotate by ma scaled rot pole omega 
     loc_2 = getPoleRotationOfPoint(ma_rot_pole, ploc, ma)[0]

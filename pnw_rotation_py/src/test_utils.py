@@ -5,7 +5,7 @@ import geopandas as gpd
 import geo_helper as gh
 from geo_helper import R, PAvel, PLoc, EulerPole
 
-OC_NA_Pole = EulerPole(lat = 45.54, long = -119.60, omega = 1.32)
+OC_NA_Pole = EulerPole(lat = 45.54, long = -119.60, omega = 1.32, is_clockwise=True)
 
 # parameters for PWN rot sample data        
 sample_radius = 600000
@@ -21,7 +21,7 @@ def get_data_file_path(name):
 def get_test_data():
   return get_GPS_rotation_data(OC_NA_Pole.long, OC_NA_Pole.lat, 6e5)
 
-def get_GPS_rotation_data (center_long, center_lat, max_distance): #distance in meters
+def get_GPS_rotation_data (center_long, center_lat, max_distance): # distance in meters
   gh.setGeod(realWorld=True)
   file_path = get_data_file_path("NSHM2023_GPS_velocity.zip")
   gdf = gpd.read_file(f"/vsizip/{file_path}")
@@ -112,16 +112,17 @@ def create_random_sample_dual_pole_ring(euler_pole1,
   crop_long = min_long + (max_long - min_long) * crop
   cropped_samples = 0;
 
+  # must 'normalize' poles w. clockwise rotation intent to use a flipped pole
   for i in range(len(rands)):
     sample = gh.create_sample(sample_ploc.long, sample_ploc.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
-    v1 = ek.calculate_v_from_EulerPole(euler_pole1, sample, test_omega) + v_noise1[i]
-    v2 = ek.calculate_v_from_EulerPole(euler_pole1, sample, test_omega) + v_noise2[i]
+    v1 = ek.calculate_v_from_EulerPole(euler_pole1.normalize(), sample, test_omega) + v_noise1[i]
+    v2 = ek.calculate_v_from_EulerPole(euler_pole2.normalize(), sample, test_omega) + v_noise2[i]
 
     if sample.long < crop_long:
       sample_e.append(sample.long)
       sample_n.append(sample.lat)
       sample_v_east.append(v1[0] + v2[0])
-      sample_v_north.append(v2[1] + v2[1])
+      sample_v_north.append(v1[1] + v2[1])
 
     # print(f"{i}: sample.long: {sample.long:.3f}, sample['lon']: {sample['lon']:.3f}, v_e: {v['v_e']:.2f}  v_n: {v['v_n']:.2f}")
     cropped_samples += 1

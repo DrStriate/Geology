@@ -78,7 +78,7 @@ def fit_euler_pole_linear(lats, lons, v_east_obs, v_north_obs, s_e = None, s_n =
     lat_pole = np.degrees(np.arcsin(wz / omega_mag_rad))
     lon_pole = np.degrees(np.arctan2(wy, wx))
     
-    return EulerPole(lon_pole, lat_pole, omega_deg_myr)
+    return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True)
 
 
 # Best results so far in tests (with or without offset) but horrible in GPS - almost certainly due to crazy scaling
@@ -151,7 +151,7 @@ def fit_euler_pole_linear2(lats, lons, v_east_obs, v_north_obs, s_e=None, s_n=No
     # 4. Convert your output offset BACK to your legacy application's expected m/Ma scaling
     Offset_legacy = Offset_raw
     
-    return EulerPole(lon_pole, lat_pole, omega_deg_myr), Offset_legacy
+    return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True), Offset_legacy
 
 # Early attempt at a unified regression (rot, offset). Gemini left it at T for offset, but it still seems incorrect in testing
 def fit_euler_pole_linear3(lats, lons, v_east_obs, v_north_obs, s_e=None, s_n=None):
@@ -228,7 +228,7 @@ def fit_euler_pole_linear3(lats, lons, v_east_obs, v_north_obs, s_e=None, s_n=No
     # Return the translation vector alongside the Euler Pole definition
     offset_e = np.dot(e_hat, T_cartesian)
     offset_n = np.dot(n_hat, T_cartesian)
-    return EulerPole(lon_pole, lat_pole, omega_deg_myr), np.array([offset_e, offset_n])
+    return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True), np.array([offset_e, offset_n])
 
 def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_list, we_list = None, wn_list = None):
 
@@ -256,7 +256,7 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
     # offset is in meters per ma and we want a rate (km/ma or mm/yr) so we need to scale
     return rot_pole, pnwVPAVel
 
-def getPnwGpsRotPoleAndVelocity(sample_center, sample_radius): 
+def getPnwGpsRotPoleAndVelocity(sample_center, sample_radius): # radius km 
   lats, longs, ves, vns, wes, wns=\
     tu.get_GPS_rotation_data(sample_center.long, sample_center.lat, sample_radius * 1000)   
   rot_pole, pnwVPAVel = extractEulerPoleUsingCombinedRegressions(lats, longs, ves, vns, wes, wns)

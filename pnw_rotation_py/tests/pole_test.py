@@ -8,7 +8,7 @@ import numpy as np
 
 def test_quad_pole():
   gh.setGeod(realWorld = False) 
-  euler_pole  = EulerPole(-99, 45.0, 1.32) # long, lat, omega
+  euler_pole  = EulerPole(-99, 45.0, 1.32, is_clockwise=True) # long, lat, omega
   azimuths  = [45.0, 135.0, 225.0, 315.0] # directions  to test lat/long
   sample_dist = 50000 # m
   realWorld = False
@@ -31,7 +31,7 @@ def test_quad_pole():
 # demonstrating new pole-offset results in same pole when v's moved by constant and good extraction
 def test_offset_quad_pole():
   gh.setGeod(realWorld = False) 
-  euler_pole  = EulerPole(-99, 45.0, 1.32) # long, lat, omega
+  euler_pole  = EulerPole(-99, 45.0, 1.32, is_clockwise=True) # long, lat, omega
   azimuths  = [45.0, 135.0, 225.0, 315.0] # directions  to test lat/long
   sample_dist = 50 # km
   realWorld = False
