@@ -39,7 +39,7 @@ def test_gm_regress_against_pnw_GPS_data():
 
   euler_pole = EulerPole(-118.5, 45, 0)
   center_ploc =  euler_pole.ploc()
-  max_distance = 550000 # m
+  max_distance = 550 # m
 
   lats, lons, v_easts, v_norths, s_e, s_n = \
     tu.get_GPS_rotation_data(center_ploc.long, center_ploc.lat, max_distance)

@@ -61,7 +61,7 @@ def test_euler_GPS_pole_extraction_legacy():
   gh.setGeod(realWorld = True)
   center_lat = 45.0
   center_long = -118
-  max_distance = 600000 # m
+  max_distance = 600 # km
   lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)
 
   pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths, s_e, s_n)
@@ -76,7 +76,7 @@ def test_euler_GPS_pole_extraction2():
   gh.setGeod(realWorld = True)
   center_lat = 45.0
   center_long = -118
-  max_distance = 600000 # m
+  max_distance = 600 # km
   
   # 1. Elements loaded cleanly in unscaled mm/yr
   lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)

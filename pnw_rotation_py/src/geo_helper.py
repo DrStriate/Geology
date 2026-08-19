@@ -132,7 +132,7 @@ def getPointFromPavel(start_point, pAVel, ma):
     
     return PLoc(destination_lon, destination_lat)
 
-# This is for angular easterly and northerly rotation angles, not dists
+# returns km
 def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
     # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
     forward_azimuth, back_azimuth, distance_meters = geod.inv(lon1, lat1, lon2, lat2)
@@ -141,22 +141,22 @@ def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
     azimuth_rad = np.radians(forward_azimuth)
     
     # Calculate components - actually calculating 
-    northerly = distance_meters * np.cos(azimuth_rad)
-    easterly = distance_meters * np.sin(azimuth_rad)
-    return northerly, easterly
+    northerly_km = distance_meters * np.cos(azimuth_rad) * 0.001
+    easterly_km = distance_meters * np.sin(azimuth_rad) * 0.001
+    return northerly_km, easterly_km
 
 def getFwdAzimuthFromLocations (point1, point2):
    # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
     forward_azimuth, back_azimuth, distance_meters = geod.inv(point1.long, point1.lat, point2.long, point2.lat)
     return forward_azimuth % 360
 
-def create_sample (start_lon, start_lat, azimuth, distance): # distance in meters!
+def create_sample (start_lon, start_lat, azimuth, distance): # distance in km!
     # Calculate the terminus point
     end_lon, end_lat, back_azimuth = geod.fwd(
         start_lon, 
         start_lat, 
         azimuth, 
-        distance) 
+        distance * 1000.0) 
     return PLoc(end_lon, end_lat)
 
 def clamp(value, minimum, maximum):
@@ -174,11 +174,12 @@ def getSamplePoints(long_list, lat_list, center_ploc):
   return p_e, p_n 
 
 # Be wary of use of these distance metrics. 
-def latitudeFromDistN(dist): # dist in meters North
+
+def latitudeFromDistN(dist): # dist in km North
     lat = np.arctan2(dist, R) * 180.0 / np.pi
     return lat
 
-def longitudeFromDistE(latitude, dist): # meters East
+def longitudeFromDistE(latitude, dist): # km East
     latitudeRadians = np.radians(latitude)
     radiusOfParallel = R * np.cos(latitudeRadians) # m
     longitudeDeltaRadians = dist / radiusOfParallel
@@ -188,7 +189,7 @@ def longitudeFromDistE(latitude, dist): # meters East
 def getDistanceBetweenPoints(point1, point2): #both PLocs
     if point1.lat < -90 or point1.lat > 90 or point2.lat < -90 or point1.lat > 90:
         print("getDistanceBetweenPoints: bounding error")
-    return haversine((point1.lat, point1.long), (point2.lat, point2.long), unit=Unit.METERS)
+    return haversine((point1.lat, point1.long), (point2.lat, point2.long), unit=Unit.KILOMETERS)
 
 ### Epipolar calculations
 def locToRadians(pLoc):

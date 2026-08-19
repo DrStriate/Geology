@@ -4,21 +4,21 @@ import math
 from .src import geo_helper as gh
 
 class JFP:
-    InitialSubductionDate = -45e6  # Years ca
-    maxSubductionDepth = 500.0e3   # m
+    InitialSubductionDate = -45    # ma
+    maxSubductionDepth = 500.0     # km
     plateAngle = 45.0              # degrees
     trackingLatitude = 42.0        # degrees N
     trenchlongitude = -125.0       # degrees E
-    subductionRate = 28.0          # mm / year (East)
+    subductionRate = 28.0          # km / Ma (East)
 
     clampedSubductionEast = maxSubductionDepth * math.tan(plateAngle / 180 * math.pi)
 
     @staticmethod
-    def leadingEdgeLongitude (date):   # date of YHS
+    def leadingEdgeLongitude (date):   # date of YHS (ma)
         if date < JFP.InitialSubductionDate:
             return JFP.trenchlongitude
 
-        plateMotion = (date - JFP.InitialSubductionDate) * JFP.subductionRate / 1e3 # m
+        plateMotion = (date - JFP.InitialSubductionDate) * JFP.subductionRate 
         plateMotionEast = plateMotion * math.cos(JFP.plateAngle / 180 * math.pi)
         plateMotionDepth = plateMotion * math.sin(JFP.plateAngle / 180 * math.pi)
 

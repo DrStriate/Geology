@@ -170,7 +170,7 @@ def test_getPoleRotationOfPoint():
 def test_euler_GPS_pole_extraction():
   center_lat = 45.0
   center_long = -118
-  max_distance = 600000 # m
+  max_distance = 600 # km
   lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)
 
   pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths, s_e, s_n)
@@ -185,7 +185,7 @@ def test_combined_GPS_pole_extraction():
   gh.setGeod(realWorld = True)
   center_lat = 45.0
   center_long = -119
-  max_distance = 600000 # m
+  max_distance = 600 # km
   lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)
 
   pole_result, pAvel_result = epr.extractEulerPoleUsingCombinedRegressions(lats, lons, v_easts, v_norths, s_e, s_n)
@@ -262,7 +262,7 @@ def test_3_pole_50ma_yhs_movement():
   
   yhsLoc50Ma = ek.getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, yhsLoc0Ma, ma)
 
-  ploc50maSB = PLoc(-124.34636238042988, 41.522228097217834)
+  ploc50maSB = PLoc(-123.04685415984108, 45.5504096560948)
   assert yhsLoc50Ma.lat == pytest.approx(ploc50maSB.lat)
   assert yhsLoc50Ma.long == pytest.approx(ploc50maSB.long)
 

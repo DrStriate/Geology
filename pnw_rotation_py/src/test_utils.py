@@ -8,7 +8,7 @@ from geo_helper import R, PAvel, PLoc, EulerPole
 OC_NA_Pole = EulerPole(lat = 45.54, long = -119.60, omega = 1.32, is_clockwise=True)
 
 # parameters for PWN rot sample data        
-sample_radius = 600000
+sample_radius = 600.0 # km
 sample_center = PLoc(-119.0, 45.0)
 
 def get_data_file_path(name):
@@ -19,9 +19,9 @@ def get_data_file_path(name):
   return data_folder_path
 
 def get_test_data():
-  return get_GPS_rotation_data(OC_NA_Pole.long, OC_NA_Pole.lat, 6e5)
+  return get_GPS_rotation_data(OC_NA_Pole.long, OC_NA_Pole.lat, 600.0) # km
 
-def get_GPS_rotation_data (center_long, center_lat, max_distance): # distance in meters
+def get_GPS_rotation_data (center_long, center_lat, max_distance): # distance in km
   gh.setGeod(realWorld=True)
   file_path = get_data_file_path("NSHM2023_GPS_velocity.zip")
   gdf = gpd.read_file(f"/vsizip/{file_path}")
@@ -53,7 +53,7 @@ def get_GPS_rotation_data (center_long, center_lat, max_distance): # distance in
 def create_random_sample_ring(euler_pole, 
                               sample_ploc,
                               count,
-                              max_dist, # meters
+                              max_dist, # km
                               test_omega, 
                               crop = 1.0, 
                               rms = 0.0):
