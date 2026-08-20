@@ -91,10 +91,9 @@ def create_random_sample_ring(euler_pole,
 
 def create_random_sample_dual_pole_ring(euler_pole1,
                                         euler_pole2,
-                                        sample_ploc,
+                                        ring_center,
                                         count,
                                         max_dist, # meters
-                                        test_omega, 
                                         crop = 1.0, 
                                         rms = 0.0):
   rng = np.random.default_rng(seed=42)
@@ -107,16 +106,16 @@ def create_random_sample_dual_pole_ring(euler_pole1,
   sample_v_east = []
   sample_v_north = [] # mm/ yr
 
-  max_long =  gh.create_sample(sample_ploc.long, sample_ploc.lat, 90.0, max_dist).long
-  min_long =  gh.create_sample(sample_ploc.long, sample_ploc.lat, 270.0, max_dist).long
+  max_long =  gh.create_sample(ring_center.long, ring_center.lat, 90.0, max_dist).long
+  min_long =  gh.create_sample(ring_center.long, ring_center.lat, 270.0, max_dist).long
   crop_long = min_long + (max_long - min_long) * crop
   cropped_samples = 0;
 
   # must 'normalize' poles w. clockwise rotation intent to use a flipped pole
   for i in range(len(rands)):
-    sample = gh.create_sample(sample_ploc.long, sample_ploc.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
-    v1 = ek.calculate_v_from_EulerPole(euler_pole1.normalize(), sample, test_omega) + v_noise1[i]
-    v2 = ek.calculate_v_from_EulerPole(euler_pole2.normalize(), sample, test_omega) + v_noise2[i]
+    sample = gh.create_sample(ring_center.long, ring_center.lat, 360.0 * rands[i][0], max_dist * rands[i][1])
+    v1 = ek.calculate_v_from_EulerPole(euler_pole1.normalize(), sample) + v_noise1[i]
+    v2 = ek.calculate_v_from_EulerPole(euler_pole2.normalize(), sample) + v_noise2[i]
 
     if sample.long < crop_long:
       sample_e.append(sample.long)
@@ -131,6 +130,23 @@ def create_random_sample_dual_pole_ring(euler_pole1,
 
   return sample_n, sample_e, sample_v_east, sample_v_north
 
+def distance_for_target_velocity(omega_deg_per_ma, target_v_mm_per_yr=1.0):
+    # Convert angular velocity omega to rad/Ma
+    omega_rad_per_ma = np.radians(omega_deg_per_ma)
+   
+    # Convert target velocity from mm/Ma to m/Ma
+    v_m_per_ma = target_v_mm_per_yr * 1000.0
+   
+    # Linear velocity on Earth's surface: v = omega * R * sin(delta)
+    # So sin(delta) = v / (omega * R)
+    sin_delta = v_m_per_ma / (omega_rad_per_ma * R * 1000)
+   
+    if sin_delta > 1.0:
+        raise ValueError("Target velocity is too large for the given rotation rate.")
+       
+    delta_rad = np.arcsin(sin_delta)
+    d_m = R * delta_rad
+    return d_m
 
 #dist in km
 def create_simple_sample_quad(euler_pole, azimuths, dist, realWorld = False):

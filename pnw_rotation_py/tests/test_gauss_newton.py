@@ -4,6 +4,7 @@ import gauss_newton as gn
 import test_utils as tu
 from pathlib import Path
 from geo_helper import PLoc, PAvel, EulerPole, geod, R
+import geo_helper as gh
 import euler_kinematics as ek
 
 # center at lat 512, long 512. Distance to center is 128
@@ -38,7 +39,7 @@ def test_gm_regress_against_pnw_GPS_data():
   # print(script_path)
 
   euler_pole = EulerPole(-118.5, 45, 0)
-  center_ploc =  euler_pole.ploc()
+  center_ploc =  euler_pole.ploc
   max_distance = 550 # m
 
   lats, lons, v_easts, v_norths, s_e, s_n = \
@@ -55,6 +56,7 @@ def test_gm_regress_against_pnw_GPS_data():
 
 # Tests legacy 2D imaging-based gauss-newton compared to the Gemini variant)
 def test_gn_regressions_against_sim_data():
+  gh.setGeod(realWorld = False)
 
   # pole for generating samples based on V
   sample_center = PLoc(-119.0, 45.0)
@@ -67,7 +69,7 @@ def test_gn_regressions_against_sim_data():
     tu.create_random_sample_ring(pnwVPole, tu.sample_center, sample_count, tu.sample_radius, None)
 
   # extract translation V from samples
-  v_out1 = gn.solve_gauss_newton_2D_transform_geo(lons, lats, v_easts, v_norths, tu.OC_NA_Pole.ploc())
+  v_out1 = gn.solve_gauss_newton_2D_transform_geo(lons, lats, v_easts, v_norths, tu.OC_NA_Pole.ploc)
 
   # compare Vs 
   tolerance1 = 0.006

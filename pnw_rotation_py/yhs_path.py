@@ -104,7 +104,7 @@ class YhsPath:
     runPnwRotPole = replace(self.PnwRotPole)
     #runPnwRotPole.print("runPnwRotPole: ") # these printouts useful for setting up GPlates
     # get the PnwVPole which is time invariant 
-    self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(runPnwRotPole.ploc(), self.PnwVPAvel)
+    self.PnwVPole = ek.getEulerPoleFromPlocAndPavel(runPnwRotPole.ploc, self.PnwVPAvel)
     #self.PnwVPole.print("PnwVPole: ")
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
@@ -127,7 +127,7 @@ class YhsPath:
     elif self.pole_model == 2: # model 2: move rot pole down by pole_v, rotate loc_1 to loc_2
 
       # 2: Translate rot pole  
-      new_rot_pole_ploc = ek.getPoleRotationOfPoint(self.PnwVPole, runPnwRotPole.ploc(), currentMa)[0]
+      new_rot_pole_ploc = ek.getPoleRotationOfPoint(self.PnwVPole, runPnwRotPole.ploc, currentMa)[0]
       t_RotPole = EulerPole(new_rot_pole_ploc.long, new_rot_pole_ploc.lat, runPnwRotPole.omega, is_clockwise=True)
       self.parent.geoWhiteboard.draw_target(t_RotPole.long, t_RotPole.lat, 
                                             f"{currentMa} Ma pole ({t_RotPole.long:0.3f}, {t_RotPole.lat:0.3f})")

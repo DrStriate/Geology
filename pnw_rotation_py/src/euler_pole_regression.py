@@ -235,21 +235,26 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
     # get data Euler pole from the raw data set
     raw_pole = fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list, we_list, wn_list)
     # raw_pole.print("1: rotPole: ")
-     
+
     # apply Gauss-Newton analysis to get any translation (non-rotation) components
     # offset = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
     offset = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
+    print(f"offset: {offset}")    
 
     # print(f"solve_gauss_newton_2D_transform_geo_wtd: {offset}")
 
-    # strip any translation element to get rot-only 
-    rot_ve_list = np.array(ve_list) - offset[0]
-    rot_vn_list = np.array(vn_list) - offset[1] 
+    for iteration in range(3):
+        # strip any translation element to get rot-only 
+        rot_ve_list = np.array(ve_list) - offset[0]
+        rot_vn_list = np.array(vn_list) - offset[1] 
 
-    # get data Euler pole from the raw data set
-    rot_pole = fit_euler_pole_linear(lat_list, long_list, rot_ve_list, rot_vn_list, we_list, wn_list)
-    # rot_pole.print("2: rotPole: ")
+        # get data Euler pole from the raw data set
+        rot_pole = fit_euler_pole_linear(lat_list, long_list, rot_ve_list, rot_vn_list, we_list, wn_list)
+        # rot_pole.print("2: rotPole: ")
 
+        pass_offset = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, rot_ve_list, rot_vn_list, we_list, wn_list, rot_pole)
+        offset += pass_offset
+        print(f"offset: {offset}")
     # get Velocity pole PAVel info 
     pnwVPAVel = getPAvel(offset[0], offset[1])
 

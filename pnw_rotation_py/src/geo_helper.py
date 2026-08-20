@@ -1,13 +1,14 @@
 import numpy as np
 from haversine import haversine, Unit
 from pyproj import Geod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 R = 6371.0 # Earth radius in km
 
 geod = Geod(ellps="WGS84")
 
 def setGeod(realWorld):
+    global geod  
     if realWorld:
         geod = Geod(ellps="WGS84")
     else:
@@ -32,6 +33,13 @@ def getPAvel (v_e, v_n):
 class PLoc:
     long: float
     lat: float
+    phi: float = field(init=False)
+    lam: float = field(init=False)
+
+    def __post_init__(self):
+        self.phi = np.radians(self.lat)
+        self.lam = np.radians(self.long)
+
     def print(self, label = ""): 
         print (f"{label} long: {self.long:0.3f}, lat:  {self.lat:0.3f}")
     
@@ -39,6 +47,8 @@ class PLoc:
         if isinstance(other, PLoc):
             self.long += other.long
             self.lat += other.lat
+            self.lam += other.lam
+            self.phi += other.phi 
             return self 
         return NotImplemented
 
@@ -74,10 +84,12 @@ class EulerPole:
     long: float
     lat: float
     omega: float
-    is_clockwise: bool = False  # Set to True for clockwise poles needing antipodal shift
+    ploc: PLoc = field(init=False)
 
-    def ploc(self):
-        return PLoc(self.long, self.lat)
+    def __post_init__(self):
+        self.ploc = PLoc(self.long, self.lat)
+
+    is_clockwise: bool = False  # Set to True for clockwise poles needing antipodal shift
 
     def print(self, label: str = ""):
         print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")
@@ -191,11 +203,6 @@ def getDistanceBetweenPoints(point1, point2): #both PLocs
         print("getDistanceBetweenPoints: bounding error")
     return haversine((point1.lat, point1.long), (point2.lat, point2.long), unit=Unit.KILOMETERS)
 
-### Epipolar calculations
-def locToRadians(pLoc):
-    lam = np.radians(pLoc.long)
-    phi = np.radians(pLoc.lat) 
-    return lam, phi
 
 def normalize(vect):
     mag = np.linalg.norm(vect)
@@ -203,26 +210,4 @@ def normalize(vect):
         return vect / mag
     return vect
 
-def getCartesianFromLatLong (pLoc):
-    lam, phi = locToRadians(pLoc)
-    P = np.array([0, 0, 0])
-    P[0] = R * np.cos(lam) * np.cos(phi)
-    P[1] = R * np.sin(lam) * np.cos(phi)
-    P[2] = R * np.sin(phi)
-    return P
 
-def getPlocFromLocNormal(p_hat):
-    phi = np.arcsin(p_hat[2])
-    lam = np.arctan2(p_hat[1], p_hat[0])
-    return PLoc(np.degrees(lam), np.degrees(phi))
-
-def getVeVnFromAzvel(pLoc, pAzvel): #cartesian Ve and Vn for point, and motion azimuth and magnitude (mm/Y)
-    lam, phi = locToRadians(pLoc)
-    # unit vectors for 'easterly' and 'northerly' at P
-    e_hat = np.array([-np.sin(lam), np.cos(lam), 0.0])
-    n_hat = np.array([-np.sin(phi) * np.cos(lam), -np.sin(phi) * np.sin(lam), np.cos(phi)])
-    # 2D motion vector at point
-    V = np.array([np.sin(np.radians(pAzvel.azimuth)) * pAzvel.vel,
-                    np.cos(np.radians(pAzvel.azimuth)) * pAzvel.vel])
-    # return scaled velocity in easterly and northerly directions
-    return e_hat * V[0], n_hat * V[1]

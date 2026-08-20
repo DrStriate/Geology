@@ -2,25 +2,17 @@ import numpy as np
 import geo_helper as gh
 from geo_helper import PLoc, EulerPole, R
 
-# get cartesian value of PLoc lat/long
-def getRVector(ploc):
-  phi = np.radians(ploc.lat)
-  lam = np.radians(ploc.long)
+# get cartesian vector for PLoc
+def getRVector(p):
   return np.array([
-      np.cos(phi) * np.cos(lam),  
-      np.cos(phi) * np.sin(lam),
-      np.sin(phi)
+      np.cos(p.phi) * np.cos(p.lam),  
+      np.cos(p.phi) * np.sin(p.lam),
+      np.sin(p.phi)
    ])
 
 #get omega vector from pole (normalized - unscaled by pole omega)
 def getWVector(pole):
-  phi = np.radians(pole.lat)
-  lam = np.radians(pole.long)
-  return np.array([
-      np.cos(phi) * np.cos(lam),  
-      np.cos(phi) * np.sin(lam),
-      np.sin(phi)
-   ]) 
+  return getRVector(pole.ploc)
 
 def getPoleRotationOfPoint(pole, ploc, ma):
     # Apply Rodrigues' rotation formula
@@ -48,7 +40,7 @@ def getPoleRotationOfPoint(pole, ploc, ma):
   # Combo pole emulation 
 def getCompoundRotationTranslationOfPoint(vPole, rPole, ploc, ma):
     # move the rot pole to the proper loc for ma
-    rot_pole_ma_ploc = getPoleRotationOfPoint(vPole, rPole.ploc(), ma)[0]
+    rot_pole_ma_ploc = getPoleRotationOfPoint(vPole, rPole.ploc, ma)[0]
     ma_rot_pole = gh.EulerPole(rot_pole_ma_ploc.long, rot_pole_ma_ploc.lat, rPole.omega, is_clockwise=True)
 
     # Rotate by ma scaled rot pole omega 
@@ -60,7 +52,7 @@ def getCompoundRotationTranslationOfPoint(vPole, rPole, ploc, ma):
 
 # Track yhs from ploc using NA plate motion and PNW rotation and plate motion info
 def getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, ploc, ma):
-  pnwVPole = getEulerPoleFromPlocAndPavel(pnwRotPole.ploc(), pnwVPavel)
+  pnwVPole = getEulerPoleFromPlocAndPavel(pnwRotPole.ploc, pnwVPavel)
   naPole = getEulerPoleFromPlocAndPavel(ploc, naPAvel)
 
   # move NA over yhs then move by both pnw poles to its ma location
@@ -68,18 +60,33 @@ def getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, ploc, ma):
   loc_3 = getCompoundRotationTranslationOfPoint(pnwVPole, pnwRotPole, loc_2, ma)
   return loc_3
 
+def getPlocFromLocNormal(p_hat):
+    phi = np.arcsin(p_hat[2])
+    lam = np.arctan2(p_hat[1], p_hat[0])
+    return PLoc(np.degrees(lam), np.degrees(phi))
+
  # Big circle pole for given loc and velocity vector. pAvel is azimuth and speed (e.f. km/ma or mm/yr)
+def getVeVnFromAzvel(pLoc, pAzvel): #cartesian Ve and Vn for point, and motion azimuth and magnitude (mm/Y)
+    # unit vectors for 'easterly' and 'northerly' at P
+    e_hat = np.array([-np.sin(pLoc.lam), np.cos(pLoc.lam), 0.0])
+    n_hat = np.array([-np.sin(pLoc.phi) * np.cos(pLoc.lam), -np.sin(pLoc.phi) * np.sin(pLoc.lam), np.cos(pLoc.phi)])
+    # 2D motion vector at point
+    V = np.array([np.sin(np.radians(pAzvel.azimuth)) * pAzvel.vel,
+                    np.cos(np.radians(pAzvel.azimuth)) * pAzvel.vel])
+    # return scaled velocity in easterly and northerly directions
+    return e_hat * V[0], n_hat * V[1]
+
 def getEulerPoleFromPlocAndPavel(ploc, pAvel):
     MetersPerDegree = 2 * np.pi * R / 360.0
     KmPerMaToDegreesPerMa = 1.0 / MetersPerDegree
     degreesPerMa = pAvel.vel * KmPerMaToDegreesPerMa
     omega = degreesPerMa
     
-    P = gh.getCartesianFromLatLong(ploc)
-    V_e, V_n = gh.getVeVnFromAzvel(ploc, pAvel)
+    P = getRVector(ploc)
+    V_e, V_n = getVeVnFromAzvel(ploc, pAvel)
     V = V_e + V_n
     pe_hat = gh.normalize(np.cross(P, V)) # epipolar unit direction vector
-    epiPoleLoc = gh.getPlocFromLocNormal(pe_hat)
+    epiPoleLoc = getPlocFromLocNormal(pe_hat)
 
     return EulerPole(epiPoleLoc.long, epiPoleLoc.lat, omega)
 
@@ -91,34 +98,17 @@ def testIfBigCircleCoplanarity(ploc1, ploc2, ploc3): # (r1 x r2) dot r3 == 0
     test = np.linalg.cross(r1, r2).dot(r3)
     return test
 
-def project_V_to_v (V, p): #V is 3D cartesion velocity, phi and lamb in radians
-  e_hat = np.array([-np.sin(p['lamb']), np.cos(p['lamb']), 0 ])
-  n_hat = np.array([-np.sin(p['phi']) * np.cos(p['lamb']), -np.sin(p['phi']) * np.sin(p['lamb']), np.cos(p['phi'])])
+def project_V_to_v (V, p): #V is 3D cartesion velocity, p is PLoc
+  e_hat = np.array([-np.sin(p.lam), np.cos(p.lam), 0 ])
+  n_hat = np.array([-np.sin(p.phi) * np.cos(p.lam), -np.sin(p.phi) * np.sin(p.lam), np.cos(p.phi)])
   v_e = np.dot(V, e_hat)
   v_n = np.dot(V, n_hat)
   return np.array([v_e, v_n])
 
-def get_hat_p(p): # returns a normal to the phi,lamb point
-  return np.array([ 
-    np.cos(p['phi']) * np.cos(p['lamb']),
-    np.cos(p['phi']) * np.sin(p['lamb']),
-    np.sin(p['phi'])
-    ])
-
-def get_hat(lat, long):
-   return get_hat_p({'lamb': np.radians(long), 'phi': np.radians(lat)})
-
-# omega not passed makes v based on euler_pole.omega, otherwise we use argument omega
-def calculate_v_from_EulerPole(euler_pole, ploc, omega = None):
-  Omega = {"omega": euler_pole.omega, "phi": np.radians(euler_pole.lat), "lamb": np.radians(euler_pole.long)}
-  p = {"phi": np.radians(ploc.lat), "lamb": np.radians(ploc.long)}
-  v = calculate_v_from_Euler_pole(Omega, p, euler_pole.omega if omega is None else omega)
-  # BUG - not clear why the sign is flipped on V (see test_v_pole_from_sample_point)
-  return -v
-
-def calculate_v_from_Euler_pole(Omega, p, omega): # p in {phi, lamb}, Omega in {phi, lamb, omega} radians
-  P = R * get_hat_p(p)
-  O = np.radians(omega) * get_hat_p(Omega)
+# BUG? - not clear why the sign is flipped on V (see test_v_pole_from_sample_point)
+def calculate_v_from_EulerPole(pole, p, omega = None): # pole is EulerPole, p is ploc, omega in degrees
+  P = R * getRVector(p)
+  O = np.radians(pole.omega if omega is None else omega) * getRVector(pole.ploc)
   V = np.cross(P, O)
   v = project_V_to_v(V, p)
-  return v
+  return -v
