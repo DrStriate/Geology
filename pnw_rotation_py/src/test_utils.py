@@ -23,6 +23,7 @@ def get_test_data():
 
 def get_GPS_rotation_data (center_long, center_lat, max_distance): # distance in km
   gh.setGeod(realWorld=True)
+
   file_path = get_data_file_path("NSHM2023_GPS_velocity.zip")
   gdf = gpd.read_file(f"/vsizip/{file_path}")
   list_lats = gdf['geometry'].y.values
@@ -31,7 +32,7 @@ def get_GPS_rotation_data (center_long, center_lat, max_distance): # distance in
   list_v_north = gdf['Vn'].values   
   list_s_east = gdf['Se'].values       
   list_s_north = gdf['Sn'].values 
-  "NSHM2023_GPS_velocity.zip"
+
   lats = []
   lons = []
   v_east = [] # mm/ yr

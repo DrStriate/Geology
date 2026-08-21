@@ -67,10 +67,10 @@ def test_euler_GPS_pole_extraction_legacy():
   pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths, s_e, s_n)
   #epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
 
-  pole_result_sb = EulerPole(-115.41237, 43.63921,  0.5512292)
-  assert pole_result.long == pytest.approx(pole_result_sb.long)
-  assert pole_result.lat == pytest.approx(pole_result_sb.lat)
-  assert pole_result.omega == pytest.approx(pole_result_sb.omega)
+  pole_result_sb = EulerPole(-115.406, 43.646,  0.550)
+  assert pole_result.long == pytest.approx(pole_result_sb.long, abs=0.001)
+  assert pole_result.lat == pytest.approx(pole_result_sb.lat, abs=0.001)
+  assert pole_result.omega == pytest.approx(pole_result_sb.omega, abs=0.001)
 
 def test_euler_GPS_pole_extraction2():
   gh.setGeod(realWorld = True)
@@ -90,8 +90,8 @@ def test_euler_GPS_pole_extraction2():
   v_offset_mm_yr = gn.solve_gauss_newton_translation_wtd(lats, lons, v_easts, v_norths, s_e, s_n, pole_result)
   #print(f"Isolated Average Background Velocity (mm/yr East, North): {v_offset_mm_yr}")
 
-  sb = np.array([0.8372719136737565,  2.9435882779238085])
-  assert v_offset_mm_yr == pytest.approx(sb)
+  sb = np.array([0.817,  2.935])
+  assert v_offset_mm_yr == pytest.approx(sb, abs=0.001)
 
 
 

@@ -1,5 +1,4 @@
 import numpy as np
-from haversine import haversine, Unit
 from pyproj import Geod
 from dataclasses import dataclass, field
 
@@ -157,10 +156,15 @@ def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
     easterly_km = distance_meters * np.sin(azimuth_rad) * 0.001
     return northerly_km, easterly_km
 
-def getFwdAzimuthFromLocations (point1, point2):
+def getFwdAzimuthFromLocations (point1, point2): #both PLocs
    # forward_azimuth is the angle from point 1 to point 2 (degrees clockwise from North)
     forward_azimuth, back_azimuth, distance_meters = geod.inv(point1.long, point1.lat, point2.long, point2.lat)
     return forward_azimuth % 360
+
+# Great circle distance (km)
+def getDistanceBetweenPoints(point1, point2): #both PLocs
+    forward_azimuth, back_azimuth, distance_meters = geod.inv(point1.long, point1.lat, point2.long, point2.lat)
+    return distance_meters / 1000.0
 
 def create_sample (start_lon, start_lat, azimuth, distance): # distance in km!
     # Calculate the terminus point
@@ -173,6 +177,12 @@ def create_sample (start_lon, start_lat, azimuth, distance): # distance in km!
 
 def clamp(value, minimum, maximum):
     return max(minimum, min(value, maximum))
+
+def normalize(vect):
+    mag = np.linalg.norm(vect)
+    if mag > 0:
+        return vect / mag
+    return vect
 
 # Code below probably needs to be refactored to use code/methods above which are more accurate
 
@@ -197,17 +207,5 @@ def longitudeFromDistE(latitude, dist): # km East
     longitudeDeltaRadians = dist / radiusOfParallel
     return np.degrees(longitudeDeltaRadians)
 
-# Great circle distance
-def getDistanceBetweenPoints(point1, point2): #both PLocs
-    if point1.lat < -90 or point1.lat > 90 or point2.lat < -90 or point1.lat > 90:
-        print("getDistanceBetweenPoints: bounding error")
-    return haversine((point1.lat, point1.long), (point2.lat, point2.long), unit=Unit.KILOMETERS)
-
-
-def normalize(vect):
-    mag = np.linalg.norm(vect)
-    if mag > 0:
-        return vect / mag
-    return vect
 
 

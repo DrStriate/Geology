@@ -187,7 +187,7 @@ class YhsPath:
 
     else: # show GPS data
       lat_list, long_list, ve_list, vn_list, s_e, s_n =\
-        tu.get_GPS_rotation_data(center.long, center.lat, radius * 1000.0)
+        tu.get_GPS_rotation_data(center.long, center.lat, radius)
 
       if len(lat_list) < 3:
         return False
@@ -200,7 +200,7 @@ class YhsPath:
       self.PnwRotPole.print("self.PnwRotPole: ")
 
       offsets = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, mod_ve_list, mod_vn_list, s_e, s_n, self.PnwRotPole )
-      print(f"offsets: {offsets}")
+      #print(f"offsets: {offsets}")
 
       label_text1 = f"{self.PnwRotPole.long:.4f}, {self.PnwRotPole.lat:.4f}, {self.PnwRotPole.omega:.3f} deg, "
       label_text2 = f"e: {offsets[0]:.3f} km, n: {offsets[1]:.3f} km, {radius} km"

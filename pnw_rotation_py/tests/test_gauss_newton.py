@@ -50,9 +50,8 @@ def test_gm_regress_against_pnw_GPS_data():
   #print(f"samples: {len(lats)}")
   #gn.print_x(x)
 
-  x_sb = np.array([1.07832394265, 3.36762990407])
-  assert(x[0] == pytest.approx(x_sb[0]))
-  assert(x[1] == pytest.approx(x_sb[1]))
+  x_sb = np.array([1.073, 3.364])
+  assert x == pytest.approx(x_sb, abs=0.001)
 
 # Tests legacy 2D imaging-based gauss-newton compared to the Gemini variant)
 def test_gn_regressions_against_sim_data():

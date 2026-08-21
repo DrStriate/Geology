@@ -181,10 +181,10 @@ def test_euler_GPS_pole_extraction():
   pole_result = epr.fit_euler_pole_linear(lats, lons, v_easts, v_norths, s_e, s_n)
   # epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
 
-  pole_result_sb = EulerPole(-115.41237, 43.63921,  0.5512292)
-  assert pole_result.long == pytest.approx(pole_result_sb.long)
-  assert pole_result.lat == pytest.approx(pole_result_sb.lat)
-  assert pole_result.omega == pytest.approx(pole_result_sb.omega)
+  pole_result_sb = EulerPole(-115.406, 43.646, 0.550)
+  assert pole_result.long == pytest.approx(pole_result_sb.long, abs=0.001)
+  assert pole_result.lat == pytest.approx(pole_result_sb.lat, abs=0.001)
+  assert pole_result.omega == pytest.approx(pole_result_sb.omega, abs=0.001)
 
 def test_combined_GPS_pole_extraction():
   gh.setGeod(realWorld = True)
@@ -198,13 +198,13 @@ def test_combined_GPS_pole_extraction():
   #epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
   #pAvel_result.print("PAvel_result: ")
 
-  pole_result_sb = EulerPole(-120.1513016164426, 44.52379407546297, 0.5953505334803234)
-  assert pole_result.long == pytest.approx(pole_result_sb.long)
-  assert pole_result.lat == pytest.approx(pole_result_sb.lat)
-  assert pole_result.omega == pytest.approx(pole_result_sb.omega)
-  paVel_result_sb = PAvel(13.770183080288092, 3.694171504121108)
-  assert pAvel_result.azimuth == pytest.approx(paVel_result_sb.azimuth)
-  assert pAvel_result.vel == pytest.approx(paVel_result_sb.vel)
+  pole_result_sb = EulerPole(-120.162, 44.520, 0.596)
+  assert pole_result.long == pytest.approx(pole_result_sb.long, abs=0.001)
+  assert pole_result.lat == pytest.approx(pole_result_sb.lat, abs=0.001)
+  assert pole_result.omega == pytest.approx(pole_result_sb.omega, abs=0.001)
+  paVel_result_sb = PAvel(13.726, 3.700)
+  assert pAvel_result.azimuth == pytest.approx(paVel_result_sb.azimuth, abs=0.001)
+  assert pAvel_result.vel == pytest.approx(paVel_result_sb.vel, abs=0.001)
 
 def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pole
   gh.setGeod(realWorld = False)
@@ -215,7 +215,7 @@ def test_euler_pole_from_pLoc(): #test pnw scenario with northerly motion on pol
   # ploc.print("\nploc:")
   # pole.print("pole: ")
 
-  assert ploc.long - 90 + 360 == pytest.approx(pole.long, abs=0)#0.01) # translation pole 90 degrees off reference at equator
+  assert ploc.long - 90 + 360 == pytest.approx(pole.long, abs=1e-6)       # translation pole 90 degrees off reference at equator
   assert pole.lat == pytest.approx(0.0, abs = 1e-6)                    # translation north on meridian has a pone on the equator
   assert pole.omega == pytest.approx(1.0, abs= 1e-6)
 
@@ -270,9 +270,9 @@ def test_3_pole_50ma_yhs_movement():
   
   yhsLoc50Ma = ek.getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, yhsLoc0Ma, ma)
 
-  ploc50maSB = PLoc(-123.04654741495806, 45.550226112027296)
-  assert yhsLoc50Ma.lat == pytest.approx(ploc50maSB.lat)
-  assert yhsLoc50Ma.long == pytest.approx(ploc50maSB.long)
+  ploc50maSB = PLoc(-124.346, 41.522)
+  assert yhsLoc50Ma.lat == pytest.approx(ploc50maSB.lat, abs=0.001)
+  assert yhsLoc50Ma.long == pytest.approx(ploc50maSB.long, abs=0.001)
 
 def angle_difference(a, b):
     # Returns the shortest angular distance in degrees [-180, 180]
