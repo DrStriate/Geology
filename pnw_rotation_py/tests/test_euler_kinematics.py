@@ -194,8 +194,10 @@ def test_combined_GPS_pole_extraction():
   max_distance = 600 # km
   lats, lons, v_easts, v_norths, s_e, s_n = tu.get_GPS_rotation_data(center_long, center_lat, max_distance)
 
-  pole_result, pAvel_result = epr.extractEulerPoleUsingCombinedRegressions(lats, lons, v_easts, v_norths, s_e, s_n)
-  #epr.print_result ("test_GPS_pole_extraction", pole_result, len(lats))
+  use_stereo = True
+  pole_result, pAvel_result = epr.extractEulerPoleUsingCombinedRegressions(
+    lats, lons, v_easts, v_norths, s_e, s_n, use_stereo)
+  #epr.print_result ("test_GPS_pole_extraction (use_stereo)", pole_result, len(lats))
   #pAvel_result.print("PAvel_result: ")
 
   pole_result_sb = EulerPole(-120.162, 44.520, 0.596)
@@ -203,6 +205,20 @@ def test_combined_GPS_pole_extraction():
   assert pole_result.lat == pytest.approx(pole_result_sb.lat, abs=0.001)
   assert pole_result.omega == pytest.approx(pole_result_sb.omega, abs=0.001)
   paVel_result_sb = PAvel(13.726, 3.700)
+  assert pAvel_result.azimuth == pytest.approx(paVel_result_sb.azimuth, abs=0.001)
+  assert pAvel_result.vel == pytest.approx(paVel_result_sb.vel, abs=0.001)
+
+  use_stereo = False # use Gemini v regression
+  pole_result, pAvel_result = epr.extractEulerPoleUsingCombinedRegressions(
+    lats, lons, v_easts, v_norths, s_e, s_n, use_stereo)
+  #epr.print_result ("test_GPS_pole_extraction (use Gemini)", pole_result, len(lats))
+  #pAvel_result.print("PAvel_result: ")
+
+  pole_result_sb = EulerPole(-120.162, 44.431, 0.596)
+  assert pole_result.long == pytest.approx(pole_result_sb.long, abs=0.06)
+  assert pole_result.lat == pytest.approx(pole_result_sb.lat, abs=0.001)
+  assert pole_result.omega == pytest.approx(pole_result_sb.omega, abs=0.001)
+  paVel_result_sb = PAvel(12.325, 3.629)
   assert pAvel_result.azimuth == pytest.approx(paVel_result_sb.azimuth, abs=0.001)
   assert pAvel_result.vel == pytest.approx(paVel_result_sb.vel, abs=0.001)
 

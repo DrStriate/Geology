@@ -1,13 +1,15 @@
 import numpy as np
-from pyproj import Geod
+from pyproj import Geod, CRS, Transformer
 from dataclasses import dataclass, field
 
 R = 6371.0 # Earth radius in km
 
 geod = Geod(ellps="WGS84")
+isRealWorld = True
 
 def setGeod(realWorld):
-    global geod  
+    global geod, isRealWorld
+    isRealWorld = realWorld
     if realWorld:
         geod = Geod(ellps="WGS84")
     else:
@@ -151,7 +153,7 @@ def getNortherlyEasterlyFromLatLongPoints(lon1, lat1, lon2, lat2):
     # Convert azimuth to radians
     azimuth_rad = np.radians(forward_azimuth)
     
-    # Calculate components - actually calculating 
+    # Calculate components  
     northerly_km = distance_meters * np.cos(azimuth_rad) * 0.001
     easterly_km = distance_meters * np.sin(azimuth_rad) * 0.001
     return northerly_km, easterly_km
@@ -188,12 +190,80 @@ def normalize(vect):
 
 # gets lat and long converted to coordinate distances from pole. This is an approximation 
 def getSamplePoints(long_list, lat_list, center_ploc):
-  p_e = np.zeros(len(long_list))
-  p_n = np.zeros(len(long_list))
-  for i in range(len(long_list)):
-    # convert sample points to meters
-    p_n[i], p_e[i] = getNortherlyEasterlyFromLatLongPoints(center_ploc.long, center_ploc.lat, long_list[i], lat_list[i])
+  # convert sample points to km
+  p_e, p_n = latlon_to_stereographic(lat_list, long_list, center_ploc.lat, center_ploc.long)
   return p_e, p_n 
+
+def latlon_to_stereographic(lats, lons, center_lat, center_lon):
+    """
+    Transforms latitude and longitude arrays to Stereographic (X, Y) grid coordinates in km.
+   
+    Parameters:
+        lats, lons: array-like or floats of point coordinates in degrees (WGS84).
+        center_lat, center_lon: projection origin center point in degrees.
+       
+    Returns:
+        x, y: grid coordinates in km relative to origin (0, 0).
+    """
+    if not isRealWorld:
+      return stereographic_forward_spherical(lats, lons, center_lat, center_lon)
+    
+    # Define custom Oblique Stereographic projection centered on (center_lat, center_lon)
+    proj_crs = CRS.from_proj4(
+        f"+proj=stere +lat_0={center_lat} +lon_0={center_lon} +k=1.0 "
+        f"+x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+    )
+   
+    # Create transformer from WGS84 geographic (EPSG:4326) to custom Stereographic
+    transformer = Transformer.from_crs("EPSG:4326", proj_crs, always_xy=True)
+   
+    # Transform (always_xy=True expects longitude first, then latitude)
+    x, y = transformer.transform(lons, lats) 
+    return np.array(x) * 1e-3, np.array(y) * 1e-3
+
+def stereographic_forward_spherical(lats, lons, center_lat, center_lon):
+    """
+    Direct mathematical Oblique Stereographic projection (spherical model).
+    """
+    # Convert degrees to radians
+    phi = np.radians(lats)
+    lam = np.radians(lons)
+    phi_0 = np.radians(center_lat)
+    lam_0 = np.radians(center_lon)
+   
+    # Angular distance / scaling factor k
+    sin_phi = np.sin(phi)
+    cos_phi = np.cos(phi)
+    sin_phi0 = np.sin(phi_0)
+    cos_phi0 = np.cos(phi_0)
+    cos_dlam = np.cos(lam - lam_0)
+   
+    # Scale factor k for stereographic tangent plane projection
+    k = 2.0 / (1.0 + sin_phi0 * sin_phi + cos_phi0 * cos_phi * cos_dlam)
+   
+    x = R * k * cos_phi * np.sin(lam - lam_0)
+    y = R * k * (cos_phi0 * sin_phi - sin_phi0 * cos_phi * cos_dlam)
+   
+    return x, y
+
+# --- Example Usage ---
+if __name__ == "__main__":
+    # Center point for the local region
+    origin_lat, origin_lon = 45.0, -122.0
+   
+    # Points to project
+    sample_lats = np.array([45.0, 45.1, 45.0, 44.9])
+    sample_lons = np.array([-122.0, -122.0, -121.9, -122.0])
+   
+    x, y = latlon_to_stereographic(sample_lats, sample_lons, origin_lat, origin_lon)
+   
+    print("X Grid Coordinates (meters):", x)
+    print("Y Grid Coordinates (meters):", y)
+
+    xs, ys = stereographic_forward_spherical(sample_lats, sample_lons, origin_lat, origin_lon)
+       
+    print("X Grid Coordinates (meters):", xs)
+    print("Y Grid Coordinates (meters):", ys)
 
 # Be wary of use of these distance metrics. 
 

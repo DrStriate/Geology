@@ -230,7 +230,7 @@ def fit_euler_pole_linear3(lats, lons, v_east_obs, v_north_obs, s_e=None, s_n=No
     offset_n = np.dot(n_hat, T_cartesian)
     return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True), np.array([offset_e, offset_n])
 
-def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_list, we_list = None, wn_list = None):
+def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_list, we_list = None, wn_list = None, use_stereo = True):
 
     # get data Euler pole from the raw data set
     raw_pole = fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list, we_list, wn_list)
@@ -238,7 +238,7 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
 
     # apply Gauss-Newton analysis to get any translation (non-rotation) components
     # offset = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
-    offset = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
+    offset = gn.solve_gauss_newton_transform(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole, use_stereo)
     # print(f"offset: {offset}")    
 
     # print(f"solve_gauss_newton_2D_transform_geo_wtd: {offset}")
@@ -252,7 +252,7 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
         rot_pole = fit_euler_pole_linear(lat_list, long_list, rot_ve_list, rot_vn_list, we_list, wn_list)
         # rot_pole.print("2: rotPole: ")
 
-        pass_offset = gn.solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, rot_ve_list, rot_vn_list, we_list, wn_list, rot_pole)
+        pass_offset = gn.solve_gauss_newton_transform(long_list, lat_list, rot_ve_list, rot_vn_list, we_list, wn_list, rot_pole, use_stereo)
         offset += pass_offset
         # print(f"offset: {offset}")
     # get Velocity pole PAVel info 

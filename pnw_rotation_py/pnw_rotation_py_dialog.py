@@ -316,7 +316,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.rotDisplayLayerSetup = False
         return
 
-
     def closeEvent(self, event: QCloseEvent):
         self.clearData()
         self.closeRotLayer()

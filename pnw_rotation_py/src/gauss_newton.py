@@ -194,12 +194,16 @@ def solve_gauss_newton_2D_transform_wtd(sample_e, sample_n, v_e, v_n, w_e, w_n, 
     
     R[j_idx] = v_n[i] * sw_n
     j_idx += 1
-        
-  # np.linalg.lstsq solves the system: (sqrt(W)*J)^T * (sqrt(W)*J) * x = (sqrt(W)*J)^T * (sqrt(W)*r)
-  # Which simplifies exactly to: J^T * W * J * x = J^T * W * r
-  x, residuals, rank, s = np.linalg.lstsq(J, R, rcond=None)
-  tu.test_regression_stats(x, J, R, residuals, False)
-  
+
+  try:
+    # np.linalg.lstsq solves the system: (sqrt(W)*J)^T * (sqrt(W)*J) * x = (sqrt(W)*J)^T * (sqrt(W)*r)
+    # Which simplifies exactly to: J^T * W * J * x = J^T * W * r
+    x, residuals, rank, s = np.linalg.lstsq(J, R, rcond=None)
+    tu.test_regression_stats(x, J, R, residuals, False)
+  except Exception as e:
+     print(f"solve_gauss_newton_2D_transform_wtd exception: \n{str(e)}")
+     x = ([0], [0])
+    
   # return {'t_x' : x[0], 't_y': x[1], 's' : x[2], 'r' : np.degrees(x[3])}
   return np.array([x[0], x[1]])
 
@@ -241,3 +245,13 @@ def gn_print(x):
   print(f"t_y:\t {x['t_y']:.5f}")
   print(f"s:  \t {x['s']:.5f}")
   print(f"r:  \t {x['r']:.5f}°")
+
+def solve_gauss_newton_transform(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole, useStereo):
+  # apply Gauss-Newton analysis to get any translation (non-rotation) components
+  if useStereo:
+      offset = solve_gauss_newton_2D_transform_geo_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
+      # print(f"offset (Stereo): {offset}")
+  else:
+      offset = solve_gauss_newton_translation_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
+      # print(f"offset (Gemini): {offset}")  
+  return offset
