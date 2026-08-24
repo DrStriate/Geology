@@ -8,5 +8,6 @@
         "long": -117.7,
         "lat": 47.9,
         "omega": 0.61
-    }
+    },
+    "StereographicProjection": true
 }

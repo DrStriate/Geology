@@ -40,7 +40,6 @@ from .rot_data import RotData
 from .geo_whiteboard import GeoWhiteboard
 from .src.geo_helper import PLoc, PAvel, EulerPole
 
-
 # Brothers_Lat = 47.652     
 # Brothers_Long = -123.141
 
@@ -66,6 +65,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.clearDataButton.clicked.connect(self.clearData)
         self.pbRunYhsLocButton.clicked.connect(self.pbRunYhsLocButtonClicked)
         self.rbConfigRV.toggled.connect(self.configRV)
+        self.rbStereographic.toggled.connect(self.stereographicToggled)
         self.rbConfigVR.toggled.connect(self.configVR)
         self.rbConfigCombo.toggled.connect(self.configCombo)
         self.pbGpsPole.clicked.connect(self.getGpsPoleData)
@@ -93,15 +93,12 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             spin_box.setKeyboardTracking(False)
             spin_box.valueChanged.connect(self.getDialogueProperties)
 
-        # parameters for PWN rot sample data        
-        self.sample_radius = 600 # km
-        self.sample_center = PLoc(-119.0, 45.0)
-
         self.rotData.load()
         self.setupRotDisplayLayer()
         self.yhsPath = YhsPath(self)
         self.configCombo()
-        self.yhsPath.getPnwGpsRotPoleAndVelocity(self.sample_center, self.sample_radius) # default to GPS regression
+        self.stereographicEnabled = True
+        self.yhsPath.getPnwGpsRotPoleAndVelocity()
         self.setDialogueProperties()
 
 
@@ -121,6 +118,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.spbPnwRPoleLong.setValue(propertyBag.PnwRotPole.long)
             self.spbPnwRPoleLat.setValue(propertyBag.PnwRotPole.lat)
             self.spbPnwRPoleOmega.setValue(propertyBag.PnwRotPole.omega)
+            self.rbStereographic.setChecked(propertyBag.StereographicProjection)
         self.uiPropertieesSet = True
     
     def getDialogueProperties(self): #set yhs_Path from UI
@@ -131,7 +129,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         propertyBag = YhsPropertyBag(
             self.NAPlateFiles[selectedIndex],
             PAvel(self.spbPnwVPoleAzimuth.value(), self.spbPnwVPoleSpeed.value()),
-            EulerPole(self.spbPnwRPoleLong.value(), self.spbPnwRPoleLat.value(), self.spbPnwRPoleOmega.value(), is_clockwise=True))
+            EulerPole(self.spbPnwRPoleLong.value(), self.spbPnwRPoleLat.value(), self.spbPnwRPoleOmega.value(), is_clockwise=True),
+            StereographicProjection = self.stereographicEnabled)
         self.yhsPath.setYhsPropertyBag(propertyBag)
 
     def save_data_to_file(self):
@@ -274,12 +273,17 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self.yhsPath.get_yhs_loc(currentMa, deltaMa, steps)
         return
 
+    def stereographicToggled(self):
+        self.stereographicEnabled = self.rbStereographic.isChecked()
+        self.getDialogueProperties()
+        self.getGpsPoleData()
+
     def NAPlateChanged(self, id):
         self.yhsPath.setupNAPLateData(self.NAPlateFiles[id])
 
     # GPS Pole button pressed
     def getGpsPoleData(self):
-        self.yhsPath.getPnwGpsRotPoleAndVelocity(self.sample_center, self.sample_radius)
+        self.yhsPath.getPnwGpsRotPoleAndVelocity()
         # self.yhsPath.setDefaultNAPole()
         self.setDialogueProperties() # upload properties to UI
     

@@ -498,8 +498,8 @@
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
-     <x>270</x>
-     <y>180</y>
+     <x>250</x>
+     <y>160</y>
      <width>120</width>
      <height>81</height>
     </rect>
@@ -550,6 +550,25 @@
     </property>
    </widget>
   </widget>
+  <widget class="QRadioButton" name="rbStereographic">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>180</y>
+     <width>121</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="toolTipDuration">
+    <number>-3</number>
+   </property>
+   <property name="text">
+    <string>Stereographic proj</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>groupParamBox</zorder>
   <zorder>clearDataButton</zorder>
   <zorder>pbRunYhsLocButton</zorder>
@@ -565,6 +584,7 @@
   <zorder>groupBox</zorder>
   <zorder>StartLatLabel_8</zorder>
   <zorder>StartLatLabel_9</zorder>
+  <zorder>rbStereographic</zorder>
  </widget>
  <resources/>
  <connections/>

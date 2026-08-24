@@ -26,6 +26,7 @@ class YhsPropertyBag:
   NaPlateDataName: str
   PnwVPAvel: PAvel
   PnwRotPole: EulerPole
+  StereographicProjection: bool
 
 class YhsPath:
   def __init__(self, parent):
@@ -37,6 +38,12 @@ class YhsPath:
     self.useGpsData = False
     self.pole_model = 2 # 1 is NA then Pole-V then Pole-R, 2 is NA - Translated-R - Pole-V
     self.yhs_loc = PLoc(YHS_long, YHS_lat)
+
+    # parameters for PWN rot sample data        
+    self.sample_radius = 600 # km
+    self.sample_center = PLoc(-119.0, 45.0)
+
+    self.stereographicProjection = True
 
     self.delta_ve = 0
     self.delta_vn = 0
@@ -54,15 +61,17 @@ class YhsPath:
     self.NaPlateDataName = propertyBag.NaPlateDataName
     self.PnwVPAvel = propertyBag.PnwVPAvel
     self.PnwRotPole = propertyBag.PnwRotPole  
+    self.stereographicProjection = propertyBag.StereographicProjection
   
   def getYhsPropertyBag(self):
-    propertyBag = YhsPropertyBag(self.NaPlateDataName, self.PnwVPAvel, self.PnwRotPole)
+    propertyBag = YhsPropertyBag(self.NaPlateDataName, self.PnwVPAvel, self.PnwRotPole, self.stereographicProjection)
     return propertyBag
   
   def setYhsPropertyBag(self, propertyBag):
     self.NaPlateDataName = propertyBag.NaPlateDataName
     self.PnwVPAvel = propertyBag.PnwVPAvel
     self.PnwRotPole = propertyBag.PnwRotPole
+    self.stereographicProjection = propertyBag.StereographicProjection
 
   def setupNAPLateData(self, fileName):
     script_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "na_plate_gplates")
@@ -70,8 +79,9 @@ class YhsPath:
     self.yhs_path_data = ry.load_data(na_file_path)
     self.NaPlateDataName = fileName
 
-  def getPnwGpsRotPoleAndVelocity(self, sample_center, sample_radius): # radius km
-      self.PnwRotPole, self.PnwVPAvel = epr.getPnwGpsRotPoleAndVelocity(sample_center, sample_radius)
+  def getPnwGpsRotPoleAndVelocity(self):
+      self.PnwRotPole, self.PnwVPAvel = epr.getPnwGpsRotPoleAndVelocity(
+        self.sample_center, self.sample_radius, self.stereographicProjection)
 
   def checkLayersCreated(self): 
     self.NaPoleLayer = self.path_layer_manager.getInstance("NA pole", "red")

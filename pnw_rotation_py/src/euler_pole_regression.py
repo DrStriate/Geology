@@ -234,14 +234,10 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
 
     # get data Euler pole from the raw data set
     raw_pole = fit_euler_pole_linear(lat_list, long_list, ve_list, vn_list, we_list, wn_list)
-    # raw_pole.print("1: rotPole: ")
 
     # apply Gauss-Newton analysis to get any translation (non-rotation) components
-    # offset = gn.solve_gauss_newton_translation_wtd(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole)
     offset = gn.solve_gauss_newton_transform(long_list, lat_list, ve_list, vn_list, we_list, wn_list, raw_pole, use_stereo)
     # print(f"offset: {offset}")    
-
-    # print(f"solve_gauss_newton_2D_transform_geo_wtd: {offset}")
 
     for iteration in range(3):
         # strip any translation element to get rot-only 
@@ -255,16 +251,18 @@ def extractEulerPoleUsingCombinedRegressions(lat_list, long_list, ve_list, vn_li
         pass_offset = gn.solve_gauss_newton_transform(long_list, lat_list, rot_ve_list, rot_vn_list, we_list, wn_list, rot_pole, use_stereo)
         offset += pass_offset
         # print(f"offset: {offset}")
+        
     # get Velocity pole PAVel info 
     pnwVPAVel = getPAvel(offset[0], offset[1])
 
-    # offset is in meters per ma and we want a rate (km/ma or mm/yr) so we need to scale
+    # rot_pole.print("rot_pole: ")
+    # pnwVPAVel.print("pnwVPAVel: ")
     return rot_pole, pnwVPAVel
 
-def getPnwGpsRotPoleAndVelocity(sample_center, sample_radius): # radius km 
+def getPnwGpsRotPoleAndVelocity(sample_center, sample_radius, useStereo = True): # radius km 
   lats, longs, ves, vns, wes, wns=\
     tu.get_GPS_rotation_data(sample_center.long, sample_center.lat, sample_radius)   
-  rot_pole, pnwVPAVel = extractEulerPoleUsingCombinedRegressions(lats, longs, ves, vns, wes, wns)
+  rot_pole, pnwVPAVel = extractEulerPoleUsingCombinedRegressions(lats, longs, ves, vns, wes, wns, useStereo)
   return rot_pole, pnwVPAVel
 
 def print_result(name, pole_result, point_count = 0):
