@@ -150,13 +150,18 @@ class YhsPath:
       self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
       #loc_3.print("loc_3: ")
     
-    else: # pole model 3: run pole from start Ma but plot progress points up to final ma
+    elif self.pole_model == 3: # model 3: run pole from start Ma but plot progress points up to final ma
 
       # self.parent.geoWhiteboard.draw_target(loc_1.long, loc_1.lat, f"{currentMa} Ma YHS ({loc_1.long:0.3f}, {loc_1.lat:0.3f})")
       loc_3 = self.PnwComboLayer.RenderComboPoleMotionForMa(loc_1, self.PnwVPole, runPnwRotPole, currentMa)
       self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
       self.PnwRotPoleLayer.RenderAzimuthMarkersforMa(loc_1, self.PnwVPole, runPnwRotPole, currentMa)
-  
+
+    else: # model 4: plot only the final YHS spot (for tracoing path)
+
+      loc_3 = ek.getCompoundRotationTranslationOfPoint(self.PnwVPole, runPnwRotPole, loc_1, currentMa)
+      self.parent.geoWhiteboard.draw_target(loc_3.long, loc_3.lat, f"{currentMa} Ma YHS ({loc_3.long:0.3f}, {loc_3.lat:0.3f})")
+
     return loc_3
 
   def displayGPSDataAndPoles(self, test_code, center, radius): # radius in km

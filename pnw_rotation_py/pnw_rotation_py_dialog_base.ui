@@ -501,7 +501,7 @@
      <x>250</x>
      <y>160</y>
      <width>120</width>
-     <height>81</height>
+     <height>101</height>
     </rect>
    </property>
    <property name="title">
@@ -518,6 +518,9 @@
     </property>
     <property name="text">
      <string>R - V</string>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QRadioButton" name="rbConfigVR">
@@ -547,6 +550,22 @@
     </property>
     <property name="checked">
      <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="rbConfigYhsOnly">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>80</y>
+      <width>81</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>YHS Only</string>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
     </property>
    </widget>
   </widget>

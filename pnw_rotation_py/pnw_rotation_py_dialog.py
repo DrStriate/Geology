@@ -68,6 +68,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
         self.rbStereographic.toggled.connect(self.stereographicToggled)
         self.rbConfigVR.toggled.connect(self.configVR)
         self.rbConfigCombo.toggled.connect(self.configCombo)
+        self.rbConfigYhsOnly.toggled.connect(self.configYhsOnly)
         self.pbGpsPole.clicked.connect(self.getGpsPoleData)
         self.pbGpsDataAndPoles.clicked.connect(self.displayGpsDataAndPoles)
         #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
@@ -297,8 +298,11 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def configCombo(self):
         if self.rbConfigCombo.isChecked():
-
             self.yhsPath.modeSet(3)
+
+    def configYhsOnly(self):
+        if self.rbConfigYhsOnly.isChecked():
+            self.yhsPath.modeSet(4)
         
     def removeLayer(self, layer):
         if layer :
