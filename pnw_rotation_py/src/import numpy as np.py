@@ -1,23 +1,25 @@
 import numpy as np
-#from scipy import linalg
+# from scipy import linalg
+
 
 def weighted_inversion(A, b, W):
-    """
-    Solves Ac = b using Weighted Least Squares.
-    Returns optimal parameters c.
-    """
-    # 1. Compute the components for the weighted normal equation
-    AT = A.T
-    ATA = AT.dot(W).dot(A)
-    ATb = AT.dot(W).dot(b)
-    
-    # 2. Solve the linear system directly instead of inverting,
-    # which is computationally more stable.
-    # Solves (AT * W * A) * c = (AT * W * b)
-    # c = linalg.solve(ATA, ATb)
-    
-    c, residuals, rank, s = np.linalg.lstsq(ATA, ATb, rcond=None)
-    return c
+  """
+  Solves Ac = b using Weighted Least Squares.
+  Returns optimal parameters c.
+  """
+  # 1. Compute the components for the weighted normal equation
+  AT = A.T
+  ATA = AT.dot(W).dot(A)
+  ATb = AT.dot(W).dot(b)
+
+  # 2. Solve the linear system directly instead of inverting,
+  # which is computationally more stable.
+  # Solves (AT * W * A) * c = (AT * W * b)
+  # c = linalg.solve(ATA, ATb)
+
+  c, residuals, rank, s = np.linalg.lstsq(ATA, ATb, rcond=None)
+  return c
+
 
 # --- Example Usage ---
 # Define the system: 3 observations, 2 parameters

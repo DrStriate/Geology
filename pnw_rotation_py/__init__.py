@@ -31,15 +31,17 @@ src_dir = os.path.abspath(os.path.join(plugin_dir, "src"))
 
 # Add it to sys.path so QGIS can see 'import package'
 if src_dir not in sys.path:
-    sys.path.insert(0, src_dir)
+  sys.path.insert(0, src_dir)
 
 # noinspection PyPep8Naming
-def classFactory(iface):  # pylint: disable=invalid-name
-    """Load PnwRotPy class from file PnwRotPy.
 
-    :param iface: A QGIS interface instance.
-    :type iface: QgsInterface
-    """
-    #
-    from .pnw_rotation_py import PnwRotPy
-    return PnwRotPy(iface)
+
+def classFactory(iface):  # pylint: disable=invalid-name
+  """Load PnwRotPy class from file PnwRotPy.
+
+  :param iface: A QGIS interface instance.
+  :type iface: QgsInterface
+  """
+  #
+  from .pnw_rotation_py import PnwRotPy
+  return PnwRotPy(iface)

@@ -25,13 +25,14 @@
 import os
 
 from qgis.PyQt import uic, QtWidgets
-from qgis.PyQt.QtWidgets import  QDoubleSpinBox, QFileDialog, QMessageBox
+from qgis.PyQt.QtWidgets import QDoubleSpinBox, QFileDialog, QMessageBox
 from qgis._core import (QgsMessageLog,
                         Qgis,
 
                         QgsVectorLayer,
                         QgsProject)
-from qgis.PyQt.QtGui import QColor, QCloseEvent # Bug - Qgis is fine with this import, PyCharm is not
+# Bug - Qgis is fine with this import, PyCharm is not
+from qgis.PyQt.QtGui import QColor, QCloseEvent
 from qgis.utils import iface
 
 from .yhs_path import YhsPath, YhsPropertyBag
@@ -40,293 +41,300 @@ from .rot_data import RotData
 from .geo_whiteboard import GeoWhiteboard
 from .src.geo_helper import PLoc, PAvel, EulerPole
 
-# Brothers_Lat = 47.652     
+# Brothers_Lat = 47.652
 # Brothers_Long = -123.141
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'pnw_rotation_py_dialog_base.ui'))
 
 class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
-    name = 'PnwRotPyDialog'
-    destRotDataLayerName = 'Pnw Rotation Data'
-    TEST_CODE = 0
+  name = 'PnwRotPyDialog'
+  destRotDataLayerName = 'Pnw Rotation Data'
+  TEST_CODE = 0
 
-    def __init__(self, parent=None):
-        super(PnwRotPyDialog, self).__init__(parent)
-        self.setupUi(self)
+  def __init__(self, parent=None):
+    super(PnwRotPyDialog, self).__init__(parent)
+    self.setupUi(self)
 
-        self.rotData = RotData()
-        self.rotDisplayLayerSetup = False
-        self.rotDestLayer = None
-        self.interpFunction = "LinearNDInterpolator"
-        self.geoWhiteboard = None
-        self.rotPoleDisplayed = False
-        
-        self.clearDataButton.clicked.connect(self.clearData)
-        self.pbRunYhsLocButton.clicked.connect(self.pbRunYhsLocButtonClicked)
-        self.rbConfigRV.toggled.connect(self.configRV)
-        self.rbStereographic.toggled.connect(self.stereographicToggled)
-        self.rbConfigVR.toggled.connect(self.configVR)
-        self.rbConfigCombo.toggled.connect(self.configCombo)
-        self.rbConfigYhsOnly.toggled.connect(self.configYhsOnly)
-        self.pbGpsPole.clicked.connect(self.getGpsPoleData)
-        self.pbGpsDataAndPoles.clicked.connect(self.displayGpsDataAndPoles)
-        #self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
-        self.saveButton.clicked.connect(self.save_data_to_file)
-        self.loadButton.clicked.connect(self.load_data_from_file)
+    self.rotData = RotData()
+    self.rotDisplayLayerSetup = False
+    self.rotDestLayer = None
+    self.interpFunction = "LinearNDInterpolator"
+    self.geoWhiteboard = None
+    self.rotPoleDisplayed = False
 
-        self.comboBoxLabels = [
-            "Müller et al. (2019)",
-            "Matthews et al. (2016)",
-            "Seton et al. (2012)"
-        ]
-        self.NAPlateFiles = [
-            "yhs_continuous_1ma_Muller2019.geojson", #"Müller et al. (2019)",
-            "yhs_continuous_1ma_Matthews2016.geojson", #"Matthews et al. (2016)",
-            "yhs_continuous_1ma_Seton2012.geojson"  #"Seton et al. (2012)"
-        ]
-        self.comboBoxNAPlate.addItems(self.comboBoxLabels)
-        self.comboBoxNAPlate.currentIndexChanged.connect(self.NAPlateChanged)
+    self.clearDataButton.clicked.connect(self.clearData)
+    self.pbRunYhsLocButton.clicked.connect(self.pbRunYhsLocButtonClicked)
+    self.rbConfigRV.toggled.connect(self.configRV)
+    self.rbStereographic.toggled.connect(self.stereographicToggled)
+    self.rbConfigVR.toggled.connect(self.configVR)
+    self.rbConfigCombo.toggled.connect(self.configCombo)
+    self.rbConfigYhsOnly.toggled.connect(self.configYhsOnly)
+    self.pbGpsPole.clicked.connect(self.getGpsPoleData)
+    self.pbGpsDataAndPoles.clicked.connect(self.displayGpsDataAndPoles)
+    # self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
+    self.saveButton.clicked.connect(self.save_data_to_file)
+    self.loadButton.clicked.connect(self.load_data_from_file)
 
-        self.uiPropertieesSet = False
-        spin_boxes = self.groupParamBox.findChildren(QDoubleSpinBox)
-        for spin_box in spin_boxes:
-            spin_box.setKeyboardTracking(False)
-            spin_box.valueChanged.connect(self.getDialogueProperties)
+    self.comboBoxLabels = [
+        "Müller et al. (2019)",
+        "Matthews et al. (2016)",
+        "Seton et al. (2012)"
+    ]
+    self.NAPlateFiles = [
+        "yhs_continuous_1ma_Muller2019.geojson",  # "Müller et al. (2019)",
+        "yhs_continuous_1ma_Matthews2016.geojson",  # "Matthews et al. (2016)",
+        "yhs_continuous_1ma_Seton2012.geojson"  # "Seton et al. (2012)"
+    ]
+    self.comboBoxNAPlate.addItems(self.comboBoxLabels)
+    self.comboBoxNAPlate.currentIndexChanged.connect(self.NAPlateChanged)
 
-        self.rotData.load()
-        self.setupRotDisplayLayer()
-        self.yhsPath = YhsPath(self)
-        self.configCombo()
-        self.stereographicEnabled = True
-        self.yhsPath.getPnwGpsRotPoleAndVelocity()
+    self.uiPropertieesSet = False
+    spin_boxes = self.groupParamBox.findChildren(QDoubleSpinBox)
+    for spin_box in spin_boxes:
+      spin_box.setKeyboardTracking(False)
+      spin_box.valueChanged.connect(self.getDialogueProperties)
+
+    self.rotData.load()
+    self.setupRotDisplayLayer()
+    self.yhsPath = YhsPath(self)
+    self.configCombo()
+    self.stereographicEnabled = True
+    self.yhsPath.getPnwGpsRotPoleAndVelocity()
+    self.setDialogueProperties()
+
+  def setDialogueProperties(self):  # Set UI from yhs_Path
+    self.uiPropertieesSet = False  # ignore changed events until done
+    index = -1
+    for i in range(len(self.NAPlateFiles)):
+      if self.NAPlateFiles[i] == self.yhsPath.NaPlateDataName:
+        index = i
+    propertyBag = self.yhsPath.getYhsPropertyBag()
+    if index >= 0:
+      self.comboBoxNAPlate.setCurrentIndex(index)
+
+    self.spbPnwVPoleAzimuth.setValue(propertyBag.PnwVPAvel.azimuth)
+    self.spbPnwVPoleSpeed.setValue(propertyBag.PnwVPAvel.vel)
+    if propertyBag.PnwRotPole:
+      self.spbPnwRPoleLong.setValue(propertyBag.PnwRotPole.long)
+      self.spbPnwRPoleLat.setValue(propertyBag.PnwRotPole.lat)
+      self.spbPnwRPoleOmega.setValue(propertyBag.PnwRotPole.omega)
+      self.rbStereographic.setChecked(propertyBag.StereographicProjection)
+    self.uiPropertieesSet = True
+
+  def getDialogueProperties(self):  # set yhs_Path from UI
+    if not self.uiPropertieesSet:
+      return
+    # changed_box = self.sender() # Might prove handy for special handling (none needed yet)
+    selectedIndex = self.comboBoxNAPlate.currentIndex()
+    propertyBag = YhsPropertyBag(
+        self.NAPlateFiles[selectedIndex],
+        PAvel(self.spbPnwVPoleAzimuth.value(), self.spbPnwVPoleSpeed.value()),
+        EulerPole(self.spbPnwRPoleLong.value(), self.spbPnwRPoleLat.value(
+        ), self.spbPnwRPoleOmega.value(), is_clockwise=True),
+        StereographicProjection=self.stereographicEnabled)
+    self.yhsPath.setYhsPropertyBag(propertyBag)
+
+  def save_data_to_file(self):
+    default_dir = os.path.join(os.path.dirname(__file__), "data")
+    file_path, _ = QFileDialog.getSaveFileName(
+        self,
+        "Save YHS Properties",
+        default_dir,
+        "Property Bag (*.pb)")
+
+    if file_path:
+      try:
+        json_data = self.yhsPath.get_serialize_bag()
+        with open(file_path, 'w', encoding='utf-8') as f:
+          f.write(json_data)
+        print(f"Successfully saved to {file_path}")
         self.setDialogueProperties()
 
+      except Exception as e:
+        QMessageBox.critical(
+            self, "Save Error", f"Could not save file:\n{str(e)}")
 
-    def setDialogueProperties(self): # Set UI from yhs_Path
-        self.uiPropertieesSet = False # ignore changed events until done
-        index = -1
-        for i in range(len(self.NAPlateFiles)):
-            if self.NAPlateFiles[i] == self.yhsPath.NaPlateDataName:
-                index = i
-        propertyBag = self.yhsPath.getYhsPropertyBag()
-        if index >= 0:
-            self.comboBoxNAPlate.setCurrentIndex(index)
+  def load_data_from_file(self):
+    default_dir = os.path.join(os.path.dirname(__file__), "data")
 
-        self.spbPnwVPoleAzimuth.setValue(propertyBag.PnwVPAvel.azimuth)
-        self.spbPnwVPoleSpeed.setValue(propertyBag.PnwVPAvel.vel)
-        if propertyBag.PnwRotPole:
-            self.spbPnwRPoleLong.setValue(propertyBag.PnwRotPole.long)
-            self.spbPnwRPoleLat.setValue(propertyBag.PnwRotPole.lat)
-            self.spbPnwRPoleOmega.setValue(propertyBag.PnwRotPole.omega)
-            self.rbStereographic.setChecked(propertyBag.StereographicProjection)
-        self.uiPropertieesSet = True
-    
-    def getDialogueProperties(self): #set yhs_Path from UI
-        if not self.uiPropertieesSet:
-               return
-        #changed_box = self.sender() # Might prove handy for special handling (none needed yet)
-        selectedIndex = self.comboBoxNAPlate.currentIndex()
-        propertyBag = YhsPropertyBag(
-            self.NAPlateFiles[selectedIndex],
-            PAvel(self.spbPnwVPoleAzimuth.value(), self.spbPnwVPoleSpeed.value()),
-            EulerPole(self.spbPnwRPoleLong.value(), self.spbPnwRPoleLat.value(), self.spbPnwRPoleOmega.value(), is_clockwise=True),
-            StereographicProjection = self.stereographicEnabled)
-        self.yhsPath.setYhsPropertyBag(propertyBag)
+    file_path, _ = QFileDialog.getOpenFileName(
+        self,
+        "Load Property Bag",
+        default_dir,
+        "Property Bag (*.pb)")
 
-    def save_data_to_file(self):
-        default_dir = os.path.join(os.path.dirname(__file__), "data")      
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save YHS Properties",
-            default_dir,
-            "Property Bag (*.pb)")
+    if file_path:
+      try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+          json_data = f.read()
+        self.yhsPath.deserialize_and_set_bag(json_data)
+        print(f"Successfully loaded from {file_path}")
+        self.setDialogueProperties()
 
-        if file_path:
-            try:
-                json_data = self.yhsPath.get_serialize_bag()
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(json_data)
-                print(f"Successfully saved to {file_path}")
-                self.setDialogueProperties()
-                
-            except Exception as e:
-                QMessageBox.critical(self, "Save Error", f"Could not save file:\n{str(e)}")
-        
-    def load_data_from_file(self):
-        default_dir = os.path.join(os.path.dirname(__file__), "data")
-    
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Load Property Bag",
-            default_dir,
-            "Property Bag (*.pb)")
+      except Exception as e:
+        QMessageBox.critical(
+            self, "Load Error", f"Could not load file:\n{str(e)}")
 
-        if file_path:
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    json_data = f.read()
-                self.yhsPath.deserialize_and_set_bag(json_data)
-                print(f"Successfully loaded from {file_path}")
-                self.setDialogueProperties()
-                
-            except Exception as e:
-                QMessageBox.critical(self, "Load Error", f"Could not load file:\n{str(e)}")
+  def clearData(self):
+    self.clearRotDataLayer()
+    self.yhsPath.erase_everything()
+    if self.geoWhiteboard:
+      self.geoWhiteboard.clear_annotations()
+    self.rotPoleDisplayed = False
 
-    def clearData(self):
-        self.clearRotDataLayer()
-        self.yhsPath.erase_everything()
-        if self.geoWhiteboard:
-            self.geoWhiteboard.clear_annotations()
-        self.rotPoleDisplayed = False
+  ####
+  # Display Rotation Data
+  ####
+  def rbApplyRotationVClicked(self):
 
-    ####
-    # Display Rotation Data
-    ####
-    def rbApplyRotationVClicked(self):
+    if not self.setupRotDisplayLayer():
+      QgsMessageLog.logMessage(
+          'failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+      return False
 
-        if not self.setupRotDisplayLayer():
-            QgsMessageLog.logMessage('failed to setup display rotation layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
-            return False
+    self.displayGpsDataAndPoles()
+    return True
 
-        self.displayGpsDataAndPoles()
-        return True
+  def setupRotDisplayLayer(self):
+    if self.rotDisplayLayerSetup:
+      return True
 
-    def setupRotDisplayLayer(self):
-        if self.rotDisplayLayerSetup:
-            return True
-        
-        if not self.rotData.load():
-            QgsMessageLog.logMessage('failed to load rotation data from layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
-            return False
+    if not self.rotData.load():
+      QgsMessageLog.logMessage(
+          'failed to load rotation data from layer', tag=PnwRotPyDialog.name, level=Qgis.Info)
+      return False
 
-        providerName = 'memory'
-        uri = 'Point?crs=epsg:4326'
-        if self.rotDestLayer is None:
-            self.rotDestLayer = QgsVectorLayer(uri, PnwRotPyDialog.destRotDataLayerName, providerName)
+    providerName = 'memory'
+    uri = 'Point?crs=epsg:4326'
+    if self.rotDestLayer is None:
+      self.rotDestLayer = QgsVectorLayer(
+          uri, PnwRotPyDialog.destRotDataLayerName, providerName)
 
-        if not self.rotDestLayer.isValid():
-            QgsMessageLog.logMessage("Couldn't create rotDestLayer", tag=PnwRotPyDialog.name, level=Qgis.Info)
-            return False
-        
-        #Copy over symbology from rot data layer
-        sourceRenderer = self.rotData.rotSourceLayer.renderer()
-        if not sourceRenderer is None:
-            clonedRenderer = sourceRenderer.clone()
-            if not clonedRenderer is None:
-                self.rotDestLayer.setRenderer(clonedRenderer)
+    if not self.rotDestLayer.isValid():
+      QgsMessageLog.logMessage(
+          "Couldn't create rotDestLayer", tag=PnwRotPyDialog.name, level=Qgis.Info)
+      return False
 
-        #Copy rot data fields over too
-        if self.rotDestLayer.dataProvider().addAttributes(self.rotData.rotFieldList):
-            self.rotDestLayer.updateFields()
-        else:
-            QgsMessageLog.logMessage('failed to copy rot data', tag=PnwRotPyDialog.name, level=Qgis.Info)
-            return False
+    # Copy over symbology from rot data layer
+    sourceRenderer = self.rotData.rotSourceLayer.renderer()
+    if not sourceRenderer is None:
+      clonedRenderer = sourceRenderer.clone()
+      if not clonedRenderer is None:
+        self.rotDestLayer.setRenderer(clonedRenderer)
 
-        # needs a base vector layer. Could add to path_layer at some point instead of rotDestLayer?
-        self.geoWhiteboard = GeoWhiteboard(self.rotDestLayer)
+    # Copy rot data fields over too
+    if self.rotDestLayer.dataProvider().addAttributes(self.rotData.rotFieldList):
+      self.rotDestLayer.updateFields()
+    else:
+      QgsMessageLog.logMessage(
+          'failed to copy rot data', tag=PnwRotPyDialog.name, level=Qgis.Info)
+      return False
 
-        self.rotDisplayLayerSetup = True
-        return True
+    # needs a base vector layer. Could add to path_layer at some point instead of rotDestLayer?
+    self.geoWhiteboard = GeoWhiteboard(self.rotDestLayer)
 
-    def displayGpsDataAndPoles(self):
-        if not self.rotDisplayLayerSetup:
-            self.setupRotDisplayLayer()
+    self.rotDisplayLayerSetup = True
+    return True
 
-        if self.yhsPath.displayGPSDataAndPoles(self.TEST_CODE, self.sample_center, self.sample_radius):
+  def displayGpsDataAndPoles(self):
+    if not self.rotDisplayLayerSetup:
+      self.setupRotDisplayLayer()
 
-            self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
-            QgsProject.instance().addMapLayer(self.rotDestLayer)
-            self.rotDestLayer.triggerRepaint()
+    if self.yhsPath.displayGPSDataAndPoles(self.TEST_CODE):
 
-            # self.yhsPath.setupEulerPoles(True)
-            self.setDialogueProperties()
+      self.rotDestLayer.dataProvider().addFeatures(self.yhsRotFeatureList)
+      QgsProject.instance().addMapLayer(self.rotDestLayer)
+      self.rotDestLayer.triggerRepaint()
 
-        else:
-            QMessageBox.information(self, "Error", "Could not get and display pole data!")
+      # self.yhsPath.setupEulerPoles(True)
+      self.setDialogueProperties()
 
+    else:
+      QMessageBox.information(
+          self, "Error", "Could not get and display pole data!")
 
-    def clearRotDataLayer(self):
-        if self.rotDestLayer: 
-            self.rotDestLayer.dataProvider().truncate()
-            self.rotDestLayer.triggerRepaint()
-            self.yhsPath.clearGPSparams()
+  def clearRotDataLayer(self):
+    if self.rotDestLayer:
+      self.rotDestLayer.dataProvider().truncate()
+      self.rotDestLayer.triggerRepaint()
+      self.yhsPath.clearGPSparams()
 
-    ####
-    # run Button
-    ####
+  ####
+  # run Button
+  ####
 
-    def pbRunYhsLocButtonClicked(self):
-        if not self.rotDisplayLayerSetup:
-            self.setupRotDisplayLayer() # also sets up whiteboard
-            
-        startMa = float(self.sbStartMa.value()) 
-        currentMa = startMa
-        deltaMa = self.spbStepMa.value() 
-        steps = self.sbSteps.value()
+  def pbRunYhsLocButtonClicked(self):
+    if not self.rotDisplayLayerSetup:
+      self.setupRotDisplayLayer()  # also sets up whiteboard
 
-        if not self.rotPoleDisplayed:
-            self.yhsPath.display_NA_pole_info()
-            self.rotPoleDisplayed = True
+    startMa = float(self.sbStartMa.value())
+    currentMa = startMa
+    deltaMa = self.spbStepMa.value()
+    steps = self.sbSteps.value()
 
-        for i in range (steps):
-            currentMa += deltaMa
-            self.yhsPath.get_yhs_loc(currentMa, deltaMa, steps)
-        return
+    if not self.rotPoleDisplayed:
+      self.yhsPath.display_NA_pole_info()
+      self.rotPoleDisplayed = True
 
-    def stereographicToggled(self):
-        self.stereographicEnabled = self.rbStereographic.isChecked()
-        self.getDialogueProperties()
-        self.getGpsPoleData()
+    for i in range(steps):
+      currentMa += deltaMa
+      self.yhsPath.get_yhs_loc(currentMa, deltaMa, steps)
+    return
 
-    def NAPlateChanged(self, id):
-        self.yhsPath.setupNAPLateData(self.NAPlateFiles[id])
+  def stereographicToggled(self):
+    self.stereographicEnabled = self.rbStereographic.isChecked()
+    self.getDialogueProperties()
+    self.getGpsPoleData()
 
-    # GPS Pole button pressed
-    def getGpsPoleData(self):
-        self.yhsPath.getPnwGpsRotPoleAndVelocity()
-        # self.yhsPath.setDefaultNAPole()
-        self.setDialogueProperties() # upload properties to UI
-    
-    def configRV(self):
-        if self.rbConfigRV.isChecked():
-            self.yhsPath.modeSet(1)
-    
-    def configVR(self):
-        if self.rbConfigVR.isChecked():
-            self.yhsPath.modeSet(2)
+  def NAPlateChanged(self, id):
+    self.yhsPath.setupNAPLateData(self.NAPlateFiles[id])
 
-    def configCombo(self):
-        if self.rbConfigCombo.isChecked():
-            self.yhsPath.modeSet(3)
+  # GPS Pole button pressed
+  def getGpsPoleData(self):
+    self.yhsPath.getPnwGpsRotPoleAndVelocity()
+    # self.yhsPath.setDefaultNAPole()
+    self.setDialogueProperties()  # upload properties to UI
 
-    def configYhsOnly(self):
-        if self.rbConfigYhsOnly.isChecked():
-            self.yhsPath.modeSet(4)
-        
-    def removeLayer(self, layer):
-        if layer :
-            root = QgsProject.instance().layerTreeRoot()
-            layer_node = root.findLayer(layer.id())
-            if layer_node:
-                layer_node.setItemVisibilityChecked(False)  # Set the checkbox to unchecked
-                QgsProject.instance().removeMapLayers([layer.id()])
-                iface.mapCanvas().refresh()
-        return
+  def configRV(self):
+    if self.rbConfigRV.isChecked():
+      self.yhsPath.modeSet(1)
 
-    def closeRotLayer(self):
-        if self.rotDestLayer:
-            self.rotData.closeRotSourceLayer()
-            self.geoWhiteboard.unload()
-            self.geoWhiteboard = None
-            self.removeLayer(self.rotDestLayer)
-            self.rotDestLayer = None
-            self.rotDisplayLayerSetup = False
-        return
+  def configVR(self):
+    if self.rbConfigVR.isChecked():
+      self.yhsPath.modeSet(2)
 
-    def closeEvent(self, event: QCloseEvent):
-        self.clearData()
-        self.closeRotLayer()
-        self.yhsPath.closeLayers()
-        return
+  def configCombo(self):
+    if self.rbConfigCombo.isChecked():
+      self.yhsPath.modeSet(3)
 
+  def configYhsOnly(self):
+    if self.rbConfigYhsOnly.isChecked():
+      self.yhsPath.modeSet(4)
+
+  def removeLayer(self, layer):
+    if layer:
+      root = QgsProject.instance().layerTreeRoot()
+      layer_node = root.findLayer(layer.id())
+      if layer_node:
+        layer_node.setItemVisibilityChecked(
+            False)  # Set the checkbox to unchecked
+        QgsProject.instance().removeMapLayers([layer.id()])
+        iface.mapCanvas().refresh()
+    return
+
+  def closeRotLayer(self):
+    if self.rotDestLayer:
+      self.rotData.closeRotSourceLayer()
+      self.geoWhiteboard.unload()
+      self.geoWhiteboard = None
+      self.removeLayer(self.rotDestLayer)
+      self.rotDestLayer = None
+      self.rotDisplayLayerSetup = False
+    return
+
+  def closeEvent(self, event: QCloseEvent):
+    self.clearData()
+    self.closeRotLayer()
+    self.yhsPath.closeLayers()
+    return
