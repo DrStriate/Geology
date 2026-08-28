@@ -363,8 +363,6 @@ def test_v_regression_against_sim_data():
   assert outPavel.vel == pytest.approx(inPavel.vel, abs=0.01)
 
 # One test to validate the combined pole simulations result in a net zero velocity
-
-
 def test_compound_pole_v():
   gh.setGeod(realWorld=False)
 

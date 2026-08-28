@@ -228,19 +228,19 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>250</y>
+     <y>257</y>
      <width>151</width>
      <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>GPS Data &amp;&amp; Poles</string>
+    <string>Data -&gt; Poles</string>
    </property>
   </widget>
   <widget class="QLabel" name="StartLatLabel_8">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>163</x>
      <y>8</y>
      <width>101</width>
      <height>21</height>
@@ -260,7 +260,7 @@
   <widget class="QLabel" name="StartLatLabel_9">
    <property name="geometry">
     <rect>
-     <x>280</x>
+     <x>290</x>
      <y>9</y>
      <width>101</width>
      <height>20</height>
@@ -292,7 +292,7 @@
    <widget class="QDoubleSpinBox" name="spbPnwRPoleOmega">
     <property name="geometry">
      <rect>
-      <x>270</x>
+      <x>280</x>
       <y>90</y>
       <width>91</width>
       <height>22</height>
@@ -320,7 +320,7 @@
    <widget class="QDoubleSpinBox" name="spbPnwRPoleLat">
     <property name="geometry">
      <rect>
-      <x>270</x>
+      <x>280</x>
       <y>60</y>
       <width>91</width>
       <height>22</height>
@@ -348,7 +348,7 @@
    <widget class="QDoubleSpinBox" name="spbPnwRPoleLong">
     <property name="geometry">
      <rect>
-      <x>270</x>
+      <x>280</x>
       <y>30</y>
       <width>91</width>
       <height>22</height>
@@ -376,7 +376,7 @@
    <widget class="QDoubleSpinBox" name="spbPnwVPoleSpeed">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>153</x>
       <y>60</y>
       <width>101</width>
       <height>22</height>
@@ -404,7 +404,7 @@
    <widget class="QDoubleSpinBox" name="spbPnwVPoleAzimuth">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>153</x>
       <y>30</y>
       <width>101</width>
       <height>22</height>
@@ -432,9 +432,9 @@
    <widget class="QPushButton" name="saveButton">
     <property name="geometry">
      <rect>
-      <x>140</x>
-      <y>127</y>
-      <width>111</width>
+      <x>153</x>
+      <y>130</y>
+      <width>91</width>
       <height>20</height>
      </rect>
     </property>
@@ -445,9 +445,9 @@
    <widget class="QPushButton" name="loadButton">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>127</y>
-      <width>111</width>
+      <x>153</x>
+      <y>100</y>
+      <width>91</width>
       <height>20</height>
      </rect>
     </property>
@@ -458,14 +458,14 @@
    <widget class="QPushButton" name="pbGpsPole">
     <property name="geometry">
      <rect>
-      <x>270</x>
-      <y>125</y>
-      <width>91</width>
+      <x>280</x>
+      <y>130</y>
+      <width>71</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>GPS Pole</string>
+     <string>Set poles</string>
     </property>
    </widget>
    <widget class="QComboBox" name="comboBoxNAPlate">
@@ -473,7 +473,7 @@
      <rect>
       <x>10</x>
       <y>30</y>
-      <width>131</width>
+      <width>121</width>
       <height>22</height>
      </rect>
     </property>
@@ -494,12 +494,65 @@
      <string> NA Plate</string>
     </property>
    </widget>
+   <widget class="QGroupBox" name="groupBox_2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>120</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Data Source</string>
+    </property>
+    <widget class="QRadioButton" name="rbGpsSource">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>20</y>
+       <width>81</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>GPS</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="rbSimSource">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>50</y>
+       <width>81</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Sim</string>
+     </property>
+    </widget>
+   </widget>
+   <zorder>groupBox_2</zorder>
+   <zorder>spbPnwRPoleOmega</zorder>
+   <zorder>spbPnwRPoleLat</zorder>
+   <zorder>spbPnwRPoleLong</zorder>
+   <zorder>spbPnwVPoleSpeed</zorder>
+   <zorder>spbPnwVPoleAzimuth</zorder>
+   <zorder>saveButton</zorder>
+   <zorder>loadButton</zorder>
+   <zorder>pbGpsPole</zorder>
+   <zorder>comboBoxNAPlate</zorder>
+   <zorder>label</zorder>
   </widget>
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
      <x>250</x>
-     <y>160</y>
+     <y>165</y>
      <width>120</width>
      <height>101</height>
     </rect>

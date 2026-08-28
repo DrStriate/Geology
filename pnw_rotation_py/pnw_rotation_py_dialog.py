@@ -70,6 +70,8 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     self.rbConfigVR.toggled.connect(self.configVR)
     self.rbConfigCombo.toggled.connect(self.configCombo)
     self.rbConfigYhsOnly.toggled.connect(self.configYhsOnly)
+    self.rbGpsSource.toggled.connect(self.gpsconfig)
+    self.rbSimSource.toggled.connect(self.gpsconfig)
     self.pbGpsPole.clicked.connect(self.getGpsPoleData)
     self.pbGpsDataAndPoles.clicked.connect(self.displayGpsDataAndPoles)
     # self.rbShowJdFOcclusion.connect(self.showJdFOcclusion)
@@ -311,6 +313,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
   def configYhsOnly(self):
     if self.rbConfigYhsOnly.isChecked():
       self.yhsPath.modeSet(4)
+
+  def gpsconfig(self):
+    self.yhsPath.useGpsData = self.rbGpsSource.isChecked()
 
   def removeLayer(self, layer):
     if layer:
