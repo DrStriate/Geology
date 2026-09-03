@@ -47,7 +47,7 @@ def run_rand_disk_test_pass(self):
 
   lat_list, long_list, ve_list, vn_list = \
       tu.create_random_sample_ring(
-          euler_pole, euler_pole.ploc, sample_count, diam * 1000, test_omega, crop)
+          euler_pole, euler_pole.ploc(), sample_count, diam * 1000, test_omega, crop)
   finish_test_setup(self, lat_list, long_list, ve_list, vn_list, diam)
 
 
@@ -62,7 +62,7 @@ def run_cropped_disk_test_test_pass(self):
   lat_list, long_list, ve_list, vn_list = \
       tu.create_random_sample_ring(
           euler_pole,
-          euler_pole.ploc,
+          euler_pole.ploc(),
           sample_count,
           diam * 1000,
           test_omega,

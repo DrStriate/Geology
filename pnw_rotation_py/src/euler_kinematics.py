@@ -16,7 +16,7 @@ def getRVector(p):
 
 
 def getWVector(pole):
-  return getRVector(pole.ploc)
+  return getRVector(pole.ploc())
 
 
 def getPoleRotationOfPoint(pole, ploc, ma):
@@ -48,7 +48,7 @@ def getPoleRotationOfPoint(pole, ploc, ma):
 
 def getCompoundRotationTranslationOfPoint(vPole, rPole, ploc, ma):
   # move the rot pole to the proper loc for ma
-  rot_pole_ma_ploc = getPoleRotationOfPoint(vPole, rPole.ploc, ma)[0]
+  rot_pole_ma_ploc = getPoleRotationOfPoint(vPole, rPole.ploc(), ma)[0]
   ma_rot_pole = gh.EulerPole(
       rot_pole_ma_ploc.long, rot_pole_ma_ploc.lat, rPole.omega, is_clockwise=True)
 
@@ -63,7 +63,7 @@ def getCompoundRotationTranslationOfPoint(vPole, rPole, ploc, ma):
 
 
 def getPlocFromPoleData(naPAvel, pnwRotPole, pnwVPavel, ploc, ma):
-  pnwVPole = getEulerPoleFromPlocAndPavel(pnwRotPole.ploc, pnwVPavel)
+  pnwVPole = getEulerPoleFromPlocAndPavel(pnwRotPole.ploc(), pnwVPavel)
   naPole = getEulerPoleFromPlocAndPavel(ploc, naPAvel)
 
   # move NA over yhs then move by both pnw poles to its ma location
@@ -133,7 +133,7 @@ def project_V_to_v(V, p):  # V is 3D cartesion velocity, p is PLoc
 def calculate_v_from_EulerPole(pole, p, omega=None):
   P = R * getRVector(p)
   O = np.radians(pole.omega if omega is None else omega) * \
-      getRVector(pole.ploc)
+      getRVector(pole.ploc())
   V = np.cross(P, O)
   v = project_V_to_v(V, p)
   return -v

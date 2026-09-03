@@ -99,12 +99,11 @@ class EulerPole:
   long: float
   lat: float
   omega: float
-  ploc: PLoc = field(init=False)
-
-  def __post_init__(self):
-    self.ploc = PLoc(self.long, self.lat)
 
   is_clockwise: bool = False  # Set to True for clockwise poles needing antipodal shift
+
+  def ploc(self):
+    return PLoc(self.long, self.lat)
 
   def print(self, label: str = ""):
     print(f"{label} long: {self.long:0.3f}, lat: {self.lat:0.3f}, omega: {self.omega:.6f}")

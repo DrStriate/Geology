@@ -7,7 +7,8 @@
     "PnwRotPole": {
         "long": -117.7,
         "lat": 47.9,
-        "omega": 0.61
+        "omega": 0.61.
+        "is_clockwise": true
     },
     "StereographicProjection": true
 }

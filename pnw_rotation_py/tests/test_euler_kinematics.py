@@ -24,7 +24,7 @@ def test_rot_pole_from_quad():
   # ek.print_result ("test_euler_pole_from_quad", pole_result)
 
   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
-  #gn_out = gn.solve_gauss_newton_2D_transform(test_pvData, pole_result.ploc)
+  #gn_out = gn.solve_gauss_newton_2D_transform(test_pvData, pole_result.ploc())
   #gn_out2 = gn.solve_gauss_newton_translation(test_pvData, pole_result)
 
   assert pole_result.omega == pytest.approx(euler_pole.omega)
@@ -42,7 +42,7 @@ def test_translation_from_quad():
 
   testPvData = tu.create_simple_sample_quad_w_trans(euler_pole, v_trans, azimuths, sample_dist)
 
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, euler_pole.ploc)
+  gn_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, euler_pole.ploc())
 
   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
   gn_out2 = gn.solve_gauss_newton_translation(testPvData, euler_pole)
@@ -61,15 +61,15 @@ def test_euler_pole_from_random_disk():
   test_omega = 1.23
 
   testPvData = tu.create_random_sample_ring(
-          euler_pole, euler_pole.ploc, sample_count, diam, test_omega, crop)
+          euler_pole, euler_pole.ploc(), sample_count, diam, test_omega, crop)
 
   pole_result = epr.fit_euler_pole_linear(testPvData)
   # ek.print_result ("test_euler_pole_from_random_disk", pole_result)
 
   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, pole_result.ploc)
+  gn_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, pole_result.ploc())
   gn_out2 = gn.solve_gauss_newton_translation(testPvData, pole_result)
-  # gn_old = gno.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc)
+  # gn_old = gno.solve_gauss_newton_2D_transform(sample_lons, sample_lats, sample_v_east, sample_v_north, pole_result.ploc())
 
   assert pole_result.omega == pytest.approx(test_omega)
   assert pole_result.long == pytest.approx(euler_pole.long)
@@ -85,9 +85,9 @@ def test_v_pole_from_sample_point():
   rotPole = EulerPole(-120.1, 44.427, 0.595, is_clockwise=True)
   v_in = [0.767, 3.545]  # v pavel from typical calibration
   v_pavel = PAvel.from_V(v_in)
-  pnwVPole = ek.getEulerPoleFromPlocAndPavel(rotPole.ploc, v_pavel)
+  pnwVPole = ek.getEulerPoleFromPlocAndPavel(rotPole.ploc(), v_pavel)
 
-  sample_ploc = rotPole.ploc
+  sample_ploc = rotPole.ploc()
   v_out = ek.calculate_v_from_EulerPole(pnwVPole, sample_ploc)
   assert v_out[0] == pytest.approx(v_in[0])
   assert v_out[1] == pytest.approx(v_in[1])
@@ -103,13 +103,13 @@ def test_v_pole_from_random_disk():
   rotPole = EulerPole(-120.1, 44.427, 0.595, is_clockwise=True)
   v_in = [0.767, 3.545]  # v pavel from typical calibration
   v_pavel = PAvel.from_V(v_in)
-  pnwVPole = ek.getEulerPoleFromPlocAndPavel(rotPole.ploc, v_pavel)
+  pnwVPole = ek.getEulerPoleFromPlocAndPavel(rotPole.ploc(), v_pavel)
 
   testPvData = tu.create_random_sample_ring(
-          pnwVPole, rotPole.ploc, sample_count, diam, pnwVPole.omega, crop)
+          pnwVPole, rotPole.ploc(), sample_count, diam, pnwVPole.omega, crop)
 
   # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
-  gn_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, rotPole.ploc)
+  gn_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, rotPole.ploc())
   gn_out2 = gn.solve_gauss_newton_translation(testPvData, rotPole)
 
   assert gn_out == pytest.approx(v_in, abs=0.005)
@@ -127,7 +127,7 @@ def test_euler_pole_from_random_cropped_disk():
 
   testPvData = tu.create_random_sample_ring(
           euler_pole,
-          euler_pole.ploc,
+          euler_pole.ploc(),
           sample_count,
           sample_dist,
           test_omega,
@@ -150,7 +150,7 @@ def test_euler_pole_using_north_rotation():
   test_omega = 1.23
   crop = 0.5  # 50% cropped out
   testPvData = tu.create_random_sample_ring(euler_n_pole,
-                                   euler_pole.ploc,
+                                   euler_pole.ploc(),
                                    sample_count,
                                    sample_dist,
                                    test_omega,
@@ -270,10 +270,10 @@ def test_v_pole():  # take avg velocity to create pole and then re-create the ve
   v_in = [0.767, 3.545]  # v pavel from typical calibration
   v_pavel = PAvel.from_V(v_in)
 
-  vPole = ek.getEulerPoleFromPlocAndPavel(rotPole.ploc, v_pavel)
+  vPole = ek.getEulerPoleFromPlocAndPavel(rotPole.ploc(), v_pavel)
 
   v_out = tu.calculate_v_from_Euler_pole2(
-      vPole, rotPole.ploc, vPole.omega, False)
+      vPole, rotPole.ploc(), vPole.omega, False)
   assert v_out["v_e"] == pytest.approx(v_in[0])
   assert v_out["v_n"] == pytest.approx(v_in[1])
 
@@ -293,7 +293,7 @@ def test_3_pole_50ma_yhs_movement():
           pnwVPole, sample_center, sample_count, sample_radius, None)
 
   # extract translation V from samples
-  v_out1 = gn.solve_gauss_newton_2D_transform_geo(testPvData, tu.OC_NA_Pole.ploc)
+  v_out1 = gn.solve_gauss_newton_2D_transform_geo(testPvData, tu.OC_NA_Pole.ploc())
 
   # compare Vs
   tolerance1 = 0.006
@@ -343,7 +343,7 @@ def test_v_regression_against_sim_data():
   # pole for generating samples based on V
   # sample_center = PLoc(-119.0, 45.0)
 
-  sample_center = tu.OC_NA_Pole.ploc  # same as combined pole setup
+  sample_center = tu.OC_NA_Pole.ploc()  # same as combined pole setup
   v_in = [0.767, 3.545]  # v pavel from typical calibration
   inPavel = PAvel.from_V(v_in)
   pnwVPole = ek.getEulerPoleFromPlocAndPavel(sample_center, inPavel)
@@ -354,7 +354,7 @@ def test_v_regression_against_sim_data():
           pnwVPole, sample_center, sample_count, tu.sample_radius, None)
 
   # extract translation V from samples
-  v_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, tu.OC_NA_Pole.ploc)
+  v_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, tu.OC_NA_Pole.ploc())
   outPavel = PAvel.from_V(v_out)
 
   # compare
@@ -370,7 +370,7 @@ def test_compound_pole_v():
   rotPole = tu.OC_NA_Pole
 
   # pole for generating samples based on V
-  sample_center = rotPole.ploc  # the configuration for coupled poles
+  sample_center = rotPole.ploc()  # the configuration for coupled poles
   v_in = [0.767, 3.545]  # v pavel from typical calibration
   inVPavel = PAvel.from_V(v_in)
   vPole = ek.getEulerPoleFromPlocAndPavel(sample_center, inVPavel)
@@ -393,7 +393,7 @@ def test_combined_regressions_against_sim_data():
   rotPole = tu.OC_NA_Pole
 
   # pole for generating samples based on V
-  sample_center = rotPole.ploc  # the configuration for coupled poles
+  sample_center = rotPole.ploc()  # the configuration for coupled poles
   v_in = [0.767, 3.545]  # v pavel from typical calibration
   inVPavel = PAvel.from_V(v_in)
   vPole = ek.getEulerPoleFromPlocAndPavel(sample_center, inVPavel)

@@ -124,7 +124,7 @@ class YhsPath:
     # runPnwRotPole.print("runPnwRotPole: ") # these printouts useful for setting up GPlates
 
     # get the PnwVPole which is time invariant
-    pnwVPole = ek.getEulerPoleFromPlocAndPavel(runPnwRotPole.ploc, self.PnwVPAvel)
+    pnwVPole = ek.getEulerPoleFromPlocAndPavel(runPnwRotPole.ploc(), self.PnwVPAvel)
     # pnwVPole.print("PnwVPole: ")
 
     # 1: Move yhs loc by NA speed scaled by ma from 0 Ma location (red line)
@@ -153,7 +153,7 @@ class YhsPath:
 
       # 2: Translate rot pole
       new_rot_pole_ploc = ek.getPoleRotationOfPoint(
-          pnwVPole, runPnwRotPole.ploc, currentMa)[0]
+          pnwVPole, runPnwRotPole.ploc(), currentMa)[0]
       t_RotPole = EulerPole(
           new_rot_pole_ploc.long, new_rot_pole_ploc.lat, runPnwRotPole.omega, is_clockwise=True)
       self.parent.geoWhiteboard.draw_target(t_RotPole.long, t_RotPole.lat,
@@ -193,6 +193,7 @@ class YhsPath:
   def displayGPSDataAndPoles(self, test_code):  
     setGeod(realWorld=True)
 
+    off_pvData = None
     if test_code == 1:  # show synthetic v data
       # pole for generating samples
       v_in = [0.767, 3.545]  # v pavel from typical calibration
@@ -200,8 +201,7 @@ class YhsPath:
       pnwVPole = ek.getEulerPoleFromPlocAndPavel(self.sample_center, v_pavel)
 
       crop = 1.0  # no crop
-      lat_list, long_list, mod_ve_list, mod_vn_list =\
-          tu.create_random_sample_ring(
+      pv_data = tu.create_random_sample_ring(
               pnwVPole, self.sample_center, self.sample_count, self.sample_radius * 1000.0, pnwVPole.omega, crop)
 
     elif test_code == 2:  # show synthetic rot data
@@ -209,8 +209,7 @@ class YhsPath:
       rotPole = tu.OC_NA_Pole
 
       # create samples from pole
-      lat_list, long_list, mod_ve_list, mod_vn_list =\
-          tu.create_random_sample_ring(
+      pv_data = tu.create_random_sample_ring(
               rotPole, tu.sample_center, self.sample_count, tu.sample_radius, None)
 
     elif test_code == 3:
@@ -222,29 +221,28 @@ class YhsPath:
       rotPole = tu.OC_NA_Pole
 
       # create samples from pole
-      sampleData = tu.create_random_sample_dual_pole_ring(
+      pv_data = tu.create_random_sample_dual_pole_ring(
               vPole, rotPole, tu.sample_center, self.sample_count, tu.sample_radius, None)
 
     else:  # show and analyze velocity data
       if self.useGpsData:
-        sampleData = tu.get_GPS_rotation_data(self.sample_center, self.sample_radius)
+        pv_data = tu.get_GPS_rotation_data(self.sample_center, self.sample_radius)
       else:
-        gpsRPole, v_pavel = epr.getPnwGpsRotPoleAndVelocity(self.sample_center, self.sample_radius)
-        pnwVPole = ek.getEulerPoleFromPlocAndPavel(self.sample_center, v_pavel)
-        sampleData =  tu.create_random_sample_dual_pole_ring(
-              pnwVPole, gpsRPole, self.sample_center, self.sample_count, self.sample_radius)
+        pnwVPole = ek.getEulerPoleFromPlocAndPavel(self.PnwRotPole.ploc(), self.PnwVPAvel)
+        pv_data =  tu.create_random_sample_dual_pole_ring(
+              pnwVPole, self.PnwRotPole, self.PnwRotPole.ploc(), self.sample_count, self.sample_radius)
 
-      if len(sampleData.lats) < 3:
+      if len(pv_data.lats) < 3:
         return False
 
       # offset_data by detected v
-      off_pvData = replace(sampleData, v_es = np.array(sampleData.v_es) - self.delta_ve, v_ns = np.array(sampleData.v_ns) - self.delta_vn)
+      off_pvData = replace(pv_data, v_es = np.array(pv_data.v_es) - self.delta_ve, v_ns = np.array(pv_data.v_ns) - self.delta_vn)
 
       # get euler pole and gauss newton results and display
       self.PnwRotPole = epr.fit_euler_pole_linear(off_pvData)
       self.PnwRotPole.print("self.PnwRotPole: ")
 
-      offsets = gn.solve_gauss_newton_2D_transform_geo_wtd(off_pvData, self.PnwRotPole)
+      offsets = gn.solve_gauss_newton_transform(off_pvData, self.PnwRotPole, self.stereographicProjection)
       print(f"offsets: {offsets}")
 
       label_text1 = f"{self.PnwRotPole.long:.4f}, {self.PnwRotPole.lat:.4f}, {self.PnwRotPole.omega:.3f} deg, "
@@ -267,9 +265,11 @@ class YhsPath:
 
     self.parent.rotDestLayer.dataProvider().truncate()
     self.parent.yhsRotFeatureList = []
-    for i in range(len(sampleData.lats)):
+    if off_pvData is None:
+      off_pvData = pv_data
+    for i in range(len(pv_data.lats)):
       feature = self.parent.rotData.createRotFeature(
-          PLoc(sampleData.longs[i], sampleData.lats[i]), PVel(off_pvData.v_es[i], off_pvData.v_ns[i]))
+          PLoc(pv_data.longs[i], pv_data.lats[i]), PVel(off_pvData.v_es[i], off_pvData.v_ns[i]))
       self.parent.yhsRotFeatureList.append(feature)
     return True
 

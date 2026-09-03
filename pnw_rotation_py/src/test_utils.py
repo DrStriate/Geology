@@ -61,9 +61,9 @@ def create_random_sample_ring(euler_pole,
                               sample_ploc,
                               count,
                               max_dist,  # km
-                              test_omega,
-                              crop=1.0,
-                              rms=0.0):
+                              test_omega = None,
+                              crop = 1.0,
+                              rms = 0.0):
   rng = np.random.default_rng(seed=42)
   rands = rng.random(size=(count, 2))
   v_noise = rng.normal(loc=0.0, scale=rms, size=(count, 2))

@@ -115,6 +115,9 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     if index >= 0:
       self.comboBoxNAPlate.setCurrentIndex(index)
 
+    # TEMPORARY
+    property
+
     self.spbPnwVPoleAzimuth.setValue(propertyBag.PnwVPAvel.azimuth)
     self.spbPnwVPoleSpeed.setValue(propertyBag.PnwVPAvel.vel)
     if propertyBag.PnwRotPole:
@@ -287,7 +290,6 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
   def stereographicToggled(self):
     self.stereographicEnabled = self.rbStereographic.isChecked()
     self.getDialogueProperties()
-    self.getGpsPoleData()
 
   def NAPlateChanged(self, id):
     self.yhsPath.setupNAPLateData(self.NAPlateFiles[id])

@@ -42,7 +42,7 @@ def test_gm_regress_against_pnw_GPS_data():
   # print(script_path)
 
   euler_pole = EulerPole(-118.5, 45, 0)
-  center_ploc = euler_pole.ploc
+  center_ploc = euler_pole.ploc()
   max_distance = 550  # m
 
   testPvData = tu.get_GPS_rotation_data(center_ploc, max_distance)
@@ -70,7 +70,7 @@ def test_gn_regressions_against_sim_data():
           pnwVPole, tu.sample_center, sample_count, tu.sample_radius, None)
 
   # extract translation V from samples
-  v_out1 = gn.solve_gauss_newton_2D_transform_geo(testPvData, tu.OC_NA_Pole.ploc)
+  v_out1 = gn.solve_gauss_newton_2D_transform_geo(testPvData, tu.OC_NA_Pole.ploc())
 
   # compare Vs
   tolerance1 = 0.006

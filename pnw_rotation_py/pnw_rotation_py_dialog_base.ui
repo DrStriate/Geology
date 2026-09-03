@@ -234,7 +234,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Data -&gt; Poles</string>
+    <string>vData &lt;-&gt; Poles</string>
    </property>
   </widget>
   <widget class="QLabel" name="StartLatLabel_8">
