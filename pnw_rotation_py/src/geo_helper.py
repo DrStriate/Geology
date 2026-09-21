@@ -7,7 +7,6 @@ R = 6371.0  # Earth radius in km
 geod = Geod(ellps="WGS84")
 isRealWorld = True
 
-
 def setGeod(realWorld):
   global geod, isRealWorld
   isRealWorld = realWorld
@@ -59,7 +58,6 @@ class PLoc:
       return self
     return NotImplemented
 
-
 @dataclass
 # PVel should only be used for (linear) Velocity. For V the standard is mm/Yr (= km/ma)
 # distance measurements in plate kinematics should be in degrees, not kilometers.
@@ -76,7 +74,6 @@ class PVel:
   def print(self, label=""):
     print(f"{label} east: {self.east:0.3f}, north:  {self.north:0.3f}")
 
-
 @dataclass
 # PAvel azimuth is in degrees (cw from N) and vel is in  mm/yr or km/Ma (equiv)
 # Note that distance measurements in plate kinematics should be in degrees, not kilometers.
@@ -92,7 +89,6 @@ class PAvel:
     return cls(
         np.degrees(np.arctan2(v2[0], v2[1])),
         np.hypot(v2[0], v2[1]))
-
 
 @dataclass
 class EulerPole:

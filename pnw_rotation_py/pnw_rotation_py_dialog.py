@@ -141,7 +141,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
     self.yhsPath.setYhsPropertyBag(propertyBag)
 
   def save_data_to_file(self):
-    default_dir = os.path.join(os.path.dirname(__file__), "data")
+    default_dir = os.path.join(os.path.dirname(__file__), "data/pole configs")
     file_path, _ = QFileDialog.getSaveFileName(
         self,
         "Save YHS Properties",
@@ -161,7 +161,7 @@ class PnwRotPyDialog(QtWidgets.QDialog, FORM_CLASS):
             self, "Save Error", f"Could not save file:\n{str(e)}")
 
   def load_data_from_file(self):
-    default_dir = os.path.join(os.path.dirname(__file__), "data")
+    default_dir = os.path.join(os.path.dirname(__file__), "data/pole configs")
 
     file_path, _ = QFileDialog.getOpenFileName(
         self,

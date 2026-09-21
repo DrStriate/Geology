@@ -174,9 +174,9 @@ def test_getPoleRotationOfPoint():
   test_pole = OC_NA_Pole
   test_loc = SeattlePloc
 
-  target = ek.getPoleRotationOfPoint(test_pole, test_loc, 20.0)[0]
-  target_midpoint = ek.getPoleRotationOfPoint(test_pole, test_loc, 10.0)[0]
-  target2 = ek.getPoleRotationOfPoint(test_pole, target_midpoint, 10.0)[0]
+  target = ek.getPoleRotationOfPoint(test_pole, test_loc, 20.0)
+  target_midpoint = ek.getPoleRotationOfPoint(test_pole, test_loc, 10.0)
+  target2 = ek.getPoleRotationOfPoint(test_pole, target_midpoint, 10.0)
   assert target == pytest.approx(target2)
 
 def test_euler_GPS_pole_extraction():
@@ -253,14 +253,14 @@ def test_movement_from_Euler_pole():  # test inverse: map above pole back to poi
 
   pole = gh.EulerPole(150.4, 0.0, 1.0)
   point = PLoc(OC_NA_Pole.long, OC_NA_Pole.lat)  # sample point loc
-  new_point, vel = ek.getPoleRotationOfPoint(pole, point, 1.0)
+  new_point = ek.getPoleRotationOfPoint(pole, point, 1.0)
 
   # translation pole 90 degrees off reference
   assert new_point.long == pytest.approx(point.long)
   assert new_point.lat == pytest.approx(
       point.lat + 1, abs=1e-6)  # 1 degree shift north
   # distance (km) for 1 degree lat movement
-  assert vel == pytest.approx(gh.kmPerDegree())
+  #assert vel == pytest.approx(gh.kmPerDegree())
 
 
 def test_v_pole():  # take avg velocity to create pole and then re-create the velocity from the pole
@@ -277,7 +277,8 @@ def test_v_pole():  # take avg velocity to create pole and then re-create the ve
   assert v_out["v_e"] == pytest.approx(v_in[0])
   assert v_out["v_n"] == pytest.approx(v_in[1])
 
-
+# This is a very old (and naive) interpretation of NA plate motion using NA PAVel, 
+# We should update this test (and probably remove or revise ) getPlocFromPoleData
 def test_3_pole_50ma_yhs_movement():
   gh.setGeod(realWorld=False)
   yhsLoc0Ma = PLoc(-110.67, 44.43)

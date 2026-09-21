@@ -166,9 +166,8 @@ def solve_gauss_newton_2D_transform_geo_wtd(pvData, center_ploc, normalize=True)
   return solve_gauss_newton_2D_transform_wtd(
     sample_e, sample_n, pvData.v_es, pvData.v_ns, pvData.s_es, pvData.s_ns, normalize)
 
+
 # lats and longs should be normalized relative to "center" of rotation for best results
-
-
 # meters and mm/Y units
 def solve_gauss_newton_2D_transform_wtd(sample_e, sample_n, v_e, v_n, w_e, w_n, normalize=True, ):
   N = len(v_e)
