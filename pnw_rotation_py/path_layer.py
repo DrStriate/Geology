@@ -97,7 +97,7 @@ class PathLayer():
     start_loc = start_point
     for i in range(0, N+1):
       next_ma = i * ma / N
-      next_loc = ek.getPoleRotationOfPoint(pole, start_point, next_ma)[0]
+      next_loc = ek.getPoleRotationOfPoint(pole, start_point, next_ma)
       layer_paths.append(
           [(start_loc.long, start_loc.lat), (next_loc.long, next_loc.lat), f"rot step {N}"])
       start_loc = next_loc

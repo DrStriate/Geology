@@ -4,15 +4,12 @@ from geo_helper import EulerPole, PLoc, pvData, getPAvel, R
 import gauss_newton as gn
 import test_utils as tu
 
-# second best model (so far) but small errors in offset (0.002) but also works with GPS data
-
-
 def fit_euler_pole_linear(pvData):
   """
   Finds the exact best-fitting Euler pole using linear least squares.
 
   Args:
-    pvData.pvData.lat (list/array): Latitudes of stations in decimal degrees
+    pvData.lat (list/array): Latitudes of stations in decimal degrees
     pvData.lons (list/array): Longitudes of stations in decimal degrees
     v_east (list/array): East velocity components in mm/yr
     v_north (list/array): North velocity components in mm/yr
@@ -36,13 +33,9 @@ def fit_euler_pole_linear(pvData):
     lam = np.radians(pvData.longs[i])
     sum_lats += pvData.lats[i]
 
-    # root weights for this station
-    if pvData.s_ns is not None and pvData.s_es is not None:
-      sw_e = 1.0 / pvData.s_es[i]
-      sw_n = 1.0 / pvData.s_ns[i]
-    else:
-      sw_e = 1.0
-      sw_n = 1.0
+    # weights for this station
+    sw_e = 1.0 / pvData.s_es[i] if pvData.s_es is not None else 1.0
+    sw_n = 1.0 / pvData.s_ns[i] if pvData.s_ns is not None else 1.0
 
     # Weighted East velocity row equations (even rows: 2*i)
     A[2*i, 0] = -R * np.sin(phi) * np.cos(lam) * sw_e
@@ -56,41 +49,33 @@ def fit_euler_pole_linear(pvData):
     A[2*i+1, 2] = 0.0 * sw_n
     B[2*i+1] = pvData.v_ns[i] * sw_n
 
-  north_hemisphere = (sum_lats > 0.0)
-
   # Solves the weighted normal equations: A^T * W * A * omega = A^T * W * B
-  omega_cartesian, residuals, rank, s = np.linalg.lstsq(A, B, rcond=None)
-  tu.test_regression_stats(omega_cartesian, A, B, residuals, False)
+  omega_3D, residuals, rank, s = np.linalg.lstsq(A, B, rcond=None)
+  tu.test_regression_stats(omega_3D, A, B, residuals, False)
 
-  wx, wy, wz = omega_cartesian
-
-  if (wz > 0) != north_hemisphere:  # if w and incoming data not in the same N/S hemisphere
-    wx = -wx
-    wy = -wy
-    wz = -wz
+  # wx, wy, wz = omega_3D
+  north_hemisphere = (sum_lats > 0.0)
+  if (omega_3D[2] > 0) != north_hemisphere:  # if w and incoming data not in the same N/S hemisphere
+    omega_3D = -omega_3D # flip pole
 
   # Convert the Cartesian angular velocity vector back into Euler Pole parameters
   # 1. Total angular rotation magnitude (rad/yr converted back to deg/Myr)
-  # Factor: (1e6 years * 180 degrees) / (pi radians * 1e9 mm to km conversion scale)
-  # Since velocities are in mm/yr and R is in km, scaling matches naturally:
-  # rad per million years / 1000
-  omega_mag_rad = np.sqrt(wx**2 + wy**2 + wz**2)
-
-  omega_deg_myr = np.degrees(omega_mag_rad)
+  omega_mag_rad = np.linalg.norm(omega_3D)
 
   # 2. Latitude and Longitude of the Pole
-  lat_pole = np.degrees(np.arcsin(wz / omega_mag_rad))
-  lon_pole = np.degrees(np.arctan2(wy, wx))
+  lat_pole = np.degrees(np.arcsin(omega_3D[2] / omega_mag_rad))
+  lon_pole = np.degrees(np.arctan2(omega_3D[1], omega_3D[0]))
+  omega_deg_myr = np.degrees(omega_mag_rad)
 
   return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True)
 
 
-# Best results so far in tests (with or without offset) but horrible in GPS - almost certainly due to crazy scaling
 def fit_euler_pole_linear2(pvData):
   """
   Finds the best-fitting Euler pole and localized horizontal translation
   simultaneously, accounting for legacy m/Ma inputs safely.
   """
+
   num_stations = len(pvData.lats)
 
   A_joint = np.zeros((2 * num_stations, 5))
@@ -103,18 +88,15 @@ def fit_euler_pole_linear2(pvData):
     lam = np.radians(pvData.longs[i])
     sum_lats += pvData.lats[i]
 
-    if pvData.s_ns is not None and pvData.s_es is not None:
-      sw_e = 1.0 / pvData.s_es[i]
-      sw_n = 1.0 / pvData.s_ns[i]
-    else:
-      sw_e = 1.0
-      sw_n = 1.0
+    # weights for this station
+    sw_e = 1.0 / pvData.s_es[i] if pvData.s_es is not None else 1.0
+    sw_n = 1.0 / pvData.s_ns[i] if pvData.s_ns is not None else 1.0
 
     e_hat = np.array([-np.sin(lam), np.cos(lam), 0.0])
     n_hat = np.array([-np.sin(phi) * np.cos(lam), -
                      np.sin(phi) * np.sin(lam), np.cos(phi)])
 
-    # 1. Build position vector in KILOMETERS
+    # 1. Build position vector 
     P = R * np.array([np.cos(phi) * np.cos(lam), np.cos(phi)
                      * np.sin(lam), np.sin(phi)])
 
@@ -127,23 +109,22 @@ def fit_euler_pole_linear2(pvData):
     A_joint[idx_e, 0:3] = row_east_pole * sw_e
     A_joint[idx_n, 0:3] = row_north_pole * sw_n
 
-    # 2. Convert translation columns to kilometer-scale scaling to match P_km matrix weight
+    # 2 Build A
     A_joint[idx_e, 3] = 1.0 * sw_e
     A_joint[idx_e, 4] = 0.0
     A_joint[idx_n, 3] = 0.0
     A_joint[idx_n, 4] = 1.0 * sw_n
 
-    # 3. Scale input velocities down from m/Ma to mm/yr (which equals km/Ma)
-    # This completely strips out the legacy x1000 multiplier during the inversion
-    B[idx_e] = (pvData.v_es[i] / 1000.0) * sw_e
-    B[idx_n] = (pvData.v_ns[i] / 1000.0) * sw_n
+    # 3 Build B
+    B[idx_e] = (pvData.v_es[i]) * sw_e
+    B[idx_n] = (pvData.v_ns[i]) * sw_n
 
   north_hemisphere = (sum_lats > 0.0)
 
   Sol_joint, residuals, rank, s = np.linalg.lstsq(A_joint, B, rcond=None)
 
   Omega_c = Sol_joint[0:3]
-  Offset_raw = Sol_joint[3:5]  # Extracted cleanly in mm/yr (km/Ma)
+  Offset = Sol_joint[3:5]  # mm/yr (km/Ma)
 
   if (Omega_c[2] > 0) != north_hemisphere:
     Omega_c = -Omega_c
@@ -154,19 +135,16 @@ def fit_euler_pole_linear2(pvData):
   lat_pole = np.degrees(np.arcsin(Omega_c[2] / Omega_mag))
   lon_pole = np.degrees(np.arctan2(Omega_c[1], Omega_c[0]))
 
-  # 4. Convert your output offset BACK to your legacy application's expected m/Ma scaling
-  Offset_legacy = Offset_raw
-
-  return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True), Offset_legacy
-
-# Early attempt at a unified regression (rot, offset). Gemini left it at T for offset, but it still seems incorrect in testing
+  return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True), Offset
 
 
+# Early Gemini attempt at a unified regression (rot, offset). 
 def fit_euler_pole_linear3(pvData):
   """
   Finds the best-fitting Euler pole and global 3D translational offset
   simultaneously, preventing mathematical cross-talk across wide regions.
   """
+
   num_stations = len(pvData.lats)
 
   # 6 Columns: 3 for Rotation [Omega_x, Y, Z], 3 for 3D Translation [T_x, Y, Z]
@@ -174,29 +152,28 @@ def fit_euler_pole_linear3(pvData):
   B = np.zeros(2 * num_stations)
 
   sum_lats = 0
-  R_val = 6371000.0  # Spherical Earth radius in meters
-
   for i in range(num_stations):
     phi = np.radians(pvData.lats[i])
     lam = np.radians(pvData.longs[i])
     sum_lats += pvData.lats[i]
 
-    # Apply standard data weights
-    if pvData.s_ns is not None and pvData.s_es is not None:
-      sw_e = 1.0 / pvData.s_es[i]
-      sw_n = 1.0 / pvData.s_ns[i]
-    else:
-      sw_e = 1.0
-      sw_n = 1.0
+    # weights for this station
+    sw_e = 1.0 / pvData.s_es[i] if pvData.s_es is not None else 1.0
+    sw_n = 1.0 / pvData.s_ns[i] if pvData.s_ns is not None else 1.0
 
     # Construct local basis frames
-    e_hat = np.array([-np.sin(lam), np.cos(lam), 0.0])
+    e_hat = np.array([-np.sin(lam), 
+                      np.cos(lam), 
+                      0.0])
+    
     n_hat = np.array([-np.sin(phi) * np.cos(lam), -
-                     np.sin(phi) * np.sin(lam), np.cos(phi)])
+                      np.sin(phi) * np.sin(lam),
+                      np.cos(phi)])
 
     # Build 3D Geocentric station position vector (meters)
-    P = R_val * np.array([np.cos(phi) * np.cos(lam),
-                         np.cos(phi) * np.sin(lam), np.sin(phi)])
+    P = R * np.array([np.cos(phi) * np.cos(lam),
+                         np.cos(phi) * np.sin(lam), 
+                         np.sin(phi)])
 
     # 1. Rigorous rigid block rotation row entries (O x P)
     row_east_pole = np.cross(P, e_hat)
@@ -238,7 +215,9 @@ def fit_euler_pole_linear3(pvData):
   # Return the translation vector alongside the Euler Pole definition
   offset_e = np.dot(e_hat, T_cartesian)
   offset_n = np.dot(n_hat, T_cartesian)
-  return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True), np.array([offset_e, offset_n])
+  Offset = np.array([offset_e, offset_n])
+
+  return EulerPole(lon_pole, lat_pole, omega_deg_myr, is_clockwise=True) #, Offset 
 
 
 def extractEulerPoleUsingCombinedRegressions(pvDataIn, use_stereo=True):
@@ -276,6 +255,7 @@ def getPnwGpsRotPoleAndVelocity(center, max_distance, useStereo=True):  # radius
   pvData = tu.get_GPS_rotation_data(center, max_distance)
   rot_pole, pnwVPAVel = extractEulerPoleUsingCombinedRegressions(pvData, useStereo)
   return rot_pole, pnwVPAVel
+
 
 def getPnwGpsRotPoleAndVelocity2(pvData, useStereo=True):  
   rot_pole, pnwVPAVel = extractEulerPoleUsingCombinedRegressions(pvData, useStereo)

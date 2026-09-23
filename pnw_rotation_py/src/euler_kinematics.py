@@ -16,14 +16,17 @@ def getPFromRVector(r):
   phi = np.arcsin(r[2])
   return PLoc(np.degrees(lamb), np.degrees(phi))
 
+# get omega vector from pole (normalized - unscaled by pole omega)
+def getWVector(pole):
+  return getRVector(pole.ploc())
+
 # Rotates point ploc around Euler pole by omega * ma to a new ploc2 
 def getPoleRotationOfPoint(pole, ploc, ma):
-  # get 3D vectors 
-  theta = np.radians(pole.omega) * ma
-  v = getRVector(ploc)  # v 
-  k = getRVector(pole.ploc())  # k
 
   # Apply Rodrigues' rotation formula
+  theta = np.radians(pole.omega) * ma
+  v = getRVector(ploc)  # v
+  k = getWVector(pole)  # k
   k_cross_v = np.cross(k, v)
   k_dot_v = np.dot(k, v)
   v_new = v * np.cos(theta) + k_cross_v * np.sin(theta) + \

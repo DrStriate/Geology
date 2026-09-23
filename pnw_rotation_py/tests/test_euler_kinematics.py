@@ -108,12 +108,11 @@ def test_v_pole_from_random_disk():
   testPvData = tu.create_random_sample_ring(
           pnwVPole, rotPole.ploc(), sample_count, diam, pnwVPole.omega, crop)
 
-  # BUG - The new geo-correct model that (now) works with GPS is pretty bad with quad test. See second version for legacy
   gn_out = gn.solve_gauss_newton_2D_transform_geo(testPvData, rotPole.ploc())
   gn_out2 = gn.solve_gauss_newton_translation(testPvData, rotPole)
 
   assert gn_out == pytest.approx(v_in, abs=0.005)
-  assert gn_out2 == pytest.approx(v_in, abs=0.061)
+  assert gn_out2 == pytest.approx(v_in, abs=0.005)
 
 
 def test_euler_pole_from_random_cropped_disk():
@@ -317,9 +316,7 @@ def angle_difference(a, b):
     # Returns the shortest angular distance in degrees [-180, 180]
   return (a - b + 180) % 360 - 180
 
-# Creates a synthethid rot field (based on Wells-Smith OC_NA pole) and extracts that pole back
-
-
+# Creates a synthethetic rot field (based on Wells-Smith OC_NA pole) and extracts that pole back
 def test_rot_regressions_against_sim_data():
   gh.setGeod(realWorld=False)
   rotPole = tu.OC_NA_Pole
@@ -336,7 +333,6 @@ def test_rot_regressions_against_sim_data():
   assert out_pole.long == pytest.approx(rotPole.long)
   assert out_pole.lat == pytest.approx(rotPole.lat)
   assert out_pole.omega == pytest.approx(rotPole.omega)
-
 
 def test_v_regression_against_sim_data():
   gh.setGeod(realWorld=False)

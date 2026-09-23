@@ -265,7 +265,7 @@ def gn_print(x):
 def solve_gauss_newton_transform(pvData, raw_pole, useStereo):
   # apply Gauss-Newton analysis to get any translation (non-rotation) components
   if useStereo:
-    offset = solve_gauss_newton_2D_transform_geo_wtd(pvData, raw_pole)
+    offset = solve_gauss_newton_2D_transform_geo_wtd(pvData, raw_pole.ploc())
     # print(f"offset (Stereo): {offset}")
   else:
     offset = solve_gauss_newton_translation(pvData, raw_pole)
