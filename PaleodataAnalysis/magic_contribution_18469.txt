@@ -1,0 +1,20 @@
+tab delimited	contribution
+id	version	timestamp	contributor	data_model_version	reference	description
+18469	3	2007-01-19T08:47:45.000Z	@magic	3.0	10.1029/JB090iB02p01925	Removed default values introduced by the upgrade to MagIC Data Model 3.0.
+>>>>>>>>>>
+tab delimited	locations
+location	location_type	result_name	result_type	method_codes	citations	geologic_classes	lithologies	geological_province_sections	lat_s	lat_n	lon_w	lon_e	continent_ocean	country	region	age_low	age_high	age_unit	dir_tilt_correction	dir_dec	dir_inc	dir_alpha95	dir_k	dir_k_ratio	dir_polarity	dir_n_sites	dir_n_samples	fold_test_significance	fold_test	conglomerate_test	contact_test	reversal_test	pole_lat	pole_lon	pole_dp	pole_dm	pole_reversed_perc	pole_antipodal_angle	description	rock_magnetic_test
+Crescent Formation Volcanics	Outcrop	305	i	 DE-VGP : LT-AF-Z : LT-T-Z:LP-DC3 	This study	Extrusive	Extrusives	Crescent Formation Volcanics	46.5	46.5	236.5	236.5	North America	U.S.A.	Washington	42	50	Ma	100	24.6	61	4.1	19	1.46		70	450	95	F+	ND	ND	Rc	73.3	326.4	5.3	5.3	20	177.6	Interbedded with, conformably overlain by Middle Eocene seds. . Folding began in Middle Eocene. AF 10-50mT, Thermal 450-550C. .	M
+Crescent Formation Volcanics	Outcrop	305	i	 DE-VGP : LT-AF-Z : LT-T-Z:LP-DC3 	This study	Extrusive	Extrusives	Crescent Formation Volcanics	46.5	46.5	236.5	236.5	North America	U.S.A.	Washington	42	50	Ma	0	24.5	62.3	5	13			70		95	F+	ND	ND	Rc	73.3	326.4	5.3	5.3	20	177.6	Interbedded with, conformably overlain by Middle Eocene seds. . Folding began in Middle Eocene. AF 10-50mT, Thermal 450-550C. .	M
+Crescent Formation Volcanics	Outcrop	305	i	 DE-VGP : LT-AF-Z : LT-T-Z:LP-DC3 	This study	Extrusive	Extrusives	Crescent Formation Volcanics	46.5	46.5	236.5	236.5	North America	U.S.A.	Washington	42	50	Ma	100	24.9	61.4	4.2	21		n	56		95	F+	ND	ND	Rc	73.3	326.4	5.3	5.3	20	177.6	Interbedded with, conformably overlain by Middle Eocene seds. . Folding began in Middle Eocene. AF 10-50mT, Thermal 450-550C. .	M
+Crescent Formation Volcanics	Outcrop	305	i	 DE-VGP : LT-AF-Z : LT-T-Z:LP-DC3 	This study	Extrusive	Extrusives	Crescent Formation Volcanics	46.5	46.5	236.5	236.5	North America	U.S.A.	Washington	42	50	Ma	100	203.8	-59.1	12.3	11		r	14		95	F+	ND	ND	Rc	73.3	326.4	5.3	5.3	20	177.6	Interbedded with, conformably overlain by Middle Eocene seds. . Folding began in Middle Eocene. AF 10-50mT, Thermal 450-550C. .	M
+Goble Volcanics	Outcrop	306	i	 DE-VGP : LT-AF-Z:LP-DC3 	This study	Extrusive	Extrusives	Goble Volcanics	46.3	46.3	237	237	North America	U.S.A.	Washington	35	39	Ma	100	194.1	-56	10.3	23	1.92		10	70	90	Fo	ND	ND	Rc	77.2	5.7	14	14	80	167.9	Underlain and overlain by Upper Eocene sediments. Extent 40 km. AF 10-50mT.	M
+Goble Volcanics	Outcrop	306	i	 DE-VGP : LT-AF-Z:LP-DC3 	This study	Extrusive	Extrusives	Goble Volcanics	46.3	46.3	237	237	North America	U.S.A.	Washington	35	39	Ma	0	188.8	-56.9	14.7	12			10		90	Fo	ND	ND	Rc	77.2	5.7	14	14	80	167.9	Underlain and overlain by Upper Eocene sediments. Extent 40 km. AF 10-50mT.	M
+Goble Volcanics	Outcrop	306	i	 DE-VGP : LT-AF-Z:LP-DC3 	This study	Extrusive	Extrusives	Goble Volcanics	46.3	46.3	237	237	North America	U.S.A.	Washington	35	39	Ma	100	26.1	49.5	9.2	744		n	2		90	Fo	ND	ND	Rc	77.2	5.7	14	14	80	167.9	Underlain and overlain by Upper Eocene sediments. Extent 40 km. AF 10-50mT.	M
+Goble Volcanics	Outcrop	306	i	 DE-VGP : LT-AF-Z:LP-DC3 	This study	Extrusive	Extrusives	Goble Volcanics	46.3	46.3	237	237	North America	U.S.A.	Washington	35	39	Ma	100	189.4	-56.3	12.4	20.9		r	8		90	Fo	ND	ND	Rc	77.2	5.7	14	14	80	167.9	Underlain and overlain by Upper Eocene sediments. Extent 40 km. AF 10-50mT.	M
+>>>>>>>>>>
+tab delimited	ages
+location	age_low	age_high	age_unit	timescale_eon	timescale_era	timescale_period	timescale_epoch	description	method_codes	timescale_citations	citations
+Crescent Formation Volcanics	42	50	Ma	Phanerozoic	Cenozoic	Paleogene	Eocene		GM-CC-STRAT	Gradstein et al. 2004	This study
+Goble Volcanics	35	39	Ma	Phanerozoic	Cenozoic	Paleogene	Eocene	K-Ar 32, 39 Ma.	 GM-CC-STRAT:GM-KAR 	Gradstein et al. 2004	This study
+>>>>>>>>>>
