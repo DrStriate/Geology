@@ -35,7 +35,7 @@ def parse_magic_file(filepath):
 # 1. PARSE & CLEAN DATA
 # ==========================================
 # Ensure this matches the exact name of your downloaded MagIC text file
-query_number = "18104"
+query_number = "18469"
 file_path = "magic_contribution_" + query_number + ".txt" 
 
 magic_tables = parse_magic_file(file_path)
@@ -59,11 +59,6 @@ if 'locations' in magic_tables:
         lambda d: (d - ref_dec + 180) % 360 - 180 if pd.notnull(d) else np.nan
     )
 
-    # Write cleaned CSV using an absolute path
-    cleaned_csv = os.path.abspath("cleaned_data.csv")
-    df.to_csv(cleaned_csv, index=False)
-    print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
-
     # ==========================================
     #  INGEST INTO ARCGIS PRO
     # ==========================================
@@ -73,10 +68,6 @@ if 'locations' in magic_tables:
 
     # 2. Drop any rows where latitude or longitude ended up as NaN/null (prevents XYTableToPoint crashes)
     df = df.dropna(subset=['x_lon', 'y_lat'])
-
-    # Re-save the cleaned CSV so it only contains valid spatial rows
-    cleaned_csv = os.path.abspath("cleaned_data.csv")
-    df.to_csv(cleaned_csv, index=False)
 
     # 3. Handle workspace paths safely
     try:
@@ -94,8 +85,6 @@ if 'locations' in magic_tables:
 
     # Drop any rows with missing coordinates
     df = df.dropna(subset=['x_lon', 'y_lat'])
-    cleaned_csv = os.path.abspath("cleaned_data.csv")
-    df.to_csv(cleaned_csv, index=False)
 
     # Explicitly define a file geodatabase in your script's directory so it always has a valid location
     script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
@@ -109,6 +98,11 @@ if 'locations' in magic_tables:
 
     output_feature_class = os.path.join(gdb_path, "Tectonic_Rotations_" + query_number)
 
+    # Save df to csv file
+    cleaned_csv = os.path.abspath("cleaned_data.csv")
+    df.to_csv(cleaned_csv, index=False)
+    print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
+    
     # Run XYTableToPoint with the fully qualified path
     try:
         arcpy.management.XYTableToPoint(

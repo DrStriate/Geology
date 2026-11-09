@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 import pmagpy.pmag as pmag
+import os
+import arcpy
+# Python.exe needs to be in ArcGIS:  C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\python.exe
+
 
 def parse_magic_file(filepath):
     """Parses multi-section MagIC v3 files into a dictionary of DataFrames."""
@@ -31,17 +35,28 @@ def parse_magic_file(filepath):
     return tables
 
 # 1. Load the MagIC file
-magic_data = parse_magic_file('magic_contribution_18469.txt')
-df = magic_data['locations']
+query_number = "18469"
+file_path = "magic_contribution_" + query_number + ".txt" 
+
+magic_tables = parse_magic_file(file_path)
+df = magic_tables['locations']
 
 # 2. Clean numerical fields
+df['lat_n'] = pd.to_numeric(df['lat_n'], errors='coerce')
+df['lon_w'] = pd.to_numeric(df['lon_w'], errors='coerce')
+df['age_high'] = pd.to_numeric(df['age_high'], errors='coerce')
+df['age_low'] = pd.to_numeric(df['age_low'], errors='coerce')
 df['dir_dec'] = pd.to_numeric(df['dir_dec'], errors='coerce')
 df['dir_inc'] = pd.to_numeric(df['dir_inc'], errors='coerce')
-df['age_av'] = (pd.to_numeric(df['age_low'], errors='coerce') + pd.to_numeric(df['age_high'], errors='coerce')) / 2.0
+df['age_av'] = (df['age_low'] + df['age_high']) / 2.0
 df['dir_tilt_correction'] = pd.to_numeric(df['dir_tilt_correction'], errors='coerce')
 
 # 3. Filter for fully tilt-corrected data (100% structural restoration)[cite: 1, 2]
 df_corrected = df[df['dir_tilt_correction'] == 100].copy()
+
+# Convert MagIC 0-360 longitude to standard -180 to 180 for ArcGIS
+df_corrected['x_lon'] = df['lon_w'].apply(lambda lon: lon - 360 if lon > 180 else lon)
+df_corrected['y_lat'] = df['lat_n']
 
 # 4. Handle polarity reversals (flip negative inclinations and their declinations by 180°)
 def normalize_polarity(row):
@@ -68,19 +83,57 @@ for location, group in df_corrected.groupby('location'):
     mean_inc = fisher_mean['inc']
     alpha95 = fisher_mean['alpha95']
     n_samples = len(dir_list)
-    
+
+    av_age = group['age_av'].mean()
+    lat_n = group['y_lat'].mean()
+    long_e = group['x_lon'].mean()
     # Calculate net tectonic rotation relative to stable North America (ref_dec = 0.0)
     rotation_angle = (mean_dec - 0.0 + 180) % 360 - 180
+    rotation_rate = rotation_angle / av_age
     
     site_results.append({
         'Location': location,
         'N_Entries': n_samples,
+        'lat': lat_n,
+        'long': long_e,
         'Mean_Declination': round(mean_dec, 2),
         'Mean_Inclination': round(mean_inc, 2),
-        #'Av Age': df_corrected.age_av,
+        'Av Age': round(av_age, 2),
         'Alpha_95': round(alpha95, 2),
-        'Net_Rotation_Angle': round(rotation_angle, 2)
+        'Net_Rot_Angle': round(rotation_angle, 2),
+        'Rot_Rate': round(rotation_rate, 3)
     })
 
-df_summary = pd.DataFrame(site_results)
-print(df_summary.to_string(index=False))
+    df_summary = pd.DataFrame(site_results)
+    print(df_summary.to_string(index=False))
+
+    # Explicitly define a file geodatabase in your script's directory so it always has a valid location
+    script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
+    gdb_name = "PaleomagData.gdb"
+    gdb_path = os.path.join(script_dir, gdb_name)
+
+    # Create the file geodatabase if it doesn't already exist
+    if not arcpy.Exists(gdb_path):
+        arcpy.management.CreateFileGDB(script_dir, gdb_name)
+        print(f"Created new file geodatabase at: {gdb_path}")
+
+    output_feature_class = os.path.join(gdb_path, "Processed_Site_Rotations_" + query_number)
+
+    # Save df to csv file
+    cleaned_csv = os.path.abspath("cleaned_data.csv")
+    df_summary.to_csv(cleaned_csv, index=False)
+    print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
+
+    # Run XYTableToPoint with the fully qualified path
+    try:
+        arcpy.management.XYTableToPoint(
+            in_table=cleaned_csv,
+            out_feature_class=output_feature_class,
+            x_field= 'long',
+            y_field= 'lat',
+            coordinate_system=arcpy.SpatialReference(4326) # WGS 1984
+        )
+        print(f"\nSuccess! Feature class created inside geodatabase:")
+        print(output_feature_class)
+    except Exception as e:
+        print(f"\nArcPy Error encountered: {e}")

@@ -46,8 +46,7 @@ df['dir_tilt_correction'] = pd.to_numeric(df['dir_tilt_correction'], errors='coe
 # Convert MagIC 0-360 longitude to standard -180 to 180 for ArcGIS
 df['x_lon'] = df['lon_w'].apply(lambda lon: lon - 360 if lon > 180 else lon)
 df['y_lat'] = df['lat_s']
-df['age_av'] = (df['age_high'] + df['age_low']) / 2.0
-
+# df['age_av'] = (df['age_high'] + df['age_low']) / 2.0
 
 # 3. Filter for fully tilt-corrected data (100% structural restoration)
 df_corrected = df[df['dir_tilt_correction'] == 100].copy()
