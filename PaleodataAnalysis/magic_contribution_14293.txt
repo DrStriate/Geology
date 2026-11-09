@@ -1,0 +1,15 @@
+tab delimited	contribution
+id	version	timestamp	contributor	data_model_version	reference	description
+14293	2	2007-01-19T08:35:38.000Z	@magic	3.0	10.1029/JB087iB05p03761	Upgraded to MagIC Data Model 3.0 by the MagIC Database Team
+>>>>>>>>>>
+tab delimited	locations
+location	location_type	result_name	result_type	method_codes	citations	geologic_classes	lithologies	geological_province_sections	lat_s	lat_n	lon_w	lon_e	continent_ocean	country	region	age_low	age_high	age_unit	dir_tilt_correction	dir_dec	dir_inc	dir_alpha95	dir_k	dir_k_ratio	dir_n_sites	dir_n_samples	fold_test_significance	fold_test	conglomerate_test	contact_test	reversal_test	pole_lat	pole_lon	pole_dp	pole_dm	pole_reversed_perc	description	rock_magnetic_test
+Pack Sack Lookout basalt	Outcrop	257	i	 DE-DI : LT-AF-Z:LP-DC3 	This study	Extrusive	Basalt	Pack Sack Lookout basalt	46.5	46.5	236.6	236.6	North America	U.S.A.	SW Washington	10	14	Ma	100	205.3	-49.7	2.4	660		7	85	90	Fo	ND	ND	ND	64.8	356.9	2.1	3.2	100	Interbedded with Late Middle Miocene sediments. Part of Columbia River Basalts. . Bulk cleaning.	ND
+Pack Sack Lookout basalt	Outcrop	257	i	 DE-DI : LT-AF-Z:LP-DC3 	This study	Extrusive	Basalt	Pack Sack Lookout basalt	46.5	46.5	236.6	236.6	North America	U.S.A.	SW Washington	10	14	Ma	100				553	3.59	4		90	Fo	ND	ND	ND	64.8	356.9	2.1	3.2	100	Interbedded with Late Middle Miocene sediments. Part of Columbia River Basalts. . Bulk cleaning.	ND
+Pack Sack Lookout basalt	Outcrop	257	i	 DE-DI : LT-AF-Z:LP-DC3 	This study	Extrusive	Basalt	Pack Sack Lookout basalt	46.5	46.5	236.6	236.6	North America	U.S.A.	SW Washington	10	14	Ma	0				154		4		90	Fo	ND	ND	ND	64.8	356.9	2.1	3.2	100	Interbedded with Late Middle Miocene sediments. Part of Columbia River Basalts. . Bulk cleaning.	ND
+Saddle Mountain Basalt	Outcrop	258	i	 DE-DI : LT-AF-Z:LP-DC3 	This study	Extrusive	Basalt	Saddle Mountain Basalt	46.3	46.3	240	240	North America	U.S.A.	SW Washington	10	14	Ma	100	189.8	-50.9	1.8	498		14	92		ND	ND	ND	ND	73.5	29.4	1.6	2.4	100	Interbedded with Late Middle Miocene sediments. Part of Columbia River basalts. Bulk cleaning.	ND
+>>>>>>>>>>
+tab delimited	ages
+location	age_low	age_high	age_unit	timescale_eon	timescale_era	timescale_period	timescale_epoch	method_codes	timescale_citations	citations
+Pack Sack Lookout basalt	10	14	Ma	Phanerozoic	Cenozoic	Neogene	Miocene	GM-CC-STRAT	Gradstein et al. 2004	This study
+Saddle Mountain Basalt	10	14	Ma	Phanerozoic	Cenozoic	Neogene	Miocene	GM-CC-STRAT	Gradstein et al. 2004	This study

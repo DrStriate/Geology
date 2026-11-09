@@ -1,0 +1,14 @@
+tab delimited	contribution
+id	version	timestamp	contributor	data_model_version	reference	description
+18104	3	2006-12-19T07:27:21.000Z	@magic	3.0	10.1029/JB086iB04p02953	Removed default values introduced by the upgrade to MagIC Data Model 3.0.
+>>>>>>>>>>
+tab delimited	locations
+location	location_type	result_name	result_type	method_codes	citations	geologic_classes	lithologies	geological_province_sections	lat_s	lat_n	lon_w	lon_e	continent_ocean	country	region	age_low	age_high	age_unit	dir_tilt_correction	dir_dec	dir_inc	dir_alpha95	dir_k	dir_polarity	dir_n_sites	dir_n_samples	fold_test	conglomerate_test	contact_test	reversal_test	pole_lat	pole_lon	pole_dp	pole_dm	pole_reversed_perc	pole_antipodal_angle	description	rock_magnetic_test
+Tillamook Volcanic Series, Coast Range	Outcrop	512	i	 DE-VGP : LT-AF-Z : LT-T-Z:LP-DC3 	This study	Extrusive	Extrusives	Tillamook Volcanic Series	45.7	45.7	236.5	236.5	North America	U.S.A.	Oregon	43	46	Ma	100	215.5	-64.2	4.9	27.9		32	175	ND	ND	ND	Rb	65.5	312.7	7	7	94	174.5	Middle to Late Eocene. Dips 'up to 20 deg'. AF 10-160mT, Thermal to 650C. No remanence left at 600C. .	ND
+Tillamook Volcanic Series, Coast Range	Outcrop	512	i	 DE-VGP : LT-AF-Z : LT-T-Z:LP-DC3 	This study	Extrusive	Extrusives	Tillamook Volcanic Series	45.7	45.7	236.5	236.5	North America	U.S.A.	Oregon	43	46	Ma	100	45.8	65.7	13.6	340.6	n	2		ND	ND	ND	Rb	65.5	312.7	7	7	94	174.5	Middle to Late Eocene. Dips 'up to 20 deg'. AF 10-160mT, Thermal to 650C. No remanence left at 600C. .	ND
+Tillamook Volcanic Series, Coast Range	Outcrop	512	i	 DE-VGP : LT-AF-Z : LT-T-Z:LP-DC3 	This study	Extrusive	Extrusives	Tillamook Volcanic Series	45.7	45.7	236.5	236.5	North America	U.S.A.	Oregon	43	46	Ma	100	215.2	-62.7	5.2	26.4	r	30		ND	ND	ND	Rb	65.5	312.7	7	7	94	174.5	Middle to Late Eocene. Dips 'up to 20 deg'. AF 10-160mT, Thermal to 650C. No remanence left at 600C. .	ND
+>>>>>>>>>>
+tab delimited	ages
+location	age_low	age_high	age_unit	timescale_eon	timescale_era	timescale_period	timescale_epoch	description	method_codes	timescale_citations	citations
+Tillamook Volcanic Series, Coast Range	43	46	Ma	Phanerozoic	Cenozoic	Paleogene	Eocene	K-Ar (7) 42. 7 to 46. 0.	 GM-KAR:GM-FOSSIL 	Gradstein et al. 2004	This study
+>>>>>>>>>>

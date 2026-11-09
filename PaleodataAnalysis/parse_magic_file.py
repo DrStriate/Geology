@@ -35,7 +35,8 @@ def parse_magic_file(filepath):
 # 1. PARSE & CLEAN DATA
 # ==========================================
 # Ensure this matches the exact name of your downloaded MagIC text file
-file_path = "magic_contribution_18469.txt" 
+query_number = "18104"
+file_path = "magic_contribution_" + query_number + ".txt" 
 
 magic_tables = parse_magic_file(file_path)
 
@@ -59,7 +60,7 @@ if 'locations' in magic_tables:
     )
 
     # Write cleaned CSV using an absolute path
-    cleaned_csv = os.path.abspath("cleaned_wells_coe_data.csv")
+    cleaned_csv = os.path.abspath("cleaned_data.csv")
     df.to_csv(cleaned_csv, index=False)
     print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
 
@@ -74,7 +75,7 @@ if 'locations' in magic_tables:
     df = df.dropna(subset=['x_lon', 'y_lat'])
 
     # Re-save the cleaned CSV so it only contains valid spatial rows
-    cleaned_csv = os.path.abspath("cleaned_wells_coe_data.csv")
+    cleaned_csv = os.path.abspath("cleaned_data.csv")
     df.to_csv(cleaned_csv, index=False)
 
     # 3. Handle workspace paths safely
@@ -93,7 +94,7 @@ if 'locations' in magic_tables:
 
     # Drop any rows with missing coordinates
     df = df.dropna(subset=['x_lon', 'y_lat'])
-    cleaned_csv = os.path.abspath("cleaned_wells_coe_data.csv")
+    cleaned_csv = os.path.abspath("cleaned_data.csv")
     df.to_csv(cleaned_csv, index=False)
 
     # Explicitly define a file geodatabase in your script's directory so it always has a valid location
@@ -106,7 +107,7 @@ if 'locations' in magic_tables:
         arcpy.management.CreateFileGDB(script_dir, gdb_name)
         print(f"Created new file geodatabase at: {gdb_path}")
 
-    output_feature_class = os.path.join(gdb_path, "Wells_Coe_Tectonic_Rotations")
+    output_feature_class = os.path.join(gdb_path, "Tectonic_Rotations_" + query_number)
 
     # Run XYTableToPoint with the fully qualified path
     try:

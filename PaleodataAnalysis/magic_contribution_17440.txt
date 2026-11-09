@@ -1,0 +1,15 @@
+tab delimited	contribution
+id	version	timestamp	contributor	data_model_version	reference	description
+17440	3	2007-01-19T08:55:05.000Z	@magic	3.0	10.1029/JB091iB08p08219	Removed default values introduced by the upgrade to MagIC Data Model 3.0.
+>>>>>>>>>>
+tab delimited	locations
+location	location_type	result_name	result_type	method_codes	citations	geologic_classes	lithologies	geological_province_sections	lat_s	lat_n	lon_w	lon_e	continent_ocean	country	region	age_low	age_high	age_unit	dir_tilt_correction	dir_dec	dir_inc	dir_alpha95	dir_k	dir_polarity	dir_n_sites	dir_n_samples	fold_test	conglomerate_test	contact_test	reversal_test	pole_lat	pole_lon	pole_dp	pole_dm	pole_reversed_perc	pole_antipodal_angle	description	rock_magnetic_test
+Western Cascade Series	Outcrop	344	i	 DE-VGP : LT-AF-Z:LP-DC3 	This study	Extrusive	Extrusives	Western Cascade Series	41.9	41.9	237.6	237.6	North America	U.S.A.	California	18	28	Ma	100	4.9	57.6	5.3	14.4		53	373	ND	ND	ND	Rc	86.9	347.1	6.9	6.9	40	174.4	Mid-Oligocene to Early Miocene covering 10 Ma. Gentle dips 0-20 deg to NE. AF max. 100mT. Bulk cleaning.	ND
+Western Cascade Series	Outcrop	344	i	 DE-VGP : LT-AF-Z:LP-DC3 	This study	Extrusive	Extrusives	Western Cascade Series	41.9	41.9	237.6	237.6	North America	U.S.A.	California	18	28	Ma	0	350.1	63.6	4.9	17.2		53		ND	ND	ND	Rc	86.9	347.1	6.9	6.9	40	174.4	Mid-Oligocene to Early Miocene covering 10 Ma. Gentle dips 0-20 deg to NE. AF max. 100mT. Bulk cleaning.	ND
+Western Cascade Series	Outcrop	344	i	 DE-VGP : LT-AF-Z:LP-DC3 	This study	Extrusive	Extrusives	Western Cascade Series	41.9	41.9	237.6	237.6	North America	U.S.A.	California	18	28	Ma	100	4.8	59.6	6.3	17.1	n	32		ND	ND	ND	Rc	86.9	347.1	6.9	6.9	40	174.4	Mid-Oligocene to Early Miocene covering 10 Ma. Gentle dips 0-20 deg to NE. AF max. 100mT. Bulk cleaning.	ND
+Western Cascade Series	Outcrop	344	i	 DE-VGP : LT-AF-Z:LP-DC3 	This study	Extrusive	Extrusives	Western Cascade Series	41.9	41.9	237.6	237.6	North America	U.S.A.	California	18	28	Ma	100	185.1	-54	9.7	11.4	r	21		ND	ND	ND	Rc	86.9	347.1	6.9	6.9	40	174.4	Mid-Oligocene to Early Miocene covering 10 Ma. Gentle dips 0-20 deg to NE. AF max. 100mT. Bulk cleaning.	ND
+>>>>>>>>>>
+tab delimited	ages
+location	age_low	age_high	age_unit	timescale_eon	timescale_era	timescale_period	timescale_epoch	method_codes	timescale_citations	citations
+Western Cascade Series	18	28	Ma	Phanerozoic	Cenozoic	Paleogene : Neogene	Oligocene : Miocene	GM-CC-STRAT	Gradstein et al. 2004	This study
+>>>>>>>>>>
