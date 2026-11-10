@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 
 def parse_magic_file(filepath):
     """Parses multi-section MagIC v3 files into a dictionary of DataFrames."""

@@ -96,44 +96,44 @@ for location, group in df_corrected.groupby('location'):
         'N_Entries': n_samples,
         'lat': lat_n,
         'long': long_e,
-        'Mean_Declination': round(mean_dec, 2),
-        'Mean_Inclination': round(mean_inc, 2),
-        'Av Age': round(av_age, 2),
-        'Alpha_95': round(alpha95, 2),
-        'Net_Rot_Angle': round(rotation_angle, 2),
+        'Mean_Declination': round(mean_dec, 3),
+        'Mean_Inclination': round(mean_inc, 3),
+        'Av Age': round(av_age, 3),
+        'Alpha_95': round(alpha95, 3),
+        'Net_Rot_Angle': round(rotation_angle, 3),
         'Rot_Rate': round(rotation_rate, 3)
     })
+    
+df_summary = pd.DataFrame(site_results)
+print(df_summary.to_string(index=False))
 
-    df_summary = pd.DataFrame(site_results)
-    print(df_summary.to_string(index=False))
+# Explicitly define a file geodatabase in your script's directory so it always has a valid location
+script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
+gdb_name = "PaleomagData.gdb"
+gdb_path = os.path.join(script_dir, gdb_name)
 
-    # Explicitly define a file geodatabase in your script's directory so it always has a valid location
-    script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
-    gdb_name = "PaleomagData.gdb"
-    gdb_path = os.path.join(script_dir, gdb_name)
+# Create the file geodatabase if it doesn't already exist
+if not arcpy.Exists(gdb_path):
+    arcpy.management.CreateFileGDB(script_dir, gdb_name)
+    print(f"Created new file geodatabase at: {gdb_path}")
 
-    # Create the file geodatabase if it doesn't already exist
-    if not arcpy.Exists(gdb_path):
-        arcpy.management.CreateFileGDB(script_dir, gdb_name)
-        print(f"Created new file geodatabase at: {gdb_path}")
+output_feature_class = os.path.join(gdb_path, "Processed_Site_Rotations_" + query_number)
 
-    output_feature_class = os.path.join(gdb_path, "Processed_Site_Rotations_" + query_number)
+# Save df to csv file
+cleaned_csv = os.path.abspath("cleaned_data.csv")
+df_summary.to_csv(cleaned_csv, index=False)
+print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
 
-    # Save df to csv file
-    cleaned_csv = os.path.abspath("cleaned_data.csv")
-    df_summary.to_csv(cleaned_csv, index=False)
-    print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
-
-    # Run XYTableToPoint with the fully qualified path
-    try:
-        arcpy.management.XYTableToPoint(
-            in_table=cleaned_csv,
-            out_feature_class=output_feature_class,
-            x_field= 'long',
-            y_field= 'lat',
-            coordinate_system=arcpy.SpatialReference(4326) # WGS 1984
-        )
-        print(f"\nSuccess! Feature class created inside geodatabase:")
-        print(output_feature_class)
-    except Exception as e:
-        print(f"\nArcPy Error encountered: {e}")
+# Run XYTableToPoint with the fully qualified path
+try:
+    arcpy.management.XYTableToPoint(
+        in_table=cleaned_csv,
+        out_feature_class=output_feature_class,
+        x_field= 'long',
+        y_field= 'lat',
+        coordinate_system=arcpy.SpatialReference(4326) # WGS 1984
+    )
+    print(f"\nSuccess! Feature class created inside geodatabase:")
+    print(output_feature_class)
+except Exception as e:
+    print(f"\nArcPy Error encountered: {e}")
