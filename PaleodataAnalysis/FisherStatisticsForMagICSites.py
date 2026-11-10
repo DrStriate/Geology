@@ -118,6 +118,8 @@ for fileName in fileNames:
     else:
         df_summary.to_csv(cleaned_csv, mode='a', header=False, index=False) 
 
+print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
+
 # Explicitly define a file geodatabase in your script's directory so it always has a valid location
 script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
 gdb_name = "PaleomagData.gdb"
@@ -129,9 +131,6 @@ if not arcpy.Exists(gdb_path):
     print(f"Created new file geodatabase at: {gdb_path}")
 
 output_feature_class = os.path.join(gdb_path, "Processed_Site_Rotations")
-
-
-print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
 
 # Run XYTableToPoint with the fully qualified path
 arcpy.env.overwriteOutput = True
