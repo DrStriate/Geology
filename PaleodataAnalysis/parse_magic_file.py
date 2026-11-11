@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import arcpy
+from arcgis.features import GeoAccessor
 # Python.exe needs to be in ArcGIS:  C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\python.exe
 
 def parse_magic_file(filepath):
@@ -35,7 +36,7 @@ def parse_magic_file(filepath):
 # 1. PARSE & CLEAN DATA
 # ==========================================
 # Ensure this matches the exact name of your downloaded MagIC text file
-query_number = "18469"
+query_number = "14293"
 file_path = "magic_contribution_" + query_number + ".txt" 
 
 magic_tables = parse_magic_file(file_path)
@@ -98,22 +99,14 @@ if 'locations' in magic_tables:
 
     output_feature_class = os.path.join(gdb_path, "Tectonic_Rotations_" + query_number)
 
-    # Save df to csv file
-    cleaned_csv = os.path.abspath("cleaned_data.csv")
-    df.to_csv(cleaned_csv, index=False)
-    print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
     
-    # Run XYTableToPoint with the fully qualified path
-    try:
-        arcpy.management.XYTableToPoint(
-            in_table=cleaned_csv,
-            out_feature_class=output_feature_class,
-            x_field="x_lon",
-            y_field="y_lat",
-            coordinate_system=arcpy.SpatialReference(4326) # WGS 1984
-        )
-        print(f"\nSuccess! Feature class created inside geodatabase:")
-        print(output_feature_class)
-    except Exception as e:
-        print(f"\nArcPy Error encountered: {e}")
+    # Convert DataFrame into a Spatially Enabled DataFrame (SEDF)
+    sedf = GeoAccessor.from_xy(
+        df, 
+        x_column="x_lon",  
+        y_column="y_lat",  
+        sr=4326 # WGS 1984
+    )
 
+    # Export directly to a File Geodatabase Feature Class
+    sedf.spatial.to_featureclass(location=output_feature_class)

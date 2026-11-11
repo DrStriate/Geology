@@ -4,8 +4,9 @@ import pmagpy.pmag as pmag
 import os
 from pathlib import Path
 import arcpy
-# Python.exe needs to be in ArcGIS:  C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\python.exe
+from arcgis.features import GeoAccessor
 
+# Python.exe needs to be in ArcGIS:  C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\python.exe
 
 def parse_magic_file(filepath):
     """Parses multi-section MagIC v3 files into a dictionary of DataFrames."""
@@ -40,7 +41,7 @@ magICPath = Path.cwd() / "MagIC"
 fileNames = os.listdir(magICPath)
 site_results = []
 header_sent = False
-cleaned_csv = os.path.abspath("cleaned_data.csv")
+all_dfs = []
 for fileName in fileNames:
     # 1. Load the MagIC file
     magic_tables = parse_magic_file(magICPath / fileName)
@@ -111,14 +112,11 @@ for fileName in fileNames:
     df_summary = pd.DataFrame(site_results)
     print(df_summary.to_string(index=False))
 
-    # Save df to csv file
-    if not header_sent:
-        df_summary.to_csv(cleaned_csv, index=False)
-        header_sent = True
-    else:
-        df_summary.to_csv(cleaned_csv, mode='a', header=False, index=False) 
+    all_dfs.append(df_summary)
 
-print(f"Successfully processed {len(df)} records. Saved to: {cleaned_csv}")
+master_df = pd.concat(all_dfs, ignore_index=True)
+print(master_df.to_string(index=False))
+print(f"Successfully processed {len(master_df)} sites")
 
 # Explicitly define a file geodatabase in your script's directory so it always has a valid location
 script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
@@ -132,17 +130,13 @@ if not arcpy.Exists(gdb_path):
 
 output_feature_class = os.path.join(gdb_path, "Processed_Site_Rotations")
 
-# Run XYTableToPoint with the fully qualified path
-arcpy.env.overwriteOutput = True
-try:
-    arcpy.management.XYTableToPoint(
-        in_table=cleaned_csv,
-        out_feature_class=output_feature_class,
-        x_field= 'long',
-        y_field= 'lat',
-        coordinate_system=arcpy.SpatialReference(4326) # WGS 1984
-    )
-    print(f"\nSuccess! Feature class created inside geodatabase:")
-    print(output_feature_class)
-except Exception as e:
-    print(f"\nArcPy Error encountered: {e}")
+# Convert DataFrame into a Spatially Enabled DataFrame (SEDF)
+sedf = GeoAccessor.from_xy(
+    master_df, 
+    x_column="long",  
+    y_column="lat",  
+    sr=4326 # WGS 1984
+)
+
+# Export directly to a File Geodatabase Feature Class
+sedf.spatial.to_featureclass(location=output_feature_class)
