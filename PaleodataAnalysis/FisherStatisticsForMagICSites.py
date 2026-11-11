@@ -43,11 +43,11 @@ site_results = []
 header_sent = False
 all_dfs = []
 for fileName in fileNames:
-    # 1. Load the MagIC file
+    # Load the MagIC file
     magic_tables = parse_magic_file(magICPath / fileName)
     df = magic_tables['locations']
 
-    # 2. Clean numerical fields
+    # Clean numerical fields
     df['lat_n'] = pd.to_numeric(df['lat_n'], errors='coerce')
     df['lon_w'] = pd.to_numeric(df['lon_w'], errors='coerce')
     df['age_high'] = pd.to_numeric(df['age_high'], errors='coerce')
@@ -57,14 +57,17 @@ for fileName in fileNames:
     df['age_av'] = (df['age_low'] + df['age_high']) / 2.0
     df['dir_tilt_correction'] = pd.to_numeric(df['dir_tilt_correction'], errors='coerce')
 
-    # 3. Filter for fully tilt-corrected data (100% structural restoration)[cite: 1, 2]
+    # Drop any rows with dir_dec or dir_inc not set
+    df = df.dropna(subset=['dir_dec', 'dir_inc'])
+
+    # Filter for fully tilt-corrected data (100% structural restoration)[cite: 1, 2]
     df_corrected = df[df['dir_tilt_correction'] == 100].copy()
 
     # Convert MagIC 0-360 longitude to standard -180 to 180 for ArcGIS
     df_corrected['x_lon'] = df['lon_w'].apply(lambda lon: lon - 360 if lon > 180 else lon)
     df_corrected['y_lat'] = df['lat_n']
 
-    # 4. Handle polarity reversals (flip negative inclinations and their declinations by 180°)
+    # Handle polarity reversals (flip negative inclinations and their declinations by 180°)
     def normalize_polarity(row):
         dec = row['dir_dec']
         inc = row['dir_inc']
@@ -76,14 +79,17 @@ for fileName in fileNames:
         lambda row: pd.Series(normalize_polarity(row)), axis=1
     )
 
-    # 5. Group by geological location/site and compute Fisher Mean
+    # Group by geological location/site and compute Fisher Mean
     for location, group in df_corrected.groupby('location'):
         # Prepare list of [declination, inclination] pairs for PmagPy
         dir_list = group[['norm_dec', 'norm_inc']].values.tolist()
-        
+
         # Calculate Fisher mean using PmagPy
         fisher_mean = pmag.fisher_mean(dir_list)
-        
+        if 'alpha95' not in fisher_mean:
+            print(f"Can't get Fisher mean stats from {location} in {fileName}")
+            continue
+
         mean_dec = fisher_mean['dec']
         mean_inc = fisher_mean['inc']
         alpha95 = fisher_mean['alpha95']
@@ -96,7 +102,8 @@ for fileName in fileNames:
         rotation_angle = (mean_dec - 0.0 + 180) % 360 - 180
         rotation_rate = rotation_angle / av_age
         
-        site_results.append({
+        site_entry = {
+            'File_name': fileName,
             'Location': location,
             'N_Entries': n_samples,
             'lat': lat_n,
@@ -107,16 +114,12 @@ for fileName in fileNames:
             'Alpha_95': round(alpha95, 3),
             'Net_Rot_Angle': round(rotation_angle, 3),
             'Rot_Rate': round(rotation_rate, 3)
-        })
+        }
+        site_results.append(site_entry)
         
-    df_summary = pd.DataFrame(site_results)
-    print(df_summary.to_string(index=False))
+df_summary = pd.DataFrame(site_results)
 
-    all_dfs.append(df_summary)
-
-master_df = pd.concat(all_dfs, ignore_index=True)
-print(master_df.to_string(index=False))
-print(f"Successfully processed {len(master_df)} sites")
+print(f"Successfully processed {len(df_summary)} sites")
 
 # Explicitly define a file geodatabase in your script's directory so it always has a valid location
 script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
@@ -132,7 +135,7 @@ output_feature_class = os.path.join(gdb_path, "Processed_Site_Rotations")
 
 # Convert DataFrame into a Spatially Enabled DataFrame (SEDF)
 sedf = GeoAccessor.from_xy(
-    master_df, 
+    df_summary, 
     x_column="long",  
     y_column="lat",  
     sr=4326 # WGS 1984

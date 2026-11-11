@@ -37,7 +37,7 @@ def parse_magic_file(filepath):
 # ==========================================
 # Ensure this matches the exact name of your downloaded MagIC text file
 query_number = "14293"
-file_path = "magic_contribution_" + query_number + ".txt" 
+file_path = "magIC/magic_contribution_" + query_number + ".txt" 
 
 magic_tables = parse_magic_file(file_path)
 
@@ -97,8 +97,8 @@ if 'locations' in magic_tables:
         arcpy.management.CreateFileGDB(script_dir, gdb_name)
         print(f"Created new file geodatabase at: {gdb_path}")
 
-    output_feature_class = os.path.join(gdb_path, "Tectonic_Rotations_" + query_number)
-
+    output_feature_class = os.path.join(gdb_path, "Raw_MagIC_file_" + query_number)
+    print(df.to_string(index=False))
     
     # Convert DataFrame into a Spatially Enabled DataFrame (SEDF)
     sedf = GeoAccessor.from_xy(
