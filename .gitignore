@@ -49,3 +49,4 @@ pnw_rotation_py/na_plate_gplates/ptt.log
 PaleodataAnalysis/PaleomagData.gdb/**
 PaleodataAnalysis/PaleomagAnalysisProject/.backups
 PaleodataAnalysis/PaleomagAnalysisProject/Index/**
+PaleodataAnalysis/PaleomagAnalysisProject/GpMessages/**
