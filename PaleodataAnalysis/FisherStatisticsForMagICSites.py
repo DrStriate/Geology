@@ -131,7 +131,7 @@ if not arcpy.Exists(gdb_path):
     arcpy.management.CreateFileGDB(script_dir, gdb_name)
     print(f"Created new file geodatabase at: {gdb_path}")
 
-output_feature_class = os.path.join(gdb_path, "Processed_Site_Rotations")
+output_feature_class = os.path.join(gdb_path, "Processed_MagIC_Rotations")
 
 # Convert DataFrame into a Spatially Enabled DataFrame (SEDF)
 sedf = GeoAccessor.from_xy(
