@@ -1,0 +1,21 @@
+Period_Epoch,location,lat,long,norm_dec,Delta_D_err_deg,norm_inc,Delta_L_err_deg,N,Pole_Lat_N,Pole_Lon_E,sigma_p_deg,Rock_Unit,Ma,Reference_Pole,Pole_References,Age_References,Notes
+Miocene,PO,46.5,-123.4,14.7,3.2,1.2,2.7,1,,,,Pomona flow,12,M,Magill et al. [1982],McKee et al. [1977],
+Miocene,SN,47.6,-121.5,-0.1,8.1,-5.1,5.1,34,84.9,237.7,,Snoqualmie batholith,17.5,G,Beske et al. [1973],Yeats and Engels [1971],
+Miocene,CB,45.8,-118,-1.8,6.3,-0.4,4.4,59,88.7,171.6,16.9,Columbia River Basalt Group,15.5,G,"Choinere and Swanson [1979], Hooper et al. [1979], Rietman [1966], Watkins and Baksi [1974]","McKee et al. [1977], Watkins and Baksi [1974], McKee et al. [1981]",
+Miocene,HP,42.5,-119.2,-1.3,8.1,-1.5,5.8,29,88.3,209,18.2,High Plateaus lavas,15.5,G,"Watkins [1965b], E. A. Mankinen et al. (written communication, 1983)",Baksi et al. [1967],
+Oligocene,OI,44.4,-123.7,47.6,12,6.2,9.3,14,60.9,325.6,22.1,Basaltic sills,31,O,"Beck and Plumley [1980], Plumley [1980]",Fiebelkorn et al. [1982],OCR shows Greek ΟΙ for OI
+Oligocene,GR,47.8,-121.4,5,8.2,-2.3,5.4,31,86.2,178.4,,Grotto batholith,25.5,O,Beske et al. [1973],Yeats and Engels [1971],
+Oligocene,OV,45.9,-122,35.7,9.3,-3,6.2,34,72.6,315,21.8,Ohanapecosh Volcanics,34,O,"Bates et al. [1981], Bates [1980]","Bates et al. [1981], Bates [1980]",
+Oligocene,WC1,44.3,-122.6,30.1,20.5,-14.9,10.7,14,70.8,270.9,25.3,Western Cascades Volcanics,25,O,Magill and Cox [1980],Magill and Cox [1980],
+Oligocene,WC2,42.7,-122.7,29.6,26.2,-8,16.5,10,74.1,291.5,32.1,Western Cascades Volcanics,24.5,O,Magill and Cox [1980],Fiebelkorn et al. [1982],
+Oligocene,WK,41.9,-122.4,18.4,7.8,2.9,6,49,82.2,349,27.6,Western Cascades Volcanics,28,O,"Craig et al. [1981], Beck et al. [1986]","Craig et al. [1981], Beck et al. [1986]",
+Eocene,BP,47.8,-122.7,7,17.2,-1.7,10.6,22,85.4,210.1,,Crescent Formation,55,E,Beck and Engebretson [1982],Duncan [1982],OCR shows -1.7±10.ϵ
+Eocene,BH,47,-123.2,26.5,,-0.6,6.9,35,78.8,305,25.1,Crescent Formation,54,E,Globerman et al. [1982],Duncan [1982],Rightmost decimal digit of Delta_D_err clipped in gutter (OCR: 26.5+10.)
+Eocene,WH,46.5,-123.5,20.3,7.8,6.1,5.6,39,81.9,349.2,21.6,Crescent Formation,50,E,Wells and Coe [1985],Duncan [1982],Willapa Hills subarea 1
+Eocene,WH,46.5,-123.5,52.4,10.2,6.8,7.4,12,59.8,319,16.5,Crescent Formation,50,E,Wells and Coe [1985],Duncan [1982],Willapa Hills subarea 2
+Eocene,GVW,46.4,-123.1,22.5,14.4,9.9,11.3,10,77.2,5.7,22.5,Goble Volcanics,39,O/E,Wells and Coe [1985],Wells and Coe [1985],
+Eocene,YB,44.3,-124.1,49,22.5,1.5,16,9,62,312.4,29.7,Yachats Basalt,37,O/E,"Simpson and Cox [1977], Simpson [1977]",Fiebelkorn et al. [1982],
+Eocene,TV,45.6,-123.7,45.3,8.7,2.2,6,32,65.5,312.6,21.6,Tillamook Volcanics,44.5,E,Magill et al. [1981],Magill et al. [1981],
+Eocene,SV,44.9,-123.8,69.5,9.1,4.2,6.6,33,48,306.5,24.4,Siletz River Volcanics,54.5,E,"Simpson and Cox [1977], Simpson [1977]",Duncan [1982],
+Eocene,GVE,46,-122.5,28,7,7,5.1,37,75.5,345.5,18.4,Goble Volcanics,33.5,O/E,Beck and Burr [1979],Beck and Burr [1979],
+Eocene,CF,44.6,-120.4,15.7,9.5,-2.6,6.3,46,83.9,277.6,27.6,Clarno Formation,44,E,this study,,

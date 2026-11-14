@@ -7,7 +7,10 @@ from arcgis.features import GeoAccessor
 # Python.exe needs to be in ArcGIS:  C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\python.exe
 
 file_name = "Magill_1986_Table_1_PO.csv"
+sites_preprocessed = False
 location = "PO"
+# file_name = "gromme_1986_table1_pnw_paleomag.csv"
+# sites_preprocessed = True
 
 file_path = "PaleomagDataSources/" + file_name
 df = pd.read_csv(file_path)
@@ -19,6 +22,7 @@ df['long'] = pd.to_numeric(df['long'], errors='coerce')
 df['Ma'] = pd.to_numeric(df['Ma'], errors='coerce')
 df['norm_dec'] = pd.to_numeric(df['norm_dec'], errors='coerce')
 df['norm_inc'] = pd.to_numeric(df['norm_inc'], errors='coerce')
+df['N'] = pd.to_numeric(df['N'], errors='coerce')
 
 # Drop any rows with dir_dec or dir_inc not set
 df = df.dropna(subset=['norm_dec', 'norm_inc'])
@@ -34,46 +38,70 @@ def normalize_polarity(row):
         return (dec + 180) % 360, -inc
     return dec, inc
 
-df[['norm_dec', 'norm_inc']] = df.apply(
-    lambda row: pd.Series(normalize_polarity(row)), axis=1
-)
-
 site_results = []
-for location, group in df.groupby('location'):
+# Raw site data files which need some aggregation to arrive at D estimates
+if not sites_preprocessed:
 
-    dir_list = group[['norm_dec', 'norm_inc']].values.tolist()
+    df[['norm_dec', 'norm_inc']] = df.apply(
+        lambda row: pd.Series(normalize_polarity(row)), axis=1
+    )
 
-    # Calculate Fisher mean using PmagPy
-    fisher_mean = pmag.fisher_mean(dir_list)
-    if 'alpha95' not in fisher_mean:
-        print(f"Can't get Fisher mean stats in {file_path}")
-        
-    mean_dec = fisher_mean['dec']
-    mean_inc = fisher_mean['inc']
-    alpha95 = fisher_mean['alpha95']
-    n_samples = len(dir_list)
+    for location, group in df.groupby('location'):
 
-    av_age = group['Ma'].mean()
-    lat_n = group['lat'].mean()
-    long_e = group['long'].mean()
-    # Calculate net tectonic rotation relative to stable North America (ref_dec = 0.0)
-    rotation_angle = (mean_dec - 0.0 + 180) % 360 - 180
-    rotation_rate = rotation_angle / av_age
+        dir_list = group[['norm_dec', 'norm_inc']].values.tolist()
 
-    site_entry = {
-        'file_name': file_name,
-        'location': location,
-        'N': n_samples,
-        'lat': lat_n,
-        'long': long_e,
-        'D': round(mean_dec, 3),
-        'I': round(mean_inc, 3),
-        'ma_av': round(av_age, 3),
-        'alpha_95': round(alpha95, 3),
-        'rot_Angle': round(rotation_angle, 3),
-        'rot_Rate': round(rotation_rate, 3)
-    }
-    site_results.append(site_entry)
+        # Calculate Fisher mean using PmagPy
+        fisher_mean = pmag.fisher_mean(dir_list)
+        if 'alpha95' not in fisher_mean:
+            print(f"Can't get Fisher mean stats in {file_path}")
+            
+        mean_dec = fisher_mean['dec']
+        mean_inc = fisher_mean['inc']
+        alpha95 = fisher_mean['alpha95']
+        n_samples = len(dir_list)
+
+        av_age = group['Ma'].mean()
+        lat_n = group['lat'].mean()
+        long_e = group['long'].mean()
+        # Calculate net tectonic rotation relative to stable North America (ref_dec = 0.0)
+        rotation_angle = (mean_dec - 0.0 + 180) % 360 - 180
+        rotation_rate = rotation_angle / av_age
+
+        site_entry = {
+            'file_name': file_name,
+            'location': location,
+            'N': n_samples,
+            'lat': lat_n,
+            'long': long_e,
+            'D': round(mean_dec, 3),
+            'I': round(mean_inc, 3),
+            'ma_av': round(av_age, 3),
+            'alpha_95': round(alpha95, 3),
+            'rot_Angle': round(rotation_angle, 3),
+            'rot_Rate': round(rotation_rate, 3)
+        }
+        site_results.append(site_entry)
+else: # Preprocessed files - Declination is rotation
+    for index, row in df.iterrows():
+
+        # Calculate net tectonic rotation relative to stable North America (ref_dec = 0.0)
+        rotation_angle = (row['norm_dec'] - 0.0 + 180) % 360 - 180
+        rotation_rate = rotation_angle / row['Ma']
+
+        site_entry = {
+            'file_name': file_name,
+            'location': row['location'],
+            'N': row['N'],
+            'lat': row['lat'],
+            'long': row['long'],
+            'D': round(row['norm_dec'], 3),
+            'I': round(row['norm_inc'], 3),
+            'ma_av': round(row['Ma'], 3),
+            'alpha_95': 0,
+            'rot_Angle': round(rotation_angle, 3),
+            'rot_Rate': round(rotation_rate, 3)
+        }
+        site_results.append(site_entry)
 
 df_summary = pd.DataFrame(site_results)
 

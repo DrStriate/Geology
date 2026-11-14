@@ -1,1 +1,6 @@
-Magill_1986_Table_1_PO.csv
+location
+lat
+long
+norm_inc
+norm_dec
+Ma
